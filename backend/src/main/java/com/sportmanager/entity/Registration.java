@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -57,6 +58,12 @@ public class Registration {
     private String specialRequests;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private RegistrationStatus status;
+
+    @OneToMany(mappedBy = "registration")
+    private List<Payment> payments;
+
+    @OneToMany(mappedBy = "registration")
+    private List<ClothingOrder> clothingOrders;
 }
