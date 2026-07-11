@@ -2,6 +2,7 @@ package com.sportmanager.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class Parent {
     @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
 
-    @NotBlank(message = "Is kibbutz member is required")
+    @NotNull(message = "Is kibbutz member is required")
     @Column(name = "is_kibbutz_member", nullable = false)
     private Boolean isKibbutzMember;
     

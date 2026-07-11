@@ -2,6 +2,7 @@ package com.sportmanager.entity;
 
 import com.sportmanager.enums.RegistrationStatus;
 import com.sportmanager.enums.SwimmingLessonType;
+import com.sportmanager.enums.WaterAdaptationLevel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -41,15 +42,18 @@ public class Registration {
     @Column(name = "registration_date", nullable = false)
     private LocalDate registrationDate;
 
-    @Column(name = "football_trainings_per_week")
-    private Integer footballTrainingsPerWeek;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "swimming_lesson_type")
     private SwimmingLessonType swimmingLessonType;
 
+    @Column(name = "water_adaptation_level")
+    private WaterAdaptationLevel waterAdaptationLevel;
+
     @Column(name = "health_declaration_approved", nullable = false)
     private Boolean healthDeclarationApproved;
+
+    @Column(name = "has_medical_limitation", nullable = false)
+    private Boolean hasMedicalLimitation;
 
     @Column(name = "medical_notes")
     private String medicalNotes;

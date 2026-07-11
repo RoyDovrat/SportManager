@@ -3,8 +3,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import java.time.LocalDate;
 import com.sportmanager.enums.Gender;
+import com.sportmanager.enums.AgeGroup;
 import java.util.List;
 
 
@@ -29,13 +29,15 @@ public class Student {
     private String lastName;
 
     @NotNull
-    @Column(name = "birth_date", nullable = false)
-    private LocalDate birthDate;
-
-    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Gender gender;
+
+    @Column(name = "age", nullable = false)
+    private Integer age;
+
+    @Column(name = "age_group", nullable = false)
+    private AgeGroup ageGroup;
 
     @ManyToOne
     @JoinColumn(name = "parent_id", nullable = false)

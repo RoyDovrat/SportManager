@@ -1,6 +1,7 @@
 package com.sportmanager.entity;
 
 import com.sportmanager.enums.PaymentStatus;
+import com.sportmanager.enums.PaymentMethod;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -41,6 +42,7 @@ public class Payment {
     @Column(name = "payment_date")
     private LocalDate paymentDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
-    private String paymentMethod;
+    private PaymentMethod paymentMethod;
 }
