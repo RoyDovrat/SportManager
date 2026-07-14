@@ -19,6 +19,7 @@ public class RegistrationRequest {
     // Student
     private String studentFirstName;
     private String studentLastName;
+    private String studentIdentityNumber;
     private Integer age;
     private AgeGroup ageGroup;
     private Gender gender;

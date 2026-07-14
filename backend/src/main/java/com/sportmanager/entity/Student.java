@@ -21,6 +21,10 @@ public class Student {
     private Long id;
 
     @NotBlank
+    @Column(name = "identity_number", nullable = false, unique = true)
+    private String identityNumber;
+
+    @NotBlank
     @Column(name = "first_name", nullable = false)
     private String firstName;
 

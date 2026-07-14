@@ -52,22 +52,31 @@ public class RegistrationService {
         return parentRepository.save(parent);
     }
 
-    private Student getOrCreateStudent(Parent parent, RegistrationRequest request) {
+    private Student getOrCreateStudent(
+        Parent parent,
+        RegistrationRequest request
+) {
+    Student student = studentRepository
+            .findByIdentityNumber(request.getStudentIdentityNumber())
+            .orElseGet(Student::new);
 
-        Student student = studentRepository
-                .findByParentAndFirstNameAndLastName(parent, request.getStudentFirstName(), request.getStudentLastName())
-                .orElse(new Student());
-
-        student.setFirstName(request.getStudentFirstName());
-        student.setLastName(request.getStudentLastName());
-        student.setAge(request.getAge());
-        student.setAgeGroup(request.getAgeGroup());
-        student.setGender(request.getGender());
-        student.setParent(parent);
-
-        return studentRepository.save(student);
+    if (student.getId() != null
+            && !student.getParent().getId().equals(parent.getId())) {
+        throw new RuntimeException(
+                "Student identity number is already associated with another parent"
+        );
     }
 
+    student.setIdentityNumber(request.getStudentIdentityNumber());
+    student.setFirstName(request.getStudentFirstName());
+    student.setLastName(request.getStudentLastName());
+    student.setAge(request.getAge());
+    student.setAgeGroup(request.getAgeGroup());
+    student.setGender(request.getGender());
+    student.setParent(parent);
+
+    return studentRepository.save(student);
+}
     private Activity getActivity(Long activityId) {
         return activityRepository.findById(activityId)
                 .orElseThrow(() -> new RuntimeException("Activity not found"));

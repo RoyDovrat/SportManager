@@ -13,4 +13,5 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByParentAndFirstNameAndLastName(Parent parent, String firstName, String lastName);
 
+    Optional<Student> findByIdentityNumber(String identityNumber);
 }

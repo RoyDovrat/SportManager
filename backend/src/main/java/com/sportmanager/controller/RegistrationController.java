@@ -19,9 +19,6 @@ public class RegistrationController {
             @RequestBody RegistrationRequest request
     ) {
         registrationService.createRegistration(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body("Registration completed successfully");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Registration completed successfully");
     }
 }
