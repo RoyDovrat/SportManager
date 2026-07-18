@@ -1,9 +1,9 @@
 package com.sportmanager.repository;
 
-import com.sportmanager.entity.Student;
 import com.sportmanager.entity.Parent;
-
+import com.sportmanager.entity.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +14,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     Optional<Student> findByParentAndFirstNameAndLastName(Parent parent, String firstName, String lastName);
 
     Optional<Student> findByIdentityNumber(String identityNumber);
+
+    boolean existsByIdentityNumber(String identityNumber);
+
+    boolean existsByIdentityNumberAndIdNot(String identityNumber, Long id);
 }

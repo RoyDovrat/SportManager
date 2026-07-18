@@ -40,6 +40,8 @@ public class Student {
     @Column(name = "age", nullable = false)
     private Integer age;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "age_group", nullable = false)
     private AgeGroup ageGroup;
 

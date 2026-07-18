@@ -31,7 +31,7 @@ public class Parent {
     private String phoneNumber;
 
     @NotNull(message = "Is kibbutz member is required")
-    @Column(name = "is_kibbutz_member", nullable = false)
+    @Column(name = "is_kibbutz_member", nullable = false, unique = true)
     private Boolean isKibbutzMember;
     
     @Column(name = "budget_number")

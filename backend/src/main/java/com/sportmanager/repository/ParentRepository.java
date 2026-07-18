@@ -8,4 +8,7 @@ public interface ParentRepository extends JpaRepository<Parent, Long> {
 
     Optional<Parent> findByPhoneNumber(String phoneNumber);
 
+    boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
 }
