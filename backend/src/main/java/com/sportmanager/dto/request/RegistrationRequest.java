@@ -34,6 +34,7 @@ public class RegistrationRequest {
 
     private SwimmingLessonType swimmingLessonType;
     private WaterAdaptationLevel waterAdaptationLevel;
+    private Integer weeklySessions;
 
     private Boolean hasMedicalLimitation;
     private Boolean healthDeclarationApproved;

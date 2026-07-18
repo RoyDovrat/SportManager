@@ -29,4 +29,7 @@ public class Activity {
 
     @OneToMany(mappedBy = "activity")
     private List<Registration> registrations;
+
+    @OneToMany(mappedBy = "activity")
+    private List<ActivityPricing> activityPricing;
 }

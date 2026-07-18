@@ -46,6 +46,7 @@ public class Registration {
     @Column(name = "swimming_lesson_type")
     private SwimmingLessonType swimmingLessonType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "water_adaptation_level")
     private WaterAdaptationLevel waterAdaptationLevel;
 
@@ -70,4 +71,9 @@ public class Registration {
 
     @OneToMany(mappedBy = "registration")
     private List<ClothingOrder> clothingOrders;
+
+    @NotNull
+    @ManyToOne
+    @JoinColumn(name = "activity_pricing_id", nullable = false)
+    private ActivityPricing activityPricing;
 }

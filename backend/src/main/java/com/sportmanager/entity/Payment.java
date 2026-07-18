@@ -2,6 +2,7 @@ package com.sportmanager.entity;
 
 import com.sportmanager.enums.PaymentStatus;
 import com.sportmanager.enums.PaymentMethod;
+import com.sportmanager.enums.PaymentType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -15,7 +16,19 @@ import java.time.LocalDate;
 @AllArgsConstructor
 
 @Entity
-@Table(name = "payments")
+@Table(
+    name = "payments",
+    uniqueConstraints = {
+            @UniqueConstraint(
+                    name = "uk_monthly_payment",
+                    columnNames = {
+                            "registration_id",
+                            "charge_month",
+                            "payment_type"
+                    }
+            )
+    }
+)
 public class Payment {
 
     @Id
@@ -28,13 +41,13 @@ public class Payment {
     private Registration registration;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 10, scale = 2)    
     private BigDecimal amount;
 
-    @NotNull
-    @Column(name = "charge_month", nullable = false)
+    @Column(name = "charge_month")
     private LocalDate chargeMonth;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PaymentStatus status;
@@ -43,6 +56,15 @@ public class Payment {
     private LocalDate paymentDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method")
+    @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_type", nullable = false)
+    private PaymentType paymentType;
+
+    @OneToOne
+    @JoinColumn(name = "clothing_order_id", unique = true, nullable = true)
+    private ClothingOrder clothingOrder;
 }

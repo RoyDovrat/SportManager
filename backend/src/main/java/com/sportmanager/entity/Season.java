@@ -37,4 +37,10 @@ public class Season {
 
     @OneToMany(mappedBy = "season")
     private List<Registration> registrations;
+
+    @OneToMany(mappedBy = "season")
+    private List<ActivityPricing> activityPricing;
+
+    @OneToOne(mappedBy = "season")
+    private ClothingPricing clothingPricing;
 }

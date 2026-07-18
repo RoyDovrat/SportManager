@@ -44,4 +44,7 @@ public class ClothingOrder {
 
     @Column(name = "shirt_number")
     private Integer shirtNumber;
+
+    @OneToOne(mappedBy = "clothingOrder")
+    private Payment payment;
 }
