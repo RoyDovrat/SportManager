@@ -10,9 +10,9 @@ import java.time.LocalDate;
 @Setter
 public class MonthlyPaymentRequest {
 
-    @NotNull
+    @NotNull(message = "Registration id is required")
     private Long registrationId;
 
-    @NotNull
+    @NotNull(message = "Charge month is required")
     private LocalDate chargeMonth;
 }

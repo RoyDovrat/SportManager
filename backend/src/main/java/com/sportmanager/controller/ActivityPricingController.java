@@ -2,6 +2,7 @@ package com.sportmanager.controller;
 
 import com.sportmanager.dto.request.ActivityPricingRequest;
 import com.sportmanager.service.ActivityPricingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +17,9 @@ public class ActivityPricingController {
 
     @PostMapping
     public ResponseEntity<String> createActivityPricing(
-            @RequestBody ActivityPricingRequest request
+            @Valid @RequestBody ActivityPricingRequest request
     ) {
         activityPricingService.createActivityPricing(request);
-
         return ResponseEntity.status(HttpStatus.CREATED).body("Activity pricing created successfully");
     }
 }

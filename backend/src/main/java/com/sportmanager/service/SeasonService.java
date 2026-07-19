@@ -1,5 +1,9 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.SeasonRequest;
 import com.sportmanager.entity.Season;
 import com.sportmanager.repository.SeasonRepository;
@@ -48,7 +52,7 @@ public class SeasonService {
     public Season getSeasonById(Long seasonId) {
         return seasonRepository.findById(seasonId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Season was not found with id: " + seasonId
                         )
                 );
@@ -61,7 +65,7 @@ public class SeasonService {
                 seasonRepository.findByIsActive(true);
 
         if (activeSeasons.isEmpty()) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "No active season was found"
             );
         }
@@ -125,13 +129,13 @@ public class SeasonService {
             java.time.LocalDate endDate
     ) {
         if (endDate.isBefore(startDate)) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Season end date cannot be before start date"
             );
         }
 
         if (endDate.isEqual(startDate)) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Season end date must be after start date"
             );
         }
@@ -140,7 +144,7 @@ public class SeasonService {
     private void validateSeasonNameDoesNotExist(String name) {
 
         if (seasonRepository.existsByName(name)) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "A season already exists with this name"
             );
         }
@@ -154,7 +158,7 @@ public class SeasonService {
                 name,
                 seasonId
         )) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "Another season already exists with this name"
             );
         }

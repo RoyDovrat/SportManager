@@ -1,5 +1,8 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.RegistrationRequest;
 import com.sportmanager.entity.*;
 import com.sportmanager.enums.ActivityType;
@@ -82,7 +85,7 @@ public class RegistrationService {
                 .getId()
                 .equals(parent.getId())) {
 
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Student identity number is associated with another parent"
             );
         }
@@ -108,7 +111,7 @@ public class RegistrationService {
         return activityRepository
                 .findById(activityId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Activity not found"
                         )
                 );
@@ -118,7 +121,7 @@ public class RegistrationService {
         return seasonRepository
                 .findById(seasonId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Season not found"
                         )
                 );
@@ -139,7 +142,7 @@ public class RegistrationService {
                             request.getAgeGroup()
                     )
                     .orElseThrow(() ->
-                            new RuntimeException(
+                            new ResourceNotFoundException(
                                     "Active football pricing was not found for this age group"
                             )
                     );
@@ -156,13 +159,13 @@ public class RegistrationService {
                             request.getWeeklySessions()
                     )
                     .orElseThrow(() ->
-                            new RuntimeException(
+                            new ResourceNotFoundException(
                                     "Active swimming pricing was not found"
                             )
                     );
         }
 
-        throw new RuntimeException(
+        throw new BusinessRuleException(
                 "Unsupported activity type"
         );
     }
@@ -181,7 +184,7 @@ public class RegistrationService {
                         );
 
         if (exists) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Student is already registered to this activity in this season"
             );
         }

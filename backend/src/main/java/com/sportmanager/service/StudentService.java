@@ -1,5 +1,9 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.StudentUpdateRequest;
 import com.sportmanager.entity.Student;
 import com.sportmanager.repository.StudentRepository;
@@ -24,7 +28,7 @@ public class StudentService {
     public Student getStudentById(Long studentId) {
         return studentRepository.findById(studentId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Student was not found with id: " + studentId
                         )
                 );
@@ -36,7 +40,7 @@ public class StudentService {
     ) {
         return studentRepository.findByIdentityNumber(identityNumber)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Student was not found with identity number: "
                                         + identityNumber
                         )
@@ -78,7 +82,7 @@ public class StudentService {
                 );
 
         if (identityNumberExists) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "Another student already exists with this identity number"
             );
         }
@@ -86,7 +90,7 @@ public class StudentService {
 
     private void validateAge(Integer age) {
         if (age == null || age <= 0) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Student age must be greater than zero"
             );
         }

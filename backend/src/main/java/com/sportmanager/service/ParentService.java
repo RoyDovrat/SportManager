@@ -1,5 +1,9 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.ParentUpdateRequest;
 import com.sportmanager.entity.Parent;
 import com.sportmanager.entity.Student;
@@ -27,7 +31,7 @@ public class ParentService {
     public Parent getParentById(Long parentId) {
         return parentRepository.findById(parentId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Parent was not found with id: " + parentId
                         )
                 );
@@ -80,7 +84,7 @@ public class ParentService {
                 );
 
         if (phoneNumberExists) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "Another parent already exists with this phone number"
             );
         }
@@ -92,7 +96,7 @@ public class ParentService {
         if (Boolean.TRUE.equals(request.getIsKibbutzMember())
                 && isBlank(request.getBudgetNumber())) {
 
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Budget number is required for a kibbutz member"
             );
         }

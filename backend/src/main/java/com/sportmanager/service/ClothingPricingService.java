@@ -1,5 +1,9 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.ClothingPricingRequest;
 import com.sportmanager.entity.ClothingPricing;
 import com.sportmanager.entity.Season;
@@ -34,7 +38,7 @@ public class ClothingPricingService {
     private Season getSeason(Long seasonId) {
         return seasonRepository
                 .findById(seasonId)
-                .orElseThrow(() -> new RuntimeException("Season not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Season not found"));
     }
 
     private void validatePricingDetails(ClothingPricingRequest request) {
@@ -48,7 +52,7 @@ public class ClothingPricingService {
     private void validatePrice(BigDecimal price, String fieldName) {
         if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
 
-            throw new RuntimeException(fieldName + " must be greater than zero");
+            throw new BusinessRuleException(fieldName + " must be greater than zero");
         }
     }
 
@@ -56,7 +60,7 @@ public class ClothingPricingService {
         boolean exists =clothingPricingRepository.existsBySeason(season);
 
         if (exists) {
-            throw new RuntimeException("Clothing pricing already exists for this season");
+            throw new ConflictException("Clothing pricing already exists for this season");
         }
     }
 

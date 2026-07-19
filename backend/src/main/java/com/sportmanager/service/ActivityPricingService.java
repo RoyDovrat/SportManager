@@ -1,5 +1,9 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.ActivityPricingRequest;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ActivityPricing;
@@ -43,49 +47,49 @@ public class ActivityPricingService {
 
     private Season getSeason(Long seasonId) {
         return seasonRepository.findById(seasonId)
-                .orElseThrow(() -> new RuntimeException("Season not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Season not found"));
     }
 
     private Activity getActivity(ActivityType activityType) {
         return activityRepository
                 .findByActivityType(activityType)
-                .orElseThrow(() -> new RuntimeException("Activity not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found"));
     }
 
     private void validatePricingDetails(ActivityPricingRequest request) {
         if (request.getActivityType() == null) {
-            throw new RuntimeException("Activity type is required");
+            throw new BusinessRuleException("Activity type is required");
         }
 
         if (request.getWeeklySessions() == null || request.getWeeklySessions() <= 0) {
-            throw new RuntimeException("Weekly sessions must be greater than zero");
+            throw new BusinessRuleException("Weekly sessions must be greater than zero");
         }
 
         BigDecimal monthlyPrice = request.getMonthlyPrice();
 
         if (monthlyPrice == null || monthlyPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Monthly price must be greater than zero");
+            throw new BusinessRuleException("Monthly price must be greater than zero");
         }
 
         if (request.getActivityType() == ActivityType.FOOTBALL) {
 
             if (request.getAgeGroup() == null) {
-                throw new RuntimeException("Age group is required for football pricing");
+                throw new BusinessRuleException("Age group is required for football pricing");
             }
 
             if (request.getSwimmingLessonType() != null) {
-                throw new RuntimeException("Swimming lesson type must not be provided for football");
+                throw new BusinessRuleException("Swimming lesson type must not be provided for football");
             }
         }
 
         if (request.getActivityType() == ActivityType.SWIMMING) {
 
             if (request.getSwimmingLessonType() == null) {
-                throw new RuntimeException("Swimming lesson type is required for swimming pricing");
+                throw new BusinessRuleException("Swimming lesson type is required for swimming pricing");
             }
 
             if (request.getAgeGroup() != null) {
-                throw new RuntimeException("Age group must not be provided for swimming pricing");
+                throw new BusinessRuleException("Age group must not be provided for swimming pricing");
             }
         }
     }
@@ -101,7 +105,7 @@ public class ActivityPricingService {
         }
 
         if (exists) {
-            throw new RuntimeException("Activity pricing already exists");
+            throw new ConflictException("Activity pricing already exists");
         }
     }
 

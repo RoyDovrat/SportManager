@@ -2,6 +2,7 @@ package com.sportmanager.controller;
 
 import com.sportmanager.dto.request.RegistrationRequest;
 import com.sportmanager.service.RegistrationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ public class RegistrationController {
 
     @PostMapping
     public ResponseEntity<String> createRegistration(
-            @RequestBody RegistrationRequest request
+            @Valid @RequestBody RegistrationRequest request
     ) {
         registrationService.createRegistration(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("Registration completed successfully");

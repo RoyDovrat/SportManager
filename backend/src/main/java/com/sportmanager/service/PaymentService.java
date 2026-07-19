@@ -1,5 +1,8 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+
 import com.sportmanager.dto.request.ClothingPaymentRequest;
 import com.sportmanager.dto.request.MonthlyPaymentRequest;
 import com.sportmanager.entity.ClothingOrder;
@@ -84,20 +87,20 @@ public class PaymentService {
     private Registration getRegistration(Long registrationId) {
         return registrationRepository
                 .findById(registrationId)
-                .orElseThrow(() -> new RuntimeException("Registration not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
     }
 
     private ClothingOrder getClothingOrder(Long clothingOrderId) {
         return clothingOrderRepository
                 .findById(clothingOrderId)
-                .orElseThrow(() -> new RuntimeException("Clothing order not found")
+                .orElseThrow(() -> new ResourceNotFoundException("Clothing order not found")
                 );
     }
 
     private ClothingPricing getClothingPricing(Registration registration) {
         return clothingPricingRepository
                 .findBySeason(registration.getSeason())
-                .orElseThrow(() -> new RuntimeException("Clothing pricing was not found for this season")
+                .orElseThrow(() -> new ResourceNotFoundException("Clothing pricing was not found for this season")
                 );
     }
 
@@ -111,7 +114,7 @@ public class PaymentService {
                         );
 
         if (paymentExists) {
-            throw new RuntimeException("Monthly payment already exists for this registration and month");
+            throw new ConflictException("Monthly payment already exists for this registration and month");
         }
     }
 
@@ -119,7 +122,7 @@ public class PaymentService {
         boolean paymentExists = paymentRepository.existsByClothingOrder(clothingOrder);
 
         if (paymentExists) {
-            throw new RuntimeException("Payment already exists for this clothing order");
+            throw new ConflictException("Payment already exists for this clothing order");
         }
     }
 

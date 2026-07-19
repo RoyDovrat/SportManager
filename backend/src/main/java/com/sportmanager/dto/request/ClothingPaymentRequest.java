@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class ClothingPaymentRequest {
 
-    @NotNull
+    @NotNull(message = "Clothing order id is required")
     private Long clothingOrderId;
 }

@@ -1,6 +1,8 @@
 package com.sportmanager.dto.request;
 
 import com.sportmanager.enums.ClothingSize;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,7 +10,10 @@ import lombok.Setter;
 @Setter
 public class ClothingOrderRequest {
 
+    @NotBlank(message = "Student identity number is required")
     private String studentIdentityNumber;
+
+    @NotNull(message = "Season id is required")
     private Long seasonId;
 
     private Integer shortKitQuantity;

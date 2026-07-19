@@ -1,5 +1,9 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.BusinessRuleException;
+
 import com.sportmanager.dto.request.ClothingOrderRequest;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ClothingOrder;
@@ -66,7 +70,7 @@ public class ClothingOrderService {
         return studentRepository
                 .findByIdentityNumber(identityNumber)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Student not found"
                         )
                 );
@@ -76,7 +80,7 @@ public class ClothingOrderService {
         return seasonRepository
                 .findById(seasonId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Season not found"
                         )
                 );
@@ -86,7 +90,7 @@ public class ClothingOrderService {
         return activityRepository
                 .findByActivityType(ActivityType.FOOTBALL)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Football activity not found"
                         )
                 );
@@ -104,7 +108,7 @@ public class ClothingOrderService {
                         season
                 )
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new BusinessRuleException(
                                 "Student is not registered for football in this season"
                         )
                 );
@@ -116,7 +120,7 @@ public class ClothingOrderService {
         if (registration.getStatus()
                 != RegistrationStatus.APPROVED) {
 
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Clothing can only be ordered for an approved registration"
             );
         }
@@ -130,7 +134,7 @@ public class ClothingOrderService {
                         .existsByRegistration(registration);
 
         if (orderExists) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "A clothing order already exists for this registration"
             );
         }
@@ -163,7 +167,7 @@ public class ClothingOrderService {
                         + request.getHoodieQuantity();
 
         if (totalQuantity == 0) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "At least one clothing item must be ordered"
             );
         }
@@ -177,21 +181,21 @@ public class ClothingOrderService {
             String itemName
     ) {
         if (quantity == null || quantity < 0) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     itemName
                             + " quantity must be zero or greater"
             );
         }
 
         if (quantity > 0 && size == null) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     itemName
                             + " size is required when quantity is greater than zero"
             );
         }
 
         if (quantity == 0 && size != null) {
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     itemName
                             + " size must not be selected when quantity is zero"
             );
@@ -204,7 +208,7 @@ public class ClothingOrderService {
         if (shirtNumber != null
                 && (shirtNumber < 0 || shirtNumber > 99)) {
 
-            throw new RuntimeException(
+            throw new BusinessRuleException(
                     "Shirt number must be between 0 and 99"
             );
         }

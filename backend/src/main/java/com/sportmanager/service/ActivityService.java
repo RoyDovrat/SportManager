@@ -1,5 +1,8 @@
 package com.sportmanager.service;
 
+import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.exception.ConflictException;
+
 import com.sportmanager.dto.request.ActivityRequest;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.enums.ActivityType;
@@ -45,7 +48,7 @@ public class ActivityService {
     public Activity getActivityById(Long activityId) {
         return activityRepository.findById(activityId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Activity was not found with id: "
                                         + activityId
                         )
@@ -59,7 +62,7 @@ public class ActivityService {
         return activityRepository
                 .findByActivityType(activityType)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Activity was not found with type: "
                                         + activityType
                         )
@@ -108,7 +111,7 @@ public class ActivityService {
             ActivityType activityType
     ) {
         if (activityRepository.existsByActivityType(activityType)) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "An activity already exists with type: "
                             + activityType
             );
@@ -127,7 +130,7 @@ public class ActivityService {
                         );
 
         if (activityTypeExists) {
-            throw new RuntimeException(
+            throw new ConflictException(
                     "Another activity already exists with type: "
                             + activityType
             );
