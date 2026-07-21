@@ -37,7 +37,7 @@ public class ActivityPricing {
     @Column(name = "swimming_lesson_type")
     private SwimmingLessonType swimmingLessonType;
 
-    @Column(name = "weekly_sessions", nullable = false)
+    @Column(name = "weekly_sessions")
     private Integer weeklySessions;
 
     @Column(name = "monthly_price", nullable = false, precision = 10, scale = 2)

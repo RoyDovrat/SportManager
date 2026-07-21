@@ -41,4 +41,18 @@ public class RegistrationController {
     ) {
         return ResponseEntity.ok(registrationService.getRegistrations(seasonId, status));
     }
+
+    @PatchMapping("/{registrationId}/approve")
+    public ResponseEntity<RegistrationResponse> approveRegistration(
+            @PathVariable Long registrationId
+    ) {
+        return ResponseEntity.ok(registrationService.approveRegistration(registrationId));
+    }
+
+    @PatchMapping("/{registrationId}/cancel")
+    public ResponseEntity<RegistrationResponse> cancelRegistration(
+            @PathVariable Long registrationId
+    ) {
+        return ResponseEntity.ok(registrationService.cancelRegistration(registrationId));
+    }
 }

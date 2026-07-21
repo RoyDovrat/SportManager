@@ -94,6 +94,33 @@ public class RegistrationService {
                 ));
     }
 
+    @Transactional
+    public RegistrationResponse approveRegistration(Long registrationId) {
+        Registration registration = getRegistrationEntity(registrationId);
+
+        if (registration.getStatus() == RegistrationStatus.APPROVED) {
+            throw new ConflictException("Registration is already approved");
+        }
+        if (registration.getStatus() == RegistrationStatus.CANCELLED) {
+            throw new BusinessRuleException("Cancelled registrations cannot be approved");
+        }
+
+        registration.setStatus(RegistrationStatus.APPROVED);
+        return toResponse(registrationRepository.save(registration));
+    }
+
+    @Transactional
+    public RegistrationResponse cancelRegistration(Long registrationId) {
+        Registration registration = getRegistrationEntity(registrationId);
+
+        if (registration.getStatus() == RegistrationStatus.CANCELLED) {
+            throw new ConflictException("Registration is already cancelled");
+        }
+
+        registration.setStatus(RegistrationStatus.CANCELLED);
+        return toResponse(registrationRepository.save(registration));
+    }
+
     private void validateRegistrationRequest(RegistrationRequest request) {
         if (!Boolean.TRUE.equals(request.getHealthDeclarationApproved())) {
             throw new BusinessRuleException(

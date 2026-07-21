@@ -10,5 +10,7 @@ public interface ClothingPricingRepository extends JpaRepository<ClothingPricing
 
     Optional<ClothingPricing> findBySeason(Season season);
 
+    Optional<ClothingPricing> findBySeasonId(Long seasonId);
+
     boolean existsBySeason(Season season);
 }

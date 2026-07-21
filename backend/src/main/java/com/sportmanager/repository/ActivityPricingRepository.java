@@ -14,6 +14,8 @@ public interface ActivityPricingRepository extends JpaRepository<ActivityPricing
 
     List<ActivityPricing> findBySeason(Season season);
 
+    List<ActivityPricing> findBySeasonId(Long seasonId);
+
     List<ActivityPricing> findByActivity(Activity activity);
 
     Optional<ActivityPricing> findBySeasonAndActivityAndAgeGroup(
