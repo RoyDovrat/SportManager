@@ -42,6 +42,9 @@ public class RegistrationResponse {
 
     private Long activityPricingId;
 
+    private Long activityGroupId;
+    private String activityGroupName;
+
     private SwimmingLessonType swimmingLessonType;
     private WaterAdaptationLevel waterAdaptationLevel;
     private Boolean healthDeclarationApproved;

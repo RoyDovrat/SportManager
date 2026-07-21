@@ -3,6 +3,7 @@ package com.sportmanager.service;
 import com.sportmanager.dto.request.RegistrationRequest;
 import com.sportmanager.dto.response.RegistrationResponse;
 import com.sportmanager.entity.Activity;
+import com.sportmanager.entity.ActivityGroup;
 import com.sportmanager.entity.ActivityPricing;
 import com.sportmanager.entity.Parent;
 import com.sportmanager.entity.Registration;
@@ -118,6 +119,7 @@ public class RegistrationService {
         }
 
         registration.setStatus(RegistrationStatus.CANCELLED);
+        registration.setActivityGroup(null);
         return toResponse(registrationRepository.save(registration));
     }
 
@@ -320,11 +322,12 @@ public class RegistrationService {
         return registration;
     }
 
-    private RegistrationResponse toResponse(Registration registration) {
+    public RegistrationResponse toResponse(Registration registration) {
         Student student = registration.getStudent();
         Parent parent = student.getParent();
         Activity activity = registration.getActivity();
         Season season = registration.getSeason();
+        ActivityGroup activityGroup = registration.getActivityGroup();
 
         return RegistrationResponse.builder()
                 .id(registration.getId())
@@ -348,6 +351,8 @@ public class RegistrationService {
                 .seasonId(season.getId())
                 .seasonName(season.getName())
                 .activityPricingId(registration.getActivityPricing().getId())
+                .activityGroupId(activityGroup != null ? activityGroup.getId() : null)
+                .activityGroupName(activityGroup != null ? activityGroup.getName() : null)
                 .swimmingLessonType(registration.getSwimmingLessonType())
                 .waterAdaptationLevel(registration.getWaterAdaptationLevel())
                 .healthDeclarationApproved(registration.getHealthDeclarationApproved())

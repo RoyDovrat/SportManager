@@ -81,4 +81,8 @@ public class Registration {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_pricing_id", nullable = false)
     private ActivityPricing activityPricing;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_group_id")
+    private ActivityGroup activityGroup;
 }

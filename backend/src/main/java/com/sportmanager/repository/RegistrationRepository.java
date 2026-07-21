@@ -24,6 +24,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
     List<Registration> findBySeasonIdAndStatus(Long seasonId, RegistrationStatus status);
 
+    List<Registration> findByActivityGroupId(Long activityGroupId);
+
     boolean existsByStudentAndActivityAndSeason(
             Student student,
             Activity activity,
