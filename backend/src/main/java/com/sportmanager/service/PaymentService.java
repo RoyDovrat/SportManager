@@ -91,7 +91,7 @@ public class PaymentService {
 
         payment.setRegistration(registration);
         payment.setAmount(amount);
-        payment.setChargeMonth(null);
+        payment.setChargeMonth(LocalDate.now().withDayOfMonth(1));
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(null);
         payment.setPaymentMethod(determineDefaultPaymentMethod(registration));
@@ -108,7 +108,7 @@ public class PaymentService {
         Payment payment = new Payment();
         payment.setRegistration(registration);
         payment.setAmount(request.getAmount());
-        payment.setChargeMonth(null);
+        payment.setChargeMonth(LocalDate.now().withDayOfMonth(1));
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(null);
         payment.setPaymentMethod(determineDefaultPaymentMethod(registration));
