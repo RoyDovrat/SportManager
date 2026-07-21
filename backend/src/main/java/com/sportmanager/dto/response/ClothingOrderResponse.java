@@ -1,32 +1,28 @@
-package com.sportmanager.dto.request;
+package com.sportmanager.dto.response;
 
 import com.sportmanager.enums.ClothingSize;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-@Setter
-public class ClothingOrderRequest {
+@Builder
+public class ClothingOrderResponse {
 
-    @NotBlank(message = "Student identity number is required")
+    private Long id;
+    private Long registrationId;
+    private Long studentId;
     private String studentIdentityNumber;
-
-    @NotNull(message = "Season id is required")
+    private String studentFirstName;
+    private String studentLastName;
     private Long seasonId;
-
-    @NotNull(message = "alreadyHasClothing is required")
+    private String seasonName;
     private Boolean alreadyHasClothing;
-
     private Integer shortKitQuantity;
     private ClothingSize shortKitSize;
-
     private Integer longKitQuantity;
     private ClothingSize longKitSize;
-
     private Integer hoodieQuantity;
     private ClothingSize hoodieSize;
-
     private Integer shirtNumber;
+    private boolean clothingPaymentRequired;
 }

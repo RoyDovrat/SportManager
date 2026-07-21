@@ -8,18 +8,26 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Entity
-@Table(name = "clothing_orders")
+@Table(
+        name = "clothing_orders",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_clothing_order_registration",
+                columnNames = "registration_id"
+        )
+)
 public class ClothingOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "registration_id", nullable = false)
     private Registration registration;
+
+    @Column(name = "already_has_clothing", nullable = false, columnDefinition = "boolean not null default false")
+    private Boolean alreadyHasClothing = false;
 
     @Column(name = "short_kit_quantity", nullable = false)
     private Integer shortKitQuantity;
