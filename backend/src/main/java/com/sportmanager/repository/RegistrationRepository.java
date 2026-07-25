@@ -14,6 +14,8 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
     List<Registration> findByStudent(Student student);
 
+    List<Registration> findByStudentId(Long studentId);
+
     List<Registration> findBySeason(Season season);
 
     List<Registration> findBySeasonId(Long seasonId);
