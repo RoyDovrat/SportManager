@@ -231,7 +231,7 @@ public class ClothingOrderService {
         return clothingOrder;
     }
 
-    private ClothingOrderResponse toResponse(ClothingOrder order) {
+    public ClothingOrderResponse toResponse(ClothingOrder order) {
         Registration registration = order.getRegistration();
         Student student = registration.getStudent();
         Season season = registration.getSeason();

@@ -75,4 +75,41 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("paymentMethod") PaymentMethod paymentMethod,
             @Param("chargeMonth") LocalDate chargeMonth
     );
+
+    long countByStatus(PaymentStatus status);
+
+    long countByRegistration_Season_IdAndStatus(Long seasonId, PaymentStatus status);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM Payment p
+            WHERE p.status = :status
+            """)
+    java.math.BigDecimal sumAmountByStatus(@Param("status") PaymentStatus status);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM Payment p
+            WHERE p.registration.season.id = :seasonId
+              AND p.status = :status
+            """)
+    java.math.BigDecimal sumAmountBySeasonIdAndStatus(
+            @Param("seasonId") Long seasonId,
+            @Param("status") PaymentStatus status
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM Payment p
+            WHERE p.status = :status
+              AND p.paymentDate >= :fromDate
+              AND p.paymentDate <= :toDate
+            """)
+    java.math.BigDecimal sumPaidAmountBetween(
+            @Param("status") PaymentStatus status,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
+    List<Payment> findByRegistration_Season_Id(Long seasonId);
 }

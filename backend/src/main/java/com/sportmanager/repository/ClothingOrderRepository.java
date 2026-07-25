@@ -18,4 +18,11 @@ public interface ClothingOrderRepository extends JpaRepository<ClothingOrder, Lo
     List<ClothingOrder> findByRegistration_Season_Id(Long seasonId);
 
     List<ClothingOrder> findByRegistration_Student_IdentityNumber(String identityNumber);
+
+    long countByRegistration_Season_Id(Long seasonId);
+
+    long countByRegistration_Season_IdAndAlreadyHasClothing(
+            Long seasonId,
+            Boolean alreadyHasClothing
+    );
 }

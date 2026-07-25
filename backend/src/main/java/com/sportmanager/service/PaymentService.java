@@ -361,7 +361,7 @@ public class PaymentService {
         return quantity == null ? 0 : quantity;
     }
 
-    private PaymentResponse toResponse(Payment payment) {
+    public PaymentResponse toResponse(Payment payment) {
         Registration registration = payment.getRegistration();
         Student student = registration.getStudent();
         Parent parent = student.getParent();

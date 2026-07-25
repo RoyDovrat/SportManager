@@ -6,6 +6,8 @@ import com.sportmanager.entity.Season;
 import com.sportmanager.entity.Student;
 import com.sportmanager.enums.RegistrationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,25 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<Registration> findBySeasonIdAndStatus(Long seasonId, RegistrationStatus status);
 
     List<Registration> findByActivityGroupId(Long activityGroupId);
+
+    long countBySeasonId(Long seasonId);
+
+    long countBySeasonIdAndStatus(Long seasonId, RegistrationStatus status);
+
+    @Query("""
+            SELECT COUNT(DISTINCT r.student.id)
+            FROM Registration r
+            WHERE r.season.id = :seasonId
+              AND r.status = :status
+            """)
+    long countDistinctStudentsBySeasonIdAndStatus(
+            @Param("seasonId") Long seasonId,
+            @Param("status") RegistrationStatus status
+    );
+
+    List<Registration> findTop10ByOrderByRegistrationDateDescIdDesc();
+
+    List<Registration> findTop10BySeasonIdOrderByRegistrationDateDescIdDesc(Long seasonId);
 
     boolean existsByStudentAndActivityAndSeason(
             Student student,
