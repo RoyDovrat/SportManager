@@ -1,0 +1,10 @@
+# Copy to application-local.properties (same folder) and adjust.
+# application-local.properties is gitignored — never commit real secrets.
+#
+#   copy application-local.properties.example application-local.properties
+#
+# Env vars (DB_PASSWORD, JWT_SECRET, ADMIN_DEFAULT_PASSWORD, …) still override these values.
+
+spring.datasource.password=CHANGE_ME_DB_PASSWORD
+app.jwt.secret=CHANGE_ME_use_a_long_random_string_at_least_32_chars
+app.admin.default-password=CHANGE_ME_ADMIN_PASSWORD
