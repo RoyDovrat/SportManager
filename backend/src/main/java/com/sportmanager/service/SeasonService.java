@@ -1,11 +1,11 @@
 package com.sportmanager.service;
 
-import com.sportmanager.exception.ResourceNotFoundException;
-import com.sportmanager.exception.ConflictException;
-import com.sportmanager.exception.BusinessRuleException;
-
 import com.sportmanager.dto.request.SeasonRequest;
+import com.sportmanager.dto.response.SeasonResponse;
 import com.sportmanager.entity.Season;
+import com.sportmanager.exception.BusinessRuleException;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.ResourceNotFoundException;
 import com.sportmanager.repository.SeasonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,13 +20,8 @@ public class SeasonService {
     private final SeasonRepository seasonRepository;
 
     @Transactional
-    public Season createSeason(SeasonRequest request) {
-
-        validateDates(
-                request.getStartDate(),
-                request.getEndDate()
-        );
-
+    public SeasonResponse createSeason(SeasonRequest request) {
+        validateDates(request.getStartDate(), request.getEndDate());
         validateSeasonNameDoesNotExist(request.getName());
 
         if (Boolean.TRUE.equals(request.getIsActive())) {
@@ -34,61 +29,43 @@ public class SeasonService {
         }
 
         Season season = new Season();
-
         season.setName(request.getName());
         season.setStartDate(request.getStartDate());
         season.setEndDate(request.getEndDate());
         season.setIsActive(request.getIsActive());
 
-        return seasonRepository.save(season);
+        return toResponse(seasonRepository.save(season));
     }
 
     @Transactional(readOnly = true)
-    public List<Season> getAllSeasons() {
-        return seasonRepository.findAll();
+    public List<SeasonResponse> getAllSeasons() {
+        return seasonRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public Season getSeasonById(Long seasonId) {
-        return seasonRepository.findById(seasonId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Season was not found with id: " + seasonId
-                        )
-                );
+    public SeasonResponse getSeasonById(Long seasonId) {
+        return toResponse(getSeasonEntity(seasonId));
     }
 
     @Transactional(readOnly = true)
-    public Season getActiveSeason() {
-
-        List<Season> activeSeasons =
-                seasonRepository.findByIsActive(true);
+    public SeasonResponse getActiveSeason() {
+        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
 
         if (activeSeasons.isEmpty()) {
-            throw new BusinessRuleException(
-                    "No active season was found"
-            );
+            throw new BusinessRuleException("No active season was found");
         }
 
-        return activeSeasons.get(0);
+        return toResponse(activeSeasons.getFirst());
     }
 
     @Transactional
-    public Season updateSeason(
-            Long seasonId,
-            SeasonRequest request
-    ) {
-        Season season = getSeasonById(seasonId);
+    public SeasonResponse updateSeason(Long seasonId, SeasonRequest request) {
+        Season season = getSeasonEntity(seasonId);
 
-        validateDates(
-                request.getStartDate(),
-                request.getEndDate()
-        );
-
-        validateSeasonNameIsAvailable(
-                request.getName(),
-                seasonId
-        );
+        validateDates(request.getStartDate(), request.getEndDate());
+        validateSeasonNameIsAvailable(request.getName(), seasonId);
 
         if (Boolean.TRUE.equals(request.getIsActive())) {
             deactivateAllSeasonsExcept(seasonId);
@@ -99,29 +76,29 @@ public class SeasonService {
         season.setEndDate(request.getEndDate());
         season.setIsActive(request.getIsActive());
 
-        return seasonRepository.save(season);
+        return toResponse(seasonRepository.save(season));
     }
 
     @Transactional
-    public Season activateSeason(Long seasonId) {
-
-        Season season = getSeasonById(seasonId);
-
+    public SeasonResponse activateSeason(Long seasonId) {
+        Season season = getSeasonEntity(seasonId);
         deactivateAllSeasonsExcept(seasonId);
-
         season.setIsActive(true);
-
-        return seasonRepository.save(season);
+        return toResponse(seasonRepository.save(season));
     }
 
     @Transactional
-    public Season deactivateSeason(Long seasonId) {
-
-        Season season = getSeasonById(seasonId);
-
+    public SeasonResponse deactivateSeason(Long seasonId) {
+        Season season = getSeasonEntity(seasonId);
         season.setIsActive(false);
+        return toResponse(seasonRepository.save(season));
+    }
 
-        return seasonRepository.save(season);
+    private Season getSeasonEntity(Long seasonId) {
+        return seasonRepository.findById(seasonId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Season was not found with id: " + seasonId
+                ));
     }
 
     private void validateDates(
@@ -142,22 +119,13 @@ public class SeasonService {
     }
 
     private void validateSeasonNameDoesNotExist(String name) {
-
         if (seasonRepository.existsByName(name)) {
-            throw new ConflictException(
-                    "A season already exists with this name"
-            );
+            throw new ConflictException("A season already exists with this name");
         }
     }
 
-    private void validateSeasonNameIsAvailable(
-            String name,
-            Long seasonId
-    ) {
-        if (seasonRepository.existsByNameAndIdNot(
-                name,
-                seasonId
-        )) {
+    private void validateSeasonNameIsAvailable(String name, Long seasonId) {
+        if (seasonRepository.existsByNameAndIdNot(name, seasonId)) {
             throw new ConflictException(
                     "Another season already exists with this name"
             );
@@ -165,29 +133,30 @@ public class SeasonService {
     }
 
     private void deactivateAllSeasons() {
-
-        List<Season> activeSeasons =
-                seasonRepository.findByIsActive(true);
-
+        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
         for (Season activeSeason : activeSeasons) {
             activeSeason.setIsActive(false);
         }
-
         seasonRepository.saveAll(activeSeasons);
     }
 
     private void deactivateAllSeasonsExcept(Long seasonId) {
-
-        List<Season> activeSeasons =
-                seasonRepository.findByIsActive(true);
-
+        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
         for (Season activeSeason : activeSeasons) {
-
             if (!activeSeason.getId().equals(seasonId)) {
                 activeSeason.setIsActive(false);
             }
         }
-
         seasonRepository.saveAll(activeSeasons);
+    }
+
+    private SeasonResponse toResponse(Season season) {
+        return SeasonResponse.builder()
+                .id(season.getId())
+                .name(season.getName())
+                .startDate(season.getStartDate())
+                .endDate(season.getEndDate())
+                .isActive(season.getIsActive())
+                .build();
     }
 }

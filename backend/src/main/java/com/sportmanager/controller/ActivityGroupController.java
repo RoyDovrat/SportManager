@@ -86,11 +86,10 @@ public class ActivityGroupController {
     }
 
     @DeleteMapping("/registrations/{registrationId}")
-    public ResponseEntity<RegistrationResponse> unassignRegistration(
+    public ResponseEntity<Void> unassignRegistration(
             @PathVariable Long registrationId
     ) {
-        return ResponseEntity.ok(
-                activityGroupService.unassignRegistrationFromGroup(registrationId)
-        );
+        activityGroupService.unassignRegistrationFromGroup(registrationId);
+        return ResponseEntity.noContent().build();
     }
 }

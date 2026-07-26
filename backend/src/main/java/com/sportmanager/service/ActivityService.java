@@ -1,11 +1,11 @@
 package com.sportmanager.service;
 
-import com.sportmanager.exception.ResourceNotFoundException;
-import com.sportmanager.exception.ConflictException;
-
 import com.sportmanager.dto.request.ActivityRequest;
+import com.sportmanager.dto.response.ActivityResponse;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.enums.ActivityType;
+import com.sportmanager.exception.ConflictException;
+import com.sportmanager.exception.ResourceNotFoundException;
 import com.sportmanager.repository.ActivityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,120 +20,102 @@ public class ActivityService {
     private final ActivityRepository activityRepository;
 
     @Transactional
-    public Activity createActivity(ActivityRequest request) {
-
-        validateActivityTypeDoesNotExist(
-                request.getActivityType()
-        );
+    public ActivityResponse createActivity(ActivityRequest request) {
+        validateActivityTypeDoesNotExist(request.getActivityType());
 
         Activity activity = new Activity();
-
         activity.setActivityType(request.getActivityType());
         activity.setIsActive(request.getIsActive());
 
-        return activityRepository.save(activity);
+        return toResponse(activityRepository.save(activity));
     }
 
     @Transactional(readOnly = true)
-    public List<Activity> getAllActivities() {
-        return activityRepository.findAll();
+    public List<ActivityResponse> getAllActivities() {
+        return activityRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Activity> getActiveActivities() {
-        return activityRepository.findByIsActive(true);
+    public List<ActivityResponse> getActiveActivities() {
+        return activityRepository.findByIsActive(true).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public Activity getActivityById(Long activityId) {
-        return activityRepository.findById(activityId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Activity was not found with id: "
-                                        + activityId
-                        )
-                );
+    public ActivityResponse getActivityById(Long activityId) {
+        return toResponse(getActivityEntity(activityId));
     }
 
     @Transactional(readOnly = true)
-    public Activity getActivityByType(
-            ActivityType activityType
-    ) {
-        return activityRepository
+    public ActivityResponse getActivityByType(ActivityType activityType) {
+        Activity activity = activityRepository
                 .findByActivityType(activityType)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Activity was not found with type: "
-                                        + activityType
-                        )
-                );
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Activity was not found with type: " + activityType
+                ));
+        return toResponse(activity);
     }
 
     @Transactional
-    public Activity updateActivity(
-            Long activityId,
-            ActivityRequest request
-    ) {
-        Activity activity = getActivityById(activityId);
+    public ActivityResponse updateActivity(Long activityId, ActivityRequest request) {
+        Activity activity = getActivityEntity(activityId);
 
-        validateActivityTypeIsAvailable(
-                request.getActivityType(),
-                activityId
-        );
+        validateActivityTypeIsAvailable(request.getActivityType(), activityId);
 
         activity.setActivityType(request.getActivityType());
         activity.setIsActive(request.getIsActive());
 
-        return activityRepository.save(activity);
+        return toResponse(activityRepository.save(activity));
     }
 
     @Transactional
-    public Activity activateActivity(Long activityId) {
-
-        Activity activity = getActivityById(activityId);
-
+    public ActivityResponse activateActivity(Long activityId) {
+        Activity activity = getActivityEntity(activityId);
         activity.setIsActive(true);
-
-        return activityRepository.save(activity);
+        return toResponse(activityRepository.save(activity));
     }
 
     @Transactional
-    public Activity deactivateActivity(Long activityId) {
-
-        Activity activity = getActivityById(activityId);
-
+    public ActivityResponse deactivateActivity(Long activityId) {
+        Activity activity = getActivityEntity(activityId);
         activity.setIsActive(false);
-
-        return activityRepository.save(activity);
+        return toResponse(activityRepository.save(activity));
     }
 
-    private void validateActivityTypeDoesNotExist(
-            ActivityType activityType
-    ) {
+    private Activity getActivityEntity(Long activityId) {
+        return activityRepository.findById(activityId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Activity was not found with id: " + activityId
+                ));
+    }
+
+    private void validateActivityTypeDoesNotExist(ActivityType activityType) {
         if (activityRepository.existsByActivityType(activityType)) {
             throw new ConflictException(
-                    "An activity already exists with type: "
-                            + activityType
+                    "An activity already exists with type: " + activityType
             );
         }
     }
 
-    private void validateActivityTypeIsAvailable(
-            ActivityType activityType,
-            Long activityId
-    ) {
-        boolean activityTypeExists =
-                activityRepository
-                        .existsByActivityTypeAndIdNot(
-                                activityType,
-                                activityId
-                        );
+    private void validateActivityTypeIsAvailable(ActivityType activityType, Long activityId) {
+        boolean activityTypeExists = activityRepository
+                .existsByActivityTypeAndIdNot(activityType, activityId);
 
         if (activityTypeExists) {
             throw new ConflictException(
-                    "Another activity already exists with type: "
-                            + activityType
+                    "Another activity already exists with type: " + activityType
             );
         }
+    }
+
+    private ActivityResponse toResponse(Activity activity) {
+        return ActivityResponse.builder()
+                .id(activity.getId())
+                .activityType(activity.getActivityType())
+                .isActive(activity.getIsActive())
+                .build();
     }
 }
