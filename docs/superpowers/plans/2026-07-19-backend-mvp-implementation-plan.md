@@ -1,6 +1,6 @@
 # SportManager Backend MVP — Gap Analysis & Implementation Plan
 
-> **Status:** Plan approved. Phases 0–10 completed. Next: Phase 11 (hardening & cleanup) after Postman verification.  
+> **Status:** Plan approved. Phases 0–11 completed — backend MVP freeze. Use Postman smoke regression for final verification.  
 > **Sources of truth:** Project Design Document (detailed MVP/FRs) + Business Requirements EN (operational flow) + current backend.  
 > **Out of scope (MVP):** Frontend, online payment gateway, auto WhatsApp/email, parent portal, multi-admin roles, automatic receipts.
 
