@@ -1,3 +1,4 @@
+import { getAccessToken } from '../auth/tokenStorage'
 import { apiBaseUrl } from '../config'
 import { ApiError, isErrorResponse, type ErrorResponse } from './types'
 
@@ -23,6 +24,11 @@ export async function apiRequest<T>(
 
   if (options.body !== undefined && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
+  }
+
+  const accessToken = getAccessToken()
+  if (accessToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${accessToken}`)
   }
 
   const response = await fetch(url, {
