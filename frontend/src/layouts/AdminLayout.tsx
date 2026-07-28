@@ -9,6 +9,7 @@ export function AdminLayout() {
           <NavLink to="/admin" end>
             Admin home
           </NavLink>
+          <NavLink to="/admin/login">Login</NavLink>
           <NavLink to="/">Public site</NavLink>
         </nav>
       </header>
