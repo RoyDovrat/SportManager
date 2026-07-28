@@ -1,4 +1,6 @@
 export { apiRequest } from './client'
 export type { ApiRequestOptions } from './client'
+export { getHealth } from './health'
+export type { HealthResponse } from './health'
 export { ApiError, isErrorResponse } from './types'
 export type { ErrorResponse } from './types'
