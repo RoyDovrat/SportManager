@@ -1,5 +1,7 @@
 export { apiRequest } from './client'
 export type { ApiRequestOptions } from './client'
+export { login } from './auth'
+export type { AuthResponse, LoginRequest } from './auth'
 export { getHealth } from './health'
 export type { HealthResponse } from './health'
 export { ApiError, isErrorResponse } from './types'
