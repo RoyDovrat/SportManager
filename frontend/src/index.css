@@ -54,6 +54,15 @@ body {
   font: inherit;
 }
 
+.admin-home__links {
+  padding-left: 1.25rem;
+}
+
+.admin-placeholder__note {
+  color: #555;
+  font-size: 0.925rem;
+}
+
 .layout__main {
   flex: 1;
   padding: 1.5rem;

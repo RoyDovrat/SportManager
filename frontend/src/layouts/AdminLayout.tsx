@@ -16,8 +16,12 @@ export function AdminLayout() {
         <strong>SportManager Admin</strong>
         <nav className="layout__nav">
           <NavLink to="/admin" end>
-            Admin home
+            Home
           </NavLink>
+          <NavLink to="/admin/seasons">Seasons</NavLink>
+          <NavLink to="/admin/activities">Activities</NavLink>
+          <NavLink to="/admin/activity-pricing">Activity pricing</NavLink>
+          <NavLink to="/admin/clothing-pricing">Clothing pricing</NavLink>
           <NavLink to="/">Public site</NavLink>
           <span className="layout__user">
             Signed in as <strong>{username ?? 'admin'}</strong>
