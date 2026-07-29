@@ -1,6 +1,15 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext'
 
 export function AdminLayout() {
+  const { username, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/admin/login', { replace: true })
+  }
+
   return (
     <div className="layout layout--admin">
       <header className="layout__header">
@@ -9,8 +18,13 @@ export function AdminLayout() {
           <NavLink to="/admin" end>
             Admin home
           </NavLink>
-          <NavLink to="/admin/login">Login</NavLink>
           <NavLink to="/">Public site</NavLink>
+          <span className="layout__user">
+            Signed in as <strong>{username ?? 'admin'}</strong>
+          </span>
+          <button type="button" className="layout__logout" onClick={handleLogout}>
+            Log out
+          </button>
         </nav>
       </header>
       <main className="layout__main">

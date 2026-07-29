@@ -2,11 +2,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react'
 import { login as loginRequest } from '../api/auth'
+import { UNAUTHORIZED_EVENT } from './authEvents'
 import {
   clearSession,
   getAccessToken,
@@ -46,6 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     clearSession()
     setSessionState({ token: null, username: null })
+  }, [])
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setSessionState({ token: null, username: null })
+    }
+
+    window.addEventListener(UNAUTHORIZED_EVENT, handleUnauthorized)
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, handleUnauthorized)
   }, [])
 
   const value = useMemo<AuthContextValue>(

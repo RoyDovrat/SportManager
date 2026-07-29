@@ -1,4 +1,5 @@
-import { getAccessToken } from '../auth/tokenStorage'
+import { clearSession, getAccessToken } from '../auth/tokenStorage'
+import { notifyUnauthorized } from '../auth/authEvents'
 import { apiBaseUrl } from '../config'
 import { ApiError, isErrorResponse, type ErrorResponse } from './types'
 
@@ -13,6 +14,10 @@ async function parseErrorBody(response: Response): Promise<ErrorResponse | null>
   } catch {
     return null
   }
+}
+
+function isAuthLoginPath(path: string): boolean {
+  return path === '/api/auth/login' || path.endsWith('/api/auth/login')
 }
 
 export async function apiRequest<T>(
@@ -38,6 +43,11 @@ export async function apiRequest<T>(
   })
 
   if (!response.ok) {
+    if (response.status === 401 && !isAuthLoginPath(path)) {
+      clearSession()
+      notifyUnauthorized()
+    }
+
     const errorBody = await parseErrorBody(response)
     throw new ApiError(
       errorBody?.message ?? `Request failed with status ${response.status}`,

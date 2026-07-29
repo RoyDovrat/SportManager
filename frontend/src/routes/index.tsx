@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { RequireAuth } from '../auth/RequireAuth'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { AdminHomePage } from '../pages/AdminHomePage'
@@ -16,8 +17,10 @@ export function AppRouter() {
 
         <Route path="/admin/login" element={<LoginPage />} />
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminHomePage />} />
+        <Route path="/admin" element={<RequireAuth />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<AdminHomePage />} />
+          </Route>
         </Route>
 
         <Route path="/404" element={<NotFoundPage />} />

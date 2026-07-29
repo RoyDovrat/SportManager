@@ -1,8 +1,14 @@
+import { useAuth } from '../auth/AuthContext'
+
 export function AdminHomePage() {
+  const { username } = useAuth()
+
   return (
     <section>
       <h1>Admin home</h1>
-      <p>Admin screens will live here (F1+). No authentication yet.</p>
+      <p>
+        Signed in as <strong>{username}</strong>. Domain screens will be added in later phases.
+      </p>
     </section>
   )
 }
