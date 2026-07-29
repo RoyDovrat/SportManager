@@ -14,6 +14,16 @@ export {
 } from './activities'
 export type { ActivityRequest, ActivityResponse } from './activities'
 export {
+  createActivityPricing,
+  listActivityPricingBySeason,
+  updateActivityPricing,
+} from './activityPricing'
+export type {
+  ActivityPricingRequest,
+  ActivityPricingResponse,
+  ActivityPricingUpdateRequest,
+} from './activityPricing'
+export {
   activateSeason,
   createSeason,
   deactivateSeason,
