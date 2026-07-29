@@ -24,6 +24,17 @@ export type {
   ActivityPricingUpdateRequest,
 } from './activityPricing'
 export {
+  createClothingPricing,
+  getClothingPricingBySeason,
+  listClothingPricing,
+  updateClothingPricing,
+} from './clothingPricing'
+export type {
+  ClothingPricingRequest,
+  ClothingPricingResponse,
+  ClothingPricingUpdateRequest,
+} from './clothingPricing'
+export {
   activateSeason,
   createSeason,
   deactivateSeason,
