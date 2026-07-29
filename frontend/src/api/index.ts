@@ -6,6 +6,14 @@ export { formatApiError } from './formatApiError'
 export { getHealth } from './health'
 export type { HealthResponse } from './health'
 export {
+  activateActivity,
+  createActivity,
+  deactivateActivity,
+  listActivities,
+  updateActivity,
+} from './activities'
+export type { ActivityRequest, ActivityResponse } from './activities'
+export {
   activateSeason,
   createSeason,
   deactivateSeason,
