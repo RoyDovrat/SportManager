@@ -92,10 +92,33 @@ body {
 }
 
 .layout__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.75rem 1.5rem;
   border-top: 1px solid #ddd;
   font-size: 0.875rem;
   color: #555;
+}
+
+.layout__footer-health {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.layout__footer-health-btn {
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.layout__footer-health-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .health-check {
