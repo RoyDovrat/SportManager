@@ -229,6 +229,17 @@ body {
   max-width: 36rem;
 }
 
+.payments-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.payments-actions .admin-form {
+  flex: 1 1 18rem;
+}
+
 .clothing-order-form__hint {
   margin: 0;
   color: #555;

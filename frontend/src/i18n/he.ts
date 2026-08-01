@@ -82,7 +82,7 @@ export const he = {
 
   payments: {
     title: 'תשלומים',
-    intro: 'סננו חיובים, פתחו פרטים לאישור או ביטול. יצירת חיובים תתווסף בשלבים הבאים.',
+    intro: 'צרו חיובים חודשיים או חיוב ביגוד, סננו ופתחו פרטים לאישור או ביטול.',
     detailTitle: 'פרטי תשלום',
     placeholderList: 'רשימת התשלומים תופיע כאן בשלב הבא.',
     placeholderDetail: 'פרטי תשלום {id} יופיעו כאן בשלב הבא.',
@@ -118,6 +118,20 @@ export const he = {
     registrationId: 'מזהה הרשמה',
     clothingOrderId: 'מזהה הזמנת ביגוד',
     parent: 'הורה',
+    generateTitle: 'הפקת חיובים חודשיים',
+    generateHint: 'יוצרים חיוב PENDING לכל הרשמה מאושרת בעונה (דילוג אם כבר קיים).',
+    generateMonth: 'חודש חיוב',
+    generateSeason: 'עונה',
+    activeSeasonDefault: 'עונה פעילה (ברירת מחדל)',
+    generateSubmit: 'הפקת חיובים',
+    generating: 'מפיק…',
+    generateMonthRequired: 'יש לבחור חודש חיוב.',
+    generateResult: 'נוצרו {created} חיובים, דולגו {skipped}.',
+    clothingPaymentTitle: 'חיוב ביגוד',
+    clothingPaymentHint: 'צרו חיוב לפי מזהה הזמנת ביגוד (לא לדלג אם alreadyHas).',
+    clothingPaymentSubmit: 'יצירת חיוב ביגוד',
+    clothingOrderIdRequired: 'יש להזין מזהה הזמנת ביגוד תקין.',
+    clothingPaymentCreated: 'נוצר חיוב ביגוד מספר {id}.',
   },
 
   clothingOrders: {

@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
-import { listPayments, type PaymentResponse } from '../../api/payments'
+import {
+  createClothingPayment,
+  generateMonthlyPayments,
+  listPayments,
+  type PaymentResponse,
+} from '../../api/payments'
+import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
   paymentMethodLabel,
   paymentStatusLabel,
@@ -32,37 +38,127 @@ function formatAmount(amount: number): string {
   })
 }
 
+function currentMonthValue(): string {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  return `${now.getFullYear()}-${month}`
+}
+
 export function PaymentsPage() {
+  const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [status, setStatus] = useState<string>('PENDING')
   const [paymentType, setPaymentType] = useState<string>(ALL)
   const [chargeMonth, setChargeMonth] = useState('')
   const [rows, setRows] = useState<PaymentResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+
+  const [generateMonth, setGenerateMonth] = useState(currentMonthValue)
+  const [generateSeasonId, setGenerateSeasonId] = useState('')
+  const [generating, setGenerating] = useState(false)
+
+  const [clothingOrderId, setClothingOrderId] = useState('')
+  const [creatingClothing, setCreatingClothing] = useState(false)
 
   useEffect(() => {
-    async function loadRows() {
-      setLoading(true)
-      setError(null)
-
+    async function loadSeasons() {
       try {
-        const data = await listPayments({
-          status: status === ALL ? null : (status as PaymentStatus),
-          paymentType:
-            paymentType === ALL ? null : (paymentType as PaymentType),
-          chargeMonth: toChargeMonthParam(chargeMonth),
-        })
-        setRows(data)
+        const data = await listSeasons()
+        setSeasons(data)
+        const active = data.find((season) => season.isActive)
+        if (active) {
+          setGenerateSeasonId(String(active.id))
+        } else if (data.length > 0) {
+          setGenerateSeasonId(String(data[0].id))
+        }
       } catch (err) {
         setError(formatApiError(err))
-        setRows([])
-      } finally {
-        setLoading(false)
       }
     }
 
+    void loadSeasons()
+  }, [])
+
+  async function loadRows() {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await listPayments({
+        status: status === ALL ? null : (status as PaymentStatus),
+        paymentType: paymentType === ALL ? null : (paymentType as PaymentType),
+        chargeMonth: toChargeMonthParam(chargeMonth),
+      })
+      setRows(data)
+    } catch (err) {
+      setError(formatApiError(err))
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     void loadRows()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when filters change
   }, [status, paymentType, chargeMonth])
+
+  async function handleGenerate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const monthParam = toChargeMonthParam(generateMonth)
+    if (!monthParam) {
+      setError(t('payments.generateMonthRequired'))
+      return
+    }
+
+    setGenerating(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const result = await generateMonthlyPayments({
+        chargeMonth: monthParam,
+        seasonId:
+          generateSeasonId === '' ? null : Number(generateSeasonId),
+      })
+      setMessage(
+        t('payments.generateResult', {
+          created: result.createdCount,
+          skipped: result.skippedCount,
+        }),
+      )
+      await loadRows()
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  async function handleClothingPayment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const orderId = Number(clothingOrderId)
+    if (!Number.isFinite(orderId) || orderId <= 0) {
+      setError(t('payments.clothingOrderIdRequired'))
+      return
+    }
+
+    setCreatingClothing(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const created = await createClothingPayment({ clothingOrderId: orderId })
+      setMessage(t('payments.clothingPaymentCreated', { id: created.id }))
+      setClothingOrderId('')
+      await loadRows()
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setCreatingClothing(false)
+    }
+  }
 
   return (
     <section className="admin-page admin-page--wide">
@@ -70,6 +166,77 @@ export function PaymentsPage() {
       <p>{t('payments.intro')}</p>
 
       {error && <p className="admin-page__error">{error}</p>}
+      {message && <p className="admin-page__ok">{message}</p>}
+
+      <div className="payments-actions">
+        <form className="admin-form" onSubmit={handleGenerate}>
+          <h2>{t('payments.generateTitle')}</h2>
+          <p className="clothing-order-form__hint">{t('payments.generateHint')}</p>
+
+          <label className="admin-form__field">
+            <span>{t('payments.generateMonth')}</span>
+            <input
+              type="month"
+              value={generateMonth}
+              onChange={(event) => setGenerateMonth(event.target.value)}
+              required
+              disabled={generating}
+            />
+          </label>
+
+          <label className="admin-form__field">
+            <span>{t('payments.generateSeason')}</span>
+            <select
+              value={generateSeasonId}
+              onChange={(event) => setGenerateSeasonId(event.target.value)}
+              disabled={generating}
+            >
+              <option value="">{t('payments.activeSeasonDefault')}</option>
+              {seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.name}
+                  {season.isActive ? ` (${t('common.active')})` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="admin-form__actions">
+            <button type="submit" disabled={generating}>
+              {generating
+                ? t('payments.generating')
+                : t('payments.generateSubmit')}
+            </button>
+          </div>
+        </form>
+
+        <form className="admin-form" onSubmit={handleClothingPayment}>
+          <h2>{t('payments.clothingPaymentTitle')}</h2>
+          <p className="clothing-order-form__hint">
+            {t('payments.clothingPaymentHint')}
+          </p>
+
+          <label className="admin-form__field">
+            <span>{t('payments.clothingOrderId')}</span>
+            <input
+              type="number"
+              min={1}
+              value={clothingOrderId}
+              onChange={(event) => setClothingOrderId(event.target.value)}
+              required
+              disabled={creatingClothing}
+            />
+          </label>
+
+          <div className="admin-form__actions">
+            <button type="submit" disabled={creatingClothing}>
+              {creatingClothing
+                ? t('common.saving')
+                : t('payments.clothingPaymentSubmit')}
+            </button>
+          </div>
+        </form>
+      </div>
 
       <div className="admin-filters">
         <label className="admin-form__field">
