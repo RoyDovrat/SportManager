@@ -28,6 +28,11 @@ const setupLinks = [
     labelKey: 'nav.registrations',
     descriptionKey: 'adminHome.registrationsDesc',
   },
+  {
+    to: '/admin/clothing-orders',
+    labelKey: 'nav.clothingOrders',
+    descriptionKey: 'adminHome.clothingOrdersDesc',
+  },
 ] as const
 
 export function AdminHomePage() {

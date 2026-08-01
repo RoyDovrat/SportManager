@@ -217,6 +217,37 @@ body {
   min-width: 12rem;
 }
 
+.admin-filters__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.clothing-order-form {
+  max-width: 36rem;
+}
+
+.clothing-order-form__hint {
+  margin: 0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.clothing-order-form__kit {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.clothing-order-form__kit legend {
+  padding: 0 0.35rem;
+  font-weight: 600;
+}
+
 .admin-detail {
   display: flex;
   flex-direction: column;
