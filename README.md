@@ -100,7 +100,7 @@ Creates return `201`. Unassign from a group (`DELETE .../activity-groups/registr
 
 ## Frontend
 
-React 19 + Vite + TypeScript (Phase F0 scaffold). Lives in `frontend/`.
+React 19 + Vite + TypeScript. Lives in `frontend/`.
 
 ### Prerequisites
 
@@ -127,10 +127,19 @@ npm run dev
 
 App: `http://localhost:5173`
 
-- Public shell: `/`
-- Admin shell (no auth yet): `/admin`
-- On the public home page, **Check API health** calls `GET /api/health` to verify the API client and CORS.
+- Public shell: `/` (includes API health check)
+- Admin login: `/admin/login`
+- Admin home (JWT required): `/admin`
+- Admin setup:
+  - Seasons: `/admin/seasons`
+  - Activities: `/admin/activities`
+  - Activity pricing: `/admin/activity-pricing`
+  - Clothing pricing: `/admin/clothing-pricing`
+
+Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
+
+Typical setup order: create/activate a **season** → ensure **activities** exist → add **activity pricing** and **clothing pricing** for that season.
 
 ### CORS
 
-Backend allows `http://localhost:5173` and `http://localhost:3000` by default (`app.cors.allowed-origins` / `CORS_ALLOWED_ORIGINS`). No extra backend change was required for F0.
+Backend allows `http://localhost:5173` and `http://localhost:3000` by default (`app.cors.allowed-origins` / `CORS_ALLOWED_ORIGINS`).

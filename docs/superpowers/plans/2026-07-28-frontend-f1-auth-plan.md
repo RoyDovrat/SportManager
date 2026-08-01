@@ -1,9 +1,10 @@
 # Frontend Phase F1 — Admin Authentication
 
+> **Status:** F1 implementation complete (Steps 1–7).  
 > **Goal:** Admin can log in via `POST /api/auth/login`, store the JWT, attach it to API calls, and reach `/admin` only when authenticated. Logout clears the session client-side.  
 > **Out of scope:** Real admin domain screens (seasons, payments, …), password change, refresh tokens, “remember me” beyond localStorage, public registration forms (F3).  
 > **Depends on:** F0 (API client, layouts, routing).  
-> **Branch:** continue on `feature/frontend-setup` or a new `feature/admin-auth` (your choice when starting).
+> **Branch:** `feature/admin-auth`
 
 **Backend contract:**
 - `POST /api/auth/login` body: `{ "username", "password" }`
@@ -99,9 +100,10 @@ frontend/src/
 
 ## Acceptance checklist (end of F1)
 
-- [ ] Login against real backend works
-- [ ] JWT stored and sent on subsequent API calls
-- [ ] `/admin` requires auth; `/admin/login` does not
-- [ ] Logout clears session
-- [ ] Public routes remain usable without JWT
-- [ ] Errors surface via existing `ErrorResponse` / `ApiError` mapping
+- [x] Login against real backend works
+- [x] JWT stored and sent on subsequent API calls
+- [x] `/admin` requires auth; `/admin/login` does not
+- [x] Logout clears session
+- [x] Public routes remain usable without JWT
+- [x] Errors surface via existing `ErrorResponse` / `ApiError` mapping
+- [x] `401` clears session (except login path) + README documents admin login
