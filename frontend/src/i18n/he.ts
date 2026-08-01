@@ -173,6 +173,7 @@ export const he = {
   payments: {
     title: 'תשלומים',
     intro: 'צרו חיובים חודשיים או חיוב ביגוד, סננו ופתחו פרטים לאישור או ביטול.',
+    kibbutzExportLink: 'ייצוא Excel לקיבוץ',
     detailTitle: 'פרטי תשלום',
     backToList: 'חזרה לרשימת התשלומים',
     filterStatus: 'סטטוס',

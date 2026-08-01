@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import { downloadKibbutzExport } from '../../api/kibbutzExport'
 import { t } from '../../i18n/t'
@@ -23,6 +24,13 @@ function parseYearMonth(value: string): { year: number; month: number } | null {
   return { year, month }
 }
 
+function initialMonthValue(searchMonth: string | null): string {
+  if (searchMonth && parseYearMonth(searchMonth)) {
+    return searchMonth
+  }
+  return currentYearMonth()
+}
+
 function saveBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
@@ -33,7 +41,10 @@ function saveBlob(blob: Blob, fileName: string) {
 }
 
 export function KibbutzExportPage() {
-  const [monthValue, setMonthValue] = useState(currentYearMonth)
+  const [searchParams] = useSearchParams()
+  const [monthValue, setMonthValue] = useState(() =>
+    initialMonthValue(searchParams.get('month')),
+  )
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)

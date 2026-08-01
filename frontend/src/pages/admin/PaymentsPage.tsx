@@ -164,6 +164,17 @@ export function PaymentsPage() {
     <section className="admin-page admin-page--wide">
       <h1>{t('payments.title')}</h1>
       <p>{t('payments.intro')}</p>
+      <p>
+        <Link
+          to={
+            chargeMonth
+              ? `/admin/exports/kibbutz?month=${encodeURIComponent(chargeMonth)}`
+              : '/admin/exports/kibbutz'
+          }
+        >
+          {t('payments.kibbutzExportLink')}
+        </Link>
+      </p>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
