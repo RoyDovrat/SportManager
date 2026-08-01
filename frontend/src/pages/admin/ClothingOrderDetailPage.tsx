@@ -5,6 +5,7 @@ import {
   type ClothingOrderResponse,
 } from '../../api/clothingOrders'
 import { formatApiError } from '../../api/formatApiError'
+import { createClothingPayment } from '../../api/payments'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import type { ClothingSize } from '../../types/enums'
@@ -33,7 +34,9 @@ export function ClothingOrderDetailPage() {
 
   const [order, setOrder] = useState<ClothingOrderResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [creatingPayment, setCreatingPayment] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +54,7 @@ export function ClothingOrderDetailPage() {
       if (!cancelled) {
         setLoading(true)
         setError(null)
+        setMessage(null)
       }
 
       try {
@@ -77,22 +81,59 @@ export function ClothingOrderDetailPage() {
     }
   }, [orderId])
 
+  async function handleCreateClothingPayment() {
+    if (!order) {
+      return
+    }
+
+    setCreatingPayment(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const payment = await createClothingPayment({ clothingOrderId: order.id })
+      setMessage(t('payments.clothingPaymentCreated', { id: payment.id }))
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setCreatingPayment(false)
+    }
+  }
+
   return (
     <section className="admin-page">
       <p>
         <Link to="/admin/clothing-orders">{t('clothingOrders.backToList')}</Link>
+        {' · '}
+        <Link to="/admin/payments">{t('nav.payments')}</Link>
       </p>
 
       <h1>{t('clothingOrders.detailTitle')}</h1>
 
       {error && <p className="admin-page__error">{error}</p>}
+      {message && <p className="admin-page__ok">{message}</p>}
 
       {loading ? (
         <p>{t('common.loading')}</p>
       ) : order === null ? (
         <p>{t('clothingOrders.notFound')}</p>
       ) : (
-        <div className="admin-detail">
+        <>
+          {order.clothingPaymentRequired && (
+            <div className="admin-form__actions">
+              <button
+                type="button"
+                onClick={() => void handleCreateClothingPayment()}
+                disabled={creatingPayment}
+              >
+                {creatingPayment
+                  ? t('common.saving')
+                  : t('clothingOrders.createPayment')}
+              </button>
+            </div>
+          )}
+
+          <div className="admin-detail">
           <DetailSection title={t('clothingOrders.summarySection')}>
             <DetailRow label={t('common.id')} value={order.id} />
             <DetailRow
@@ -144,7 +185,8 @@ export function ClothingOrderDetailPage() {
               value={displayValue(order.shirtNumber)}
             />
           </DetailSection>
-        </div>
+          </div>
+        </>
       )}
     </section>
   )
