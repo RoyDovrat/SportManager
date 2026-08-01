@@ -143,20 +143,23 @@ Registrations are created as **PENDING** until an admin approves them. Clothing 
 **Admin (JWT):**
 
 - Login: `/admin/login`
-- Home: `/admin`
+- Dashboard (home): `/admin` — season stats, open charges, recent registrations, quick links
+- Season reports: `/admin/reports` — full-season summary (registrations / payments / clothing)
 - Seasons: `/admin/seasons`
 - Activities: `/admin/activities`
 - Activity pricing: `/admin/activity-pricing`
 - Clothing pricing: `/admin/clothing-pricing`
-- Registrations list: `/admin/registrations` (filter by season + status; defaults to active season + `PENDING`)
+- Registrations list: `/admin/registrations` (filter by season + status; defaults to active season + `PENDING`; supports `?status=` / `?seasonId=`)
 - Registration detail: `/admin/registrations/:id` (approve / cancel)
 - Clothing orders list: `/admin/clothing-orders` (create/skip + filter by season / identity)
 - Clothing order detail: `/admin/clothing-orders/:id`
-- Payments list: `/admin/payments` (filters; generate monthly charges; create clothing payment)
+- Payments list: `/admin/payments` (filters; generate monthly charges; create clothing payment; supports `?status=`)
 - Payment detail: `/admin/payments/:id` (confirm / cancel)
 - Activity groups: `/admin/activity-groups` (create football/swimming groups)
 - Activity group detail: `/admin/activity-groups/:id` (edit; assign matching approved kids — swimming matches lesson type, age, water level, weekly sessions 1–6; capacities 1/2/5)
 - Kibbutz Excel export: `/admin/exports/kibbutz` (download pending kibbutz-budget charges for a month)
+
+**Dashboard notes:** Season filter defaults to the active season. **Monthly income** is the sum of payments marked PAID in the **current calendar month across all seasons** — it is not limited to the selected season (the UI labels this explicitly).
 
 Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
 
