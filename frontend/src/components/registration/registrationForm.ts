@@ -1,3 +1,4 @@
+import type { RegistrationRequest } from '../../api/registrations'
 import type { AgeGroup, Gender } from '../../types/enums'
 
 export type RegistrationCommonForm = {
@@ -34,4 +35,30 @@ export const emptyRegistrationCommonForm: RegistrationCommonForm = {
   healthDeclarationApproved: false,
   medicalNotes: '',
   specialRequests: '',
+}
+
+export function toRegistrationRequest(
+  form: RegistrationCommonForm,
+  seasonId: number,
+  activityId: number,
+): RegistrationRequest {
+  return {
+    parentFirstName: form.parentFirstName.trim(),
+    parentLastName: form.parentLastName.trim(),
+    phoneNumber: form.phoneNumber.trim(),
+    studentFirstName: form.studentFirstName.trim(),
+    studentLastName: form.studentLastName.trim(),
+    studentIdentityNumber: form.studentIdentityNumber.trim(),
+    age: Number(form.age),
+    ageGroup: form.ageGroup,
+    gender: form.gender,
+    isKibbutzMember: form.isKibbutzMember,
+    budgetNumber: form.isKibbutzMember ? form.budgetNumber.trim() : null,
+    activityId,
+    seasonId,
+    hasMedicalLimitation: form.hasMedicalLimitation,
+    healthDeclarationApproved: form.healthDeclarationApproved,
+    medicalNotes: form.medicalNotes.trim() || null,
+    specialRequests: form.specialRequests.trim() || null,
+  }
 }

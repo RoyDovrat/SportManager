@@ -157,7 +157,7 @@ export const he = {
   registration: {
     footballTitle: 'הרשמה לכדורגל',
     swimmingTitle: 'הרשמה לשחייה',
-    footballIntro: 'מלאו את הטופס להרשמה לכדורגל. שליחה תחובר בשלב הבא.',
+    footballIntro: 'מלאו את הטופס להרשמה לכדורגל בעונה הפעילה.',
     swimmingIntro: 'שדות הורה ותלמיד מוכנים. שדות שחייה ושליחה יתווספו בהמשך.',
     loadingCatalog: 'טוען עונה וחוג פעילים…',
     seasonLabel: 'עונה',
@@ -187,6 +187,7 @@ export const he = {
     success: 'ההרשמה נקלטה וממתינה לאישור מנהל.',
     registrationId: 'מספר הרשמה',
     status: 'סטטוס',
+    registerAnother: 'הרשמה נוספת',
   },
 
   notFound: {
