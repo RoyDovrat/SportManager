@@ -43,6 +43,11 @@ const setupLinks = [
     labelKey: 'nav.activityGroups',
     descriptionKey: 'adminHome.activityGroupsDesc',
   },
+  {
+    to: '/admin/exports/kibbutz',
+    labelKey: 'nav.kibbutzExport',
+    descriptionKey: 'adminHome.kibbutzExportDesc',
+  },
 ] as const
 
 export function AdminHomePage() {

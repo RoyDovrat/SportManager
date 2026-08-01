@@ -27,6 +27,7 @@ export function AdminLayout() {
           <NavLink to="/admin/clothing-orders">{t('nav.clothingOrders')}</NavLink>
           <NavLink to="/admin/payments">{t('nav.payments')}</NavLink>
           <NavLink to="/admin/activity-groups">{t('nav.activityGroups')}</NavLink>
+          <NavLink to="/admin/exports/kibbutz">{t('nav.kibbutzExport')}</NavLink>
           <NavLink to="/">{t('nav.publicSite')}</NavLink>
           <span className="layout__user">
             {t('nav.signedInAs')} <strong>{username ?? 'admin'}</strong>

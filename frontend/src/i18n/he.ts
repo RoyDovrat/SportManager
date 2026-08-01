@@ -17,6 +17,7 @@ export const he = {
     clothingOrders: 'הזמנות ביגוד',
     payments: 'תשלומים',
     activityGroups: 'קבוצות',
+    kibbutzExport: 'ייצוא קיבוץ',
     publicSite: 'אתר ציבורי',
     logout: 'התנתקות',
     signedInAs: 'מחובר/ת כ',
@@ -80,6 +81,14 @@ export const he = {
     clothingOrdersDesc: 'הזמנות ביגוד לכדורגל ודילוג אם יש כבר ציוד',
     paymentsDesc: 'חיובים חודשיים, אישור תשלום וביטול',
     activityGroupsDesc: 'קבוצות חוג ושיוך תלמידים מאושרים',
+    kibbutzExportDesc: 'הורדת קובץ Excel לחיוב חודשי בתקציב קיבוץ',
+  },
+
+  kibbutzExport: {
+    title: 'ייצוא קיבוץ',
+    intro:
+      'הורדת קובץ Excel של חיובים ממתינים בתקציב קיבוץ לחודש שנבחר.',
+    placeholder: 'טופס בחירת חודש והורדה יופיע בשלב הבא.',
   },
 
   activityGroups: {
