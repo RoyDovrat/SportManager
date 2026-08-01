@@ -203,6 +203,20 @@ body {
   max-width: 56rem;
 }
 
+.admin-page--wide {
+  max-width: 72rem;
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-filters .admin-form__field {
+  min-width: 12rem;
+}
+
 .admin-page__error {
   margin: 0;
   color: #b00020;

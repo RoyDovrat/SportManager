@@ -57,10 +57,25 @@ export const he = {
 
   registrations: {
     title: 'הרשמות',
+    intro: 'סננו לפי עונה וסטטוס, ופתחו הרשמה לאישור או ביטול.',
     detailTitle: 'פרטי הרשמה',
     placeholderList: 'רשימת ההרשמות תופיע כאן בשלב הבא.',
     placeholderDetail: 'פרטי הרשמה {id} יופיעו כאן בשלב הבא.',
     backToList: 'חזרה לרשימת ההרשמות',
+    filterSeason: 'עונה',
+    filterStatus: 'סטטוס',
+    allSeasons: 'כל העונות',
+    allStatuses: 'כל הסטטוסים',
+    listTitle: 'רשימת הרשמות',
+    empty: 'אין הרשמות להצגה',
+    date: 'תאריך',
+    student: 'תלמיד/ה',
+    parent: 'הורה',
+    phone: 'טלפון',
+    activity: 'חוג',
+    season: 'עונה',
+    kibbutz: 'קיבוץ',
+    viewDetails: 'פרטים',
   },
 
   common: {
