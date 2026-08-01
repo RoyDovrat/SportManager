@@ -149,10 +149,12 @@ Registrations are created as **PENDING** until an admin approves them.
 - Clothing pricing: `/admin/clothing-pricing`
 - Registrations list: `/admin/registrations` (filter by season + status; defaults to active season + `PENDING`)
 - Registration detail: `/admin/registrations/:id` (approve / cancel)
+- Clothing orders list: `/admin/clothing-orders` (create/skip + filter by season / identity)
+- Clothing order detail: `/admin/clothing-orders/:id`
 
 Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
 
-Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations`.
+Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → clothing orders for approved football registrations at `/admin/clothing-orders`.
 
 ### CORS
 
