@@ -33,7 +33,11 @@ export function WizardShell({
           )}
         </header>
 
-        {error && <p className="wizard-card__error">{error}</p>}
+        {error && (
+          <p className="wizard-card__error" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        )}
 
         <div className="wizard-card__body">{children}</div>
 

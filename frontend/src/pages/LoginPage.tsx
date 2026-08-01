@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { ApiError } from '../api'
 import { useAuth } from '../auth/AuthContext'
 import { t } from '../i18n/t'
 
@@ -22,18 +21,18 @@ export function LoginPage() {
     setError(null)
     setSubmitting(true)
 
-    try {
-      await login(username.trim(), password)
-      navigate('/admin', { replace: true })
-    } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : t('login.failed')
+    const cleanedUsername = username.trim()
+    if (!cleanedUsername || !password) {
+      setError(t('login.required'))
+      setSubmitting(false)
+      return
+    }
 
-      setError(message)
+    try {
+      await login(cleanedUsername, password)
+      navigate('/admin', { replace: true })
+    } catch {
+      setError(t('login.failed'))
     } finally {
       setSubmitting(false)
     }
@@ -68,7 +67,11 @@ export function LoginPage() {
           />
         </label>
 
-        {error && <p className="login-form__error">{error}</p>}
+        {error && (
+          <p className="login-form__error" role="alert">
+            {error}
+          </p>
+        )}
 
         <button type="submit" disabled={submitting}>
           {submitting ? t('login.submitting') : t('login.submit')}

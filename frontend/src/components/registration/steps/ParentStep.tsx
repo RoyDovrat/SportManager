@@ -47,6 +47,8 @@ export function ParentStep({ form, onChange, disabled = false }: ParentStepProps
           required
           disabled={disabled}
           inputMode="tel"
+          autoComplete="tel"
+          maxLength={15}
         />
       </label>
 

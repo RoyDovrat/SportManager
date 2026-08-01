@@ -11,6 +11,11 @@ import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import { CLOTHING_SIZES, type ClothingSize } from '../../types/enums'
+import {
+  hasText,
+  isValidIsraeliId,
+  normalizeIsraeliId,
+} from '../../validation/fields'
 
 const ALL = ''
 
@@ -46,9 +51,11 @@ function parseQuantity(value: string): number {
 }
 
 function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
+  const studentIdentityNumber = normalizeIsraeliId(form.studentIdentityNumber)
+
   if (form.alreadyHasClothing) {
     return {
-      studentIdentityNumber: form.studentIdentityNumber.trim(),
+      studentIdentityNumber,
       seasonId: Number(form.seasonId),
       alreadyHasClothing: true,
     }
@@ -57,9 +64,10 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
   const longKitQuantity = parseQuantity(form.longKitQuantity)
   const hoodieQuantity = parseQuantity(form.hoodieQuantity)
+  const shirtRaw = form.shirtNumber.trim()
 
   return {
-    studentIdentityNumber: form.studentIdentityNumber.trim(),
+    studentIdentityNumber,
     seasonId: Number(form.seasonId),
     alreadyHasClothing: false,
     shortKitQuantity,
@@ -70,8 +78,7 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
       longKitQuantity > 0 ? (form.longKitSize as ClothingSize) : null,
     hoodieQuantity,
     hoodieSize: hoodieQuantity > 0 ? (form.hoodieSize as ClothingSize) : null,
-    shirtNumber:
-      form.shirtNumber.trim() === '' ? null : Number(form.shirtNumber),
+    shirtNumber: shirtRaw === '' ? null : Number(shirtRaw),
   }
 }
 
@@ -159,9 +166,36 @@ export function ClothingOrdersPage() {
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSaving(true)
     setError(null)
     setMessage(null)
+
+    if (!hasText(createForm.studentIdentityNumber)) {
+      setError(t('wizard.clothing.identityRequired'))
+      return
+    }
+    if (!isValidIsraeliId(createForm.studentIdentityNumber)) {
+      setError(t('wizard.errors.identityInvalid'))
+      return
+    }
+    if (!createForm.alreadyHasClothing) {
+      const shortKitQuantity = parseQuantity(createForm.shortKitQuantity)
+      const longKitQuantity = parseQuantity(createForm.longKitQuantity)
+      const hoodieQuantity = parseQuantity(createForm.hoodieQuantity)
+      if (shortKitQuantity + longKitQuantity + hoodieQuantity < 1) {
+        setError(t('wizard.clothing.itemsRequired'))
+        return
+      }
+      if (
+        (shortKitQuantity > 0 && !createForm.shortKitSize) ||
+        (longKitQuantity > 0 && !createForm.longKitSize) ||
+        (hoodieQuantity > 0 && !createForm.hoodieSize)
+      ) {
+        setError(t('wizard.clothing.sizeRequired'))
+        return
+      }
+    }
+
+    setSaving(true)
 
     try {
       const created = await createClothingOrder(buildCreateRequest(createForm))

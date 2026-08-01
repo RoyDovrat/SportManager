@@ -59,6 +59,9 @@ export function StudentStep({
           }
           required
           disabled={disabled}
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={12}
         />
       </label>
 

@@ -6,6 +6,11 @@ import {
 } from '../../api/registrations'
 import { formatPublicApiError } from '../../api/formatPublicApiError'
 import {
+  hasText,
+  isValidIsraeliId,
+  isValidIsraeliMobile,
+} from '../../validation/fields'
+import {
   StatusBadge,
   registrationStatusTone,
 } from '../ui/StatusBadge'
@@ -41,27 +46,33 @@ type RegistrationWizardProps = {
 }
 
 function validateParent(form: RegistrationCommonForm): string | null {
-  if (!form.parentFirstName.trim() || !form.parentLastName.trim()) {
+  if (!hasText(form.parentFirstName) || !hasText(form.parentLastName)) {
     return t('wizard.errors.parentNameRequired')
   }
-  if (!form.phoneNumber.trim()) {
+  if (!hasText(form.phoneNumber)) {
     return t('wizard.errors.phoneRequired')
   }
-  if (form.isKibbutzMember && !form.budgetNumber.trim()) {
+  if (!isValidIsraeliMobile(form.phoneNumber)) {
+    return t('wizard.errors.phoneInvalid')
+  }
+  if (form.isKibbutzMember && !hasText(form.budgetNumber)) {
     return t('wizard.errors.budgetRequired')
   }
   return null
 }
 
 function validateStudent(form: RegistrationCommonForm): string | null {
-  if (!form.studentFirstName.trim() || !form.studentLastName.trim()) {
+  if (!hasText(form.studentFirstName) || !hasText(form.studentLastName)) {
     return t('wizard.errors.studentNameRequired')
   }
-  if (!form.studentIdentityNumber.trim()) {
+  if (!hasText(form.studentIdentityNumber)) {
     return t('wizard.errors.identityRequired')
   }
+  if (!isValidIsraeliId(form.studentIdentityNumber)) {
+    return t('wizard.errors.identityInvalid')
+  }
   const age = Number(form.age)
-  if (!Number.isFinite(age) || age < 1) {
+  if (!Number.isFinite(age) || age < 1 || age > 120) {
     return t('wizard.errors.ageInvalid')
   }
   return null

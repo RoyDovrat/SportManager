@@ -13,18 +13,18 @@
   --surface: #f4f7fb;
   --surface-elevated: #ffffff;
   --text: #142033;
-  --text-muted: #5b6b82;
+  --text-muted: #4a5a70;
   --border: #d7e0ec;
   --border-strong: #b8c7db;
   --accent-green: #1f8a4c;
   --accent-green-soft: #e8f6ee;
   --accent-blue: #1a6f9a;
   --accent-blue-soft: #e6f3f9;
-  --pending: #c47a12;
+  --pending: #a8660a;
   --pending-soft: #fff4e4;
-  --danger: #c0392b;
+  --danger: #b13224;
   --danger-soft: #fdecea;
-  --success: #1f8a4c;
+  --success: #1a7a42;
   --success-soft: #e8f6ee;
   --shadow-sm: 0 1px 2px rgb(11 31 58 / 6%);
   --shadow-md: 0 8px 24px rgb(11 31 58 / 8%);
@@ -34,19 +34,41 @@
   --font: 'Heebo', 'Segoe UI', Tahoma, sans-serif;
   --sidebar-width: 16.5rem;
   --topbar-height: 3.75rem;
+  --page-pad: clamp(0.85rem, 2vw, 1.75rem);
+  --focus-ring: 0 0 0 3px rgb(26 111 154 / 45%);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 body {
   margin: 0;
   font-family: var(--font);
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--text);
   background: var(--surface);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 a {
@@ -67,6 +89,29 @@ button {
 button:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.admin-sidebar__link:focus-visible,
+.sport-panel:focus-visible,
+.public-home__clothing-btn:focus-visible,
+.admin-home__card:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* ——— Buttons ——— */
@@ -348,7 +393,29 @@ button.btn--danger {
 
 .admin-shell__main {
   flex: 1;
-  padding: 1.5rem 1.75rem 2.5rem;
+  padding: var(--page-pad);
+  padding-bottom: 2.5rem;
+}
+
+@media (max-width: 720px) {
+  .admin-detail__row {
+    grid-template-columns: 1fr;
+    gap: 0.15rem;
+  }
+
+  .admin-filters {
+    padding: 0.85rem;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.55rem 0.6rem;
+    font-size: 0.92rem;
+  }
 }
 
 .admin-sidebar-backdrop {
@@ -408,28 +475,32 @@ button.btn--danger {
     linear-gradient(180deg, #f7fbf8 0%, #f3f7fb 45%, #eef3f8 100%);
 }
 
-/* Lock home to one viewport — no page scroll */
+/* Home: locked to one viewport — no page scroll */
+html:has(.public-home),
 body:has(.public-home) {
+  height: 100%;
+  overflow: hidden;
+}
+
+body:has(.public-home) #root {
+  height: 100%;
+  min-height: 100%;
   overflow: hidden;
 }
 
 .layout--public:has(.public-home) {
-  height: 100dvh;
+  height: 100%;
   max-height: 100dvh;
   overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(31 138 76 / 10%), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 100% 30%, rgb(26 111 154 / 10%), transparent 50%),
+    linear-gradient(180deg, #fbfcfe 0%, #f3f7fb 100%);
 }
 
 .layout--public:has(.public-home) .layout__header {
   flex-shrink: 0;
-  flex-wrap: nowrap;
   padding: 0.55rem 1.25rem;
-  gap: 0.75rem;
-}
-
-.layout--public:has(.public-home) .layout__nav {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  max-width: 100%;
 }
 
 .layout--public:has(.public-home) .layout__main {
@@ -439,10 +510,7 @@ body:has(.public-home) {
 }
 
 .layout--public:has(.public-home) .layout__footer {
-  flex-shrink: 0;
-  padding: 0.4rem 1.25rem;
-  gap: 0.5rem;
-  font-size: 0.78rem;
+  display: none;
 }
 
 .layout--public .layout__header {
@@ -540,51 +608,8 @@ body:has(.public-home) {
   color: var(--danger);
 }
 
-/* ——— Public home (single-screen) ——— */
-.public-home {
-  height: 100%;
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-.public-home__intro {
-  flex-shrink: 0;
-  text-align: center;
-  padding: 0.65rem 1rem 0.5rem;
-}
-
-.public-home__welcome {
-  margin: 0;
-  font-size: clamp(1.15rem, 2.2vw, 1.55rem);
-  font-weight: 800;
-  color: var(--navy-900);
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.public-home__tagline {
-  margin: 0.2rem 0 0;
-  font-size: clamp(0.85rem, 1.4vw, 0.98rem);
-  color: var(--text-muted);
-  line-height: 1.35;
-}
-
-.public-home__sports {
-  font-weight: 700;
-  color: var(--accent-blue);
-}
-
-.public-home__split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-@keyframes fade-up {
+/* ——— Public home: matched 3:2 cards, edge-to-edge photos, one viewport ——— */
+@keyframes public-home-fade-up {
   from {
     opacity: 0;
     transform: translateY(0.75rem);
@@ -595,79 +620,160 @@ body:has(.public-home) {
   }
 }
 
-.sport-panel {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  min-height: 0;
-  min-width: 0;
+.public-home {
   height: 100%;
-  padding: 1rem 1.15rem;
-  background-size: cover;
-  background-position: center;
-  text-decoration: none;
-  color: #fff;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(0.55rem, 1.2vh, 1rem);
+  padding: clamp(0.5rem, 1.2vh, 0.9rem) var(--page-pad)
+    clamp(0.55rem, 1.4vh, 1rem);
+  width: min(92rem, 100%);
+  margin-inline: auto;
   overflow: hidden;
 }
 
-.sport-panel__shade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgb(7 21 37 / 12%) 25%,
-    rgb(7 21 37 / 80%) 100%
-  );
-  transition: background 0.2s ease;
+.public-home__intro {
+  flex-shrink: 0;
+  text-align: center;
+  animation: public-home-fade-up 0.45s ease both;
 }
 
-.sport-panel:hover .sport-panel__shade {
-  background: linear-gradient(
-    180deg,
-    rgb(7 21 37 / 8%) 20%,
-    rgb(7 21 37 / 86%) 100%
-  );
+.public-home__welcome {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+  font-weight: 700;
+  color: var(--navy-900);
+  line-height: 1.25;
 }
 
-.sport-panel__body {
-  position: relative;
-  z-index: 1;
+.public-home__tagline {
+  margin: 0.25rem 0 0;
+  font-size: clamp(0.92rem, 1.4vw, 1.1rem);
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.public-home__sports {
+  font-weight: 700;
+  color: var(--accent-blue);
+}
+
+.public-home__split {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: clamp(0.85rem, 1.5vw, 1.35rem);
+  width: 100%;
+  animation: public-home-fade-up 0.5s ease 0.08s both;
+}
+
+.sport-panel {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.45rem;
-  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  background: #fff;
+  border: 1px solid rgb(11 31 58 / 8%);
+  box-shadow: 0 14px 36px rgb(11 31 58 / 10%);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-.sport-panel__icon {
-  display: inline-flex;
-  width: 2rem;
-  height: 2rem;
+.sport-panel:hover {
+  box-shadow: 0 20px 44px rgb(11 31 58 / 14%);
+  transform: translateY(-2px);
+}
+
+/* Both photos are 3:2 — frame matches image, fills edge to edge */
+.sport-panel__media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  max-height: calc(100dvh - 16.5rem);
+  overflow: hidden;
+  line-height: 0;
+  background: #e8eef3;
+}
+
+.sport-panel--football .sport-panel__media {
+  background: #dceee3;
+}
+
+.sport-panel--swimming .sport-panel__media {
+  background: #d9ebf4;
+}
+
+img.sport-panel__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center;
+}
+
+.sport-panel__footer {
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 16%);
-  backdrop-filter: blur(4px);
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1.15rem;
+  background: #fff;
+  border-top: 1px solid rgb(11 31 58 / 6%);
 }
 
-.sport-panel__icon svg {
-  width: 1.1rem;
-  height: 1.1rem;
+.sport-panel__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .sport-panel__title {
-  font-size: clamp(1.05rem, 1.8vw, 1.3rem);
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
   font-weight: 800;
+  color: var(--navy-900);
   letter-spacing: -0.02em;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 35%);
+  line-height: 1.2;
+}
+
+.sport-panel__hint {
+  font-size: clamp(0.85rem, 1.15vw, 0.95rem);
+  line-height: 1.35;
+  color: var(--text-muted);
 }
 
 .sport-panel__cta {
-  pointer-events: none;
-  padding: 0.5rem 0.9rem;
-  border-radius: var(--radius-md);
-  font-size: 0.88rem;
-  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.15rem;
+  border-radius: 999px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.sport-panel--football .sport-panel__cta {
+  background: var(--accent-green);
+}
+
+.sport-panel--swimming .sport-panel__cta {
+  background: var(--accent-blue);
 }
 
 .sport-panel--football:hover .sport-panel__cta {
@@ -680,92 +786,117 @@ body:has(.public-home) {
 
 .public-home__secondary {
   flex-shrink: 0;
-  padding: 0.55rem 1rem 0.65rem;
+  width: min(42rem, 100%);
+  margin-inline: auto;
+  animation: public-home-fade-up 0.55s ease 0.14s both;
 }
 
-.public-home__clothing-bar {
+.public-home__clothing-btn {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.35rem 1rem;
-  padding: 0.55rem 0.9rem;
+  gap: 0.55rem 1rem;
+  padding: 0.85rem 1.15rem;
   border-radius: var(--radius-md);
-  background: var(--surface-elevated);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+  background: var(--accent-green-soft);
+  border: 1px solid rgb(31 138 76 / 28%);
   text-decoration: none;
   color: inherit;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.public-home__clothing-bar strong {
+.public-home__clothing-btn:hover {
+  background: #daf1e4;
+  border-color: rgb(31 138 76 / 45%);
+  box-shadow: var(--shadow-sm);
+}
+
+.public-home__clothing-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: start;
+}
+
+.public-home__clothing-copy strong {
   color: var(--navy-900);
-  font-size: 0.95rem;
+  font-size: 1.05rem;
+  font-weight: 800;
 }
 
-.public-home__clothing-bar > span:not(.public-home__clothing-cta) {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  flex: 1 1 10rem;
+.public-home__clothing-copy > span {
+  color: #2f5f42;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .public-home__clothing-cta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 0.98rem;
   font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--accent-blue);
   white-space: nowrap;
 }
 
-.public-home__clothing-bar:hover {
-  border-color: var(--border-strong);
+.public-home__clothing-btn:hover .public-home__clothing-cta {
+  background: #187541;
 }
 
-.public-home__link-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 1.15rem 1.25rem;
-  border-radius: var(--radius-md);
-  background: var(--surface-elevated);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  text-decoration: none;
-  color: inherit;
-  max-width: 28rem;
+@media (prefers-reduced-motion: reduce) {
+  .public-home__intro,
+  .public-home__split,
+  .public-home__secondary {
+    animation: none;
+  }
+
+  .sport-panel,
+  .sport-panel:hover {
+    transition: none;
+    transform: none;
+  }
 }
 
-@media (max-width: 800px) {
-  body:has(.public-home) {
-    overflow: auto;
+@media (max-width: 900px) {
+  .public-home__split {
+    gap: 0.75rem;
   }
 
-  .layout--public:has(.public-home) {
-    height: auto;
-    max-height: none;
-    overflow: auto;
+  .sport-panel__hint {
+    display: none;
   }
 
-  .layout--public:has(.public-home) .layout__main {
-    overflow: visible;
-  }
-
-  .layout--public:has(.public-home) .layout__header {
+  .sport-panel__footer {
     flex-wrap: wrap;
   }
 
-  .public-home {
-    height: auto;
-    grid-template-rows: auto auto auto;
+  .sport-panel__cta {
+    width: 100%;
   }
 
-  .public-home__split {
-    grid-template-columns: 1fr;
-    height: auto;
+  .public-home__clothing-copy > span {
+    display: none;
+  }
+}
+
+@media (max-height: 720px) {
+  .public-home__tagline {
+    display: none;
   }
 
-  .sport-panel {
-    min-height: 12.5rem;
-    height: 12.5rem;
+  .sport-panel__hint {
+    display: none;
   }
 }
 
@@ -801,12 +932,12 @@ body:has(.wizard-page) {
   min-height: 0;
   display: grid;
   place-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.65rem 1.15rem;
   overflow: hidden;
 }
 
 .wizard-card {
-  width: min(34rem, 100%);
+  width: min(40rem, 100%);
   max-height: 100%;
   display: flex;
   flex-direction: column;
@@ -820,21 +951,21 @@ body:has(.wizard-page) {
 
 .wizard-card__header {
   flex-shrink: 0;
-  padding: 0.75rem 1.25rem 0.5rem;
+  padding: 0.9rem 1.45rem 0.6rem;
   border-bottom: 1px solid var(--border);
 }
 
 .wizard-card__header h1 {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: clamp(1.45rem, 2.2vw, 1.7rem);
   font-weight: 800;
   color: var(--navy-900);
   letter-spacing: -0.02em;
 }
 
 .wizard-card__subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.95rem;
+  margin: 0.3rem 0 0;
+  font-size: clamp(0.98rem, 1.4vw, 1.08rem);
   color: var(--text-muted);
 }
 
@@ -851,7 +982,7 @@ body:has(.wizard-page) {
 .wizard-stepper::before {
   content: '';
   position: absolute;
-  top: 0.8rem;
+  top: 0.9rem;
   inset-inline: 10%;
   height: 2px;
   background: #d7e3f2;
@@ -874,12 +1005,12 @@ body:has(.wizard-page) {
 }
 
 .wizard-stepper__dot {
-  width: 1.65rem;
-  height: 1.65rem;
+  width: 1.8rem;
+  height: 1.8rem;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
   background: #fff;
   border: 2px solid #b7c9e0;
@@ -899,10 +1030,10 @@ body:has(.wizard-page) {
 }
 
 .wizard-stepper__label {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   line-height: 1.25;
   color: var(--text-muted);
-  max-width: 5.25rem;
+  max-width: 5.75rem;
 }
 
 .wizard-stepper__item--active .wizard-stepper__label {
@@ -913,10 +1044,10 @@ body:has(.wizard-page) {
 .wizard-card__error {
   margin: 0;
   flex-shrink: 0;
-  padding: 0.55rem 1.25rem;
+  padding: 0.6rem 1.45rem;
   background: var(--danger-soft);
   color: #922b21;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.35;
 }
@@ -924,7 +1055,7 @@ body:has(.wizard-page) {
 .wizard-card__body {
   flex: 1;
   min-height: 0;
-  padding: 0.75rem 1.25rem;
+  padding: 0.9rem 1.45rem;
   overflow: hidden;
 }
 
@@ -932,61 +1063,61 @@ body:has(.wizard-page) {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.6rem;
   justify-content: flex-end;
-  padding: 0.65rem 1.25rem 0.8rem;
+  padding: 0.75rem 1.45rem 0.95rem;
   border-top: 1px solid var(--border);
   background: #fbfcfe;
 }
 
 .wizard-card__footer .btn,
 .wizard-card__footer a.btn {
-  min-width: 7rem;
-  padding: 0.7rem 1.15rem;
-  font-size: 1.05rem;
+  min-width: 7.5rem;
+  padding: 0.78rem 1.25rem;
+  font-size: 1.1rem;
   text-decoration: none;
 }
 
 .wizard-fields {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  font-size: 1.08rem;
+  gap: 0.8rem;
+  font-size: 1.12rem;
 }
 
 .wizard-fields__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.7rem;
+  gap: 0.8rem;
 }
 
 .wizard-fields .admin-form__field input,
 .wizard-fields .admin-form__field select,
 .wizard-fields .admin-form__field textarea {
-  padding: 0.55rem 0.75rem;
-  font-size: 1.08rem;
-  min-height: 2.7rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 1.12rem;
+  min-height: 2.9rem;
 }
 
 .wizard-fields .admin-form__field > span {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
 }
 
 .wizard-fields .admin-form__checkbox {
-  font-size: 1.08rem;
-  gap: 0.6rem;
+  font-size: 1.12rem;
+  gap: 0.65rem;
 }
 
 .wizard-fields .admin-form__checkbox input {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
 }
 
 .wizard-hint {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: 1.02rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
@@ -998,8 +1129,8 @@ body:has(.wizard-page) {
 }
 
 .wizard-radio-group legend {
-  margin-bottom: 0.4rem;
-  font-size: 0.98rem;
+  margin-bottom: 0.45rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
 }
@@ -1007,25 +1138,25 @@ body:has(.wizard-page) {
 .wizard-radio-group__options {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: 0.55rem 1.1rem;
 }
 
 .wizard-radio-group__options--stack {
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .wizard-radio {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.05rem;
+  gap: 0.55rem;
+  font-size: 1.1rem;
 }
 
 .wizard-radio input {
   accent-color: var(--navy-900);
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
 }
 
 .admin-form__checkbox--emphasis {
@@ -1059,18 +1190,18 @@ body:has(.wizard-page) {
 
 .wizard-success h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   color: var(--success);
 }
 
 .wizard-success p {
   margin: 0;
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
 }
 
 .wizard-success__hint {
-  font-size: 0.98rem !important;
+  font-size: 1.02rem !important;
 }
 
 .wizard-kit-grid {
@@ -1099,8 +1230,8 @@ body:has(.wizard-page) {
 
 .wizard-kit .admin-form__field input,
 .wizard-kit .admin-form__field select {
-  font-size: 1.05rem;
-  min-height: 2.65rem;
+  font-size: 1.1rem;
+  min-height: 2.8rem;
 }
 
 @media (max-width: 640px) {
@@ -1125,10 +1256,22 @@ body:has(.wizard-page) {
   .wizard-page {
     height: auto;
     place-items: stretch;
+    padding: 0.75rem 0.85rem 1.25rem;
   }
 
   .wizard-card {
+    width: 100%;
     max-height: none;
+  }
+
+  .wizard-card__header,
+  .wizard-card__body,
+  .wizard-card__footer {
+    padding-inline: 1.1rem;
+  }
+
+  .wizard-card__header h1 {
+    font-size: 1.4rem;
   }
 
   .wizard-card__body {
@@ -1140,7 +1283,15 @@ body:has(.wizard-page) {
   }
 
   .wizard-stepper__label {
-    font-size: 0.72rem;
+    font-size: 0.75rem;
+    max-width: 4.75rem;
+  }
+
+  .wizard-fields .admin-form__field input,
+  .wizard-fields .admin-form__field select,
+  .wizard-fields .admin-form__field textarea {
+    font-size: 1.08rem;
+    min-height: 2.85rem;
   }
 }
 
@@ -1254,6 +1405,7 @@ body:has(.wizard-page) {
   border-radius: var(--radius-sm);
   background: var(--danger-soft);
   color: var(--danger);
+  font-weight: 600;
 }
 
 .admin-page__ok {
@@ -1262,6 +1414,7 @@ body:has(.wizard-page) {
   border-radius: var(--radius-sm);
   background: var(--success-soft);
   color: #146338;
+  font-weight: 600;
 }
 
 .admin-filters {

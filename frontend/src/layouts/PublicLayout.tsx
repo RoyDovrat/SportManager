@@ -38,7 +38,7 @@ export function PublicLayout() {
         <NavLink to="/" end className="layout__brand">
           {t('appName')}
         </NavLink>
-        <nav className="layout__nav">
+        <nav className="layout__nav" aria-label={t('nav.home')}>
           <NavLink to="/" end>
             {t('nav.home')}
           </NavLink>

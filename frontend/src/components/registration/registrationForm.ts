@@ -5,6 +5,11 @@ import type {
   SwimmingLessonType,
   WaterAdaptationLevel,
 } from '../../types/enums'
+import {
+  cleanText,
+  normalizeIsraeliId,
+  normalizeIsraeliPhone,
+} from '../../validation/fields'
 
 export type RegistrationCommonForm = {
   parentFirstName: string
@@ -61,23 +66,25 @@ export function toRegistrationRequest(
   swimming?: SwimmingFormExtras,
 ): RegistrationRequest {
   return {
-    parentFirstName: form.parentFirstName.trim(),
-    parentLastName: form.parentLastName.trim(),
-    phoneNumber: form.phoneNumber.trim(),
-    studentFirstName: form.studentFirstName.trim(),
-    studentLastName: form.studentLastName.trim(),
-    studentIdentityNumber: form.studentIdentityNumber.trim(),
+    parentFirstName: cleanText(form.parentFirstName),
+    parentLastName: cleanText(form.parentLastName),
+    phoneNumber: normalizeIsraeliPhone(form.phoneNumber),
+    studentFirstName: cleanText(form.studentFirstName),
+    studentLastName: cleanText(form.studentLastName),
+    studentIdentityNumber: normalizeIsraeliId(form.studentIdentityNumber),
     age: Number(form.age),
     ageGroup: form.ageGroup,
     gender: form.gender,
     isKibbutzMember: form.isKibbutzMember,
-    budgetNumber: form.isKibbutzMember ? form.budgetNumber.trim() : null,
+    budgetNumber: form.isKibbutzMember
+      ? cleanText(form.budgetNumber)
+      : null,
     activityId,
     seasonId,
     hasMedicalLimitation: form.hasMedicalLimitation,
     healthDeclarationApproved: form.healthDeclarationApproved,
-    medicalNotes: form.medicalNotes.trim() || null,
-    specialRequests: form.specialRequests.trim() || null,
+    medicalNotes: cleanText(form.medicalNotes) || null,
+    specialRequests: cleanText(form.specialRequests) || null,
     ...(swimming
       ? {
           swimmingLessonType: swimming.swimmingLessonType,

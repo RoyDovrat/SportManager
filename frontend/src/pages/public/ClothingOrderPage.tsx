@@ -12,6 +12,11 @@ import { WizardShell } from '../../components/wizard/WizardShell'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import { CLOTHING_SIZES, type ClothingSize } from '../../types/enums'
+import {
+  hasText,
+  isValidIsraeliId,
+  normalizeIsraeliId,
+} from '../../validation/fields'
 
 type FormState = {
   studentIdentityNumber: string
@@ -49,9 +54,11 @@ function parseQuantity(value: string): number {
 }
 
 function buildRequest(form: FormState, seasonId: number): ClothingOrderRequest {
+  const studentIdentityNumber = normalizeIsraeliId(form.studentIdentityNumber)
+
   if (form.alreadyHasClothing) {
     return {
-      studentIdentityNumber: form.studentIdentityNumber.trim(),
+      studentIdentityNumber,
       seasonId,
       alreadyHasClothing: true,
     }
@@ -60,9 +67,10 @@ function buildRequest(form: FormState, seasonId: number): ClothingOrderRequest {
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
   const longKitQuantity = parseQuantity(form.longKitQuantity)
   const hoodieQuantity = parseQuantity(form.hoodieQuantity)
+  const shirtRaw = form.shirtNumber.trim()
 
   return {
-    studentIdentityNumber: form.studentIdentityNumber.trim(),
+    studentIdentityNumber,
     seasonId,
     alreadyHasClothing: false,
     shortKitQuantity,
@@ -73,9 +81,18 @@ function buildRequest(form: FormState, seasonId: number): ClothingOrderRequest {
       longKitQuantity > 0 ? (form.longKitSize as ClothingSize) : null,
     hoodieQuantity,
     hoodieSize: hoodieQuantity > 0 ? (form.hoodieSize as ClothingSize) : null,
-    shirtNumber:
-      form.shirtNumber.trim() === '' ? null : Number(form.shirtNumber),
+    shirtNumber: shirtRaw === '' ? null : Number(shirtRaw),
   }
+}
+
+function validateIdentity(form: FormState): string | null {
+  if (!hasText(form.studentIdentityNumber)) {
+    return t('wizard.clothing.identityRequired')
+  }
+  if (!isValidIsraeliId(form.studentIdentityNumber)) {
+    return t('wizard.errors.identityInvalid')
+  }
+  return null
 }
 
 function validateItems(form: FormState): string | null {
@@ -173,8 +190,9 @@ export function ClothingOrderPage() {
   function goNext() {
     setError(null)
     if (step === 0) {
-      if (!form.studentIdentityNumber.trim()) {
-        setError(t('wizard.clothing.identityRequired'))
+      const identityError = validateIdentity(form)
+      if (identityError) {
+        setError(identityError)
         return
       }
       if (form.alreadyHasClothing) {
@@ -326,6 +344,9 @@ export function ClothingOrderPage() {
                 required
                 disabled={formDisabled}
                 autoFocus
+                inputMode="numeric"
+                placeholder=""
+                maxLength={12}
               />
             </label>
             <label className="admin-form__checkbox">
