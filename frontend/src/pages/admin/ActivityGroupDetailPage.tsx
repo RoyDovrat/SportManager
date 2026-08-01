@@ -2,15 +2,20 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   activateActivityGroup,
+  assignRegistrationToGroup,
   deactivateActivityGroup,
   getActivityGroup,
+  listGroupRegistrations,
+  unassignRegistrationFromGroup,
   updateActivityGroup,
   type ActivityGroupResponse,
 } from '../../api/activityGroups'
 import { formatApiError } from '../../api/formatApiError'
+import type { RegistrationResponse } from '../../api/registrations'
 import {
   activityTypeLabel,
   ageGroupLabel,
+  registrationStatusLabel,
   swimmingLessonTypeLabel,
   waterAdaptationLevelLabel,
 } from '../../i18n/labels'
@@ -48,56 +53,52 @@ export function ActivityGroupDetailPage() {
 
   const [group, setGroup] = useState<ActivityGroupResponse | null>(null)
   const [form, setForm] = useState<EditForm | null>(null)
+  const [members, setMembers] = useState<RegistrationResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [acting, setActing] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+  const [registrationIdInput, setRegistrationIdInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
+  async function loadGroupAndMembers(options?: { clearMessage?: boolean }) {
+    if (!Number.isFinite(groupId) || groupId <= 0) {
+      setError(t('activityGroups.invalidId'))
+      setGroup(null)
+      setForm(null)
+      setMembers([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    if (options?.clearMessage) {
+      setMessage(null)
+    }
+
+    try {
+      const [data, memberData] = await Promise.all([
+        getActivityGroup(groupId),
+        listGroupRegistrations(groupId),
+      ])
+      setGroup(data)
+      setForm(toEditForm(data))
+      setMembers(memberData)
+    } catch (err) {
+      setError(formatApiError(err))
+      setGroup(null)
+      setForm(null)
+      setMembers([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false
-
-    async function loadGroup() {
-      if (!Number.isFinite(groupId) || groupId <= 0) {
-        if (!cancelled) {
-          setError(t('activityGroups.invalidId'))
-          setGroup(null)
-          setForm(null)
-          setLoading(false)
-        }
-        return
-      }
-
-      if (!cancelled) {
-        setLoading(true)
-        setError(null)
-        setMessage(null)
-      }
-
-      try {
-        const data = await getActivityGroup(groupId)
-        if (!cancelled) {
-          setGroup(data)
-          setForm(toEditForm(data))
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(formatApiError(err))
-          setGroup(null)
-          setForm(null)
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadGroup()
-
-    return () => {
-      cancelled = true
-    }
+    void loadGroupAndMembers({ clearMessage: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId])
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -173,6 +174,54 @@ export function ActivityGroupDetailPage() {
       setError(formatApiError(err))
     } finally {
       setActing(false)
+    }
+  }
+
+  async function handleAssign(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!group) {
+      return
+    }
+
+    const registrationId = Number(registrationIdInput)
+    if (!Number.isFinite(registrationId) || registrationId <= 0) {
+      setError(t('activityGroups.registrationIdRequired'))
+      return
+    }
+
+    setAssigning(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await assignRegistrationToGroup(group.id, registrationId)
+      setRegistrationIdInput('')
+      setMessage(t('activityGroups.assigned'))
+      await loadGroupAndMembers()
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  async function handleUnassign(registrationId: number) {
+    if (!window.confirm(t('activityGroups.confirmUnassign'))) {
+      return
+    }
+
+    setAssigning(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      await unassignRegistrationFromGroup(registrationId)
+      setMessage(t('activityGroups.unassigned'))
+      await loadGroupAndMembers()
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setAssigning(false)
     }
   }
 
@@ -337,9 +386,75 @@ export function ActivityGroupDetailPage() {
             </div>
           </form>
 
-          <p className="clothing-order-form__hint">
-            {t('activityGroups.membersComingNext')}
-          </p>
+          <form className="admin-form" onSubmit={handleAssign}>
+            <h2>{t('activityGroups.assignTitle')}</h2>
+            <p className="clothing-order-form__hint">
+              {t('activityGroups.assignHint')}
+            </p>
+            <label className="admin-form__field">
+              <span>{t('activityGroups.registrationId')}</span>
+              <input
+                type="number"
+                min={1}
+                value={registrationIdInput}
+                onChange={(event) => setRegistrationIdInput(event.target.value)}
+                required
+                disabled={assigning || saving || acting}
+              />
+            </label>
+            <div className="admin-form__actions">
+              <button
+                type="submit"
+                disabled={assigning || saving || acting}
+              >
+                {assigning
+                  ? t('activityGroups.assigning')
+                  : t('activityGroups.assignSubmit')}
+              </button>
+            </div>
+          </form>
+
+          <div className="admin-table-wrap">
+            <h2>{t('activityGroups.membersTitle')}</h2>
+            {members.length === 0 ? (
+              <p>{t('activityGroups.membersEmpty')}</p>
+            ) : (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{t('common.id')}</th>
+                    <th>{t('activityGroups.student')}</th>
+                    <th>{t('common.status')}</th>
+                    <th>{t('common.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => (
+                    <tr key={member.id}>
+                      <td>
+                        <Link to={`/admin/registrations/${member.id}`}>
+                          {member.id}
+                        </Link>
+                      </td>
+                      <td>
+                        {member.studentFirstName} {member.studentLastName}
+                      </td>
+                      <td>{registrationStatusLabel(member.status)}</td>
+                      <td className="admin-table__actions">
+                        <button
+                          type="button"
+                          onClick={() => void handleUnassign(member.id)}
+                          disabled={assigning || saving || acting}
+                        >
+                          {t('activityGroups.unassign')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </>
       )}
     </section>
