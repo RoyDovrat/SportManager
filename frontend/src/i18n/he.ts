@@ -109,6 +109,13 @@ export const he = {
     attributes: 'מאפיינים',
     members: 'משתתפים',
     viewDetails: 'פרטים',
+    editTitle: 'עריכת קבוצה',
+    updated: 'הקבוצה עודכנה.',
+    activated: 'הקבוצה הופעלה.',
+    deactivated: 'הקבוצה כובתה.',
+    notFound: 'הקבוצה לא נמצאה.',
+    invalidId: 'מזהה קבוצה לא תקין.',
+    membersComingNext: 'רשימת משתתפים ושיוך יופיעו בשלב הבא.',
   },
 
   payments: {
