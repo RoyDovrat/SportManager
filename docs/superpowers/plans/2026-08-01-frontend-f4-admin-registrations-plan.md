@@ -1,6 +1,6 @@
 # Frontend Phase F4 — Admin registration review (list + detail)
 
-> **Status:** In progress — Stage 1 done; waiting for approve before Stage 2.  
+> **Status:** F4 implementation complete (Stages 1–5).  
 > **Goal:** Authenticated admin can browse registrations (season + status filters), open a detail view, and approve or cancel with clear status rules and Hebrew UX.  
 > **UI language:** Hebrew (RTL) via `frontend/src/i18n` (`t()` + enum labels).  
 > **Out of scope:** Edit registration fields, group assignment, clothing orders, payments, dashboard/reports, parent/student CRUD.  
@@ -193,14 +193,14 @@ Do not mix F4 commits into F3 commit titles.
 
 ## Acceptance checklist (end of F4)
 
-- [ ] Admin can open `/admin/registrations` when logged in  
-- [ ] List filters by season and status; defaults favor active season + `PENDING`  
-- [ ] Row opens detail at `/admin/registrations/:id`  
-- [ ] Detail shows full registration data (incl. swimming when relevant)  
-- [ ] Approve works for `PENDING` only  
-- [ ] Cancel works for `PENDING` / `APPROVED`  
-- [ ] Confirm before approve and cancel  
-- [ ] Errors use `ApiError` / `formatApiError`  
-- [ ] Unauthenticated users redirected to login  
-- [ ] Hebrew UI + README admin registration URLs
-)
+- [x] Admin can open `/admin/registrations` when logged in  
+- [x] List filters by season and status; defaults favor active season + `PENDING`  
+- [x] Row opens detail at `/admin/registrations/:id`  
+- [x] Detail shows full registration data (incl. swimming when relevant)  
+- [x] Approve works for `PENDING` only  
+- [x] Cancel works for `PENDING` / `APPROVED`  
+- [x] Confirm before approve and cancel  
+- [x] Errors use `ApiError` / `formatApiError`  
+- [x] Unauthenticated users redirected to login  
+- [x] Hebrew UI + README admin registration URLs
+
