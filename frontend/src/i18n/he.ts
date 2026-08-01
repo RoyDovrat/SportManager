@@ -353,6 +353,21 @@ export const he = {
       XL: 'XL',
       XXL: 'XXL',
     },
+    paymentStatus: {
+      PENDING: 'ממתין לתשלום',
+      PAID: 'שולם',
+      CANCELLED: 'מבוטל',
+    },
+    paymentType: {
+      MONTHLY_ACTIVITY: 'חיוב חודשי',
+      CLOTHING: 'ביגוד',
+      MANUAL_ONE_TIME: 'חד־פעמי',
+    },
+    paymentMethod: {
+      BIT: 'ביט',
+      PAYBOX: 'פייבוקס',
+      KIBBUTZ_BUDGET: 'תקציב קיבוץ',
+    },
   },
 } as const
 

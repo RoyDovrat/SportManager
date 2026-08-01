@@ -46,3 +46,16 @@ export const CLOTHING_SIZES = [
   'XXL',
 ] as const
 export type ClothingSize = (typeof CLOTHING_SIZES)[number]
+
+export const PAYMENT_STATUSES = ['PENDING', 'PAID', 'CANCELLED'] as const
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number]
+
+export const PAYMENT_TYPES = [
+  'MONTHLY_ACTIVITY',
+  'CLOTHING',
+  'MANUAL_ONE_TIME',
+] as const
+export type PaymentType = (typeof PAYMENT_TYPES)[number]
+
+export const PAYMENT_METHODS = ['BIT', 'PAYBOX', 'KIBBUTZ_BUDGET'] as const
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number]

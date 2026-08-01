@@ -4,6 +4,9 @@ import type {
   AgeGroup,
   ClothingSize,
   Gender,
+  PaymentMethod,
+  PaymentStatus,
+  PaymentType,
   RegistrationStatus,
   SwimmingLessonType,
   WaterAdaptationLevel,
@@ -35,4 +38,16 @@ export function registrationStatusLabel(value: RegistrationStatus): string {
 
 export function clothingSizeLabel(value: ClothingSize): string {
   return t(`enums.clothingSize.${value}`)
+}
+
+export function paymentStatusLabel(value: PaymentStatus): string {
+  return t(`enums.paymentStatus.${value}`)
+}
+
+export function paymentTypeLabel(value: PaymentType): string {
+  return t(`enums.paymentType.${value}`)
+}
+
+export function paymentMethodLabel(value: PaymentMethod): string {
+  return t(`enums.paymentMethod.${value}`)
 }
