@@ -164,9 +164,11 @@ public class RegistrationService {
                         "Water adaptation level is required for swimming registration"
                 );
             }
-            if (request.getWeeklySessions() == null || request.getWeeklySessions() <= 0) {
+            if (request.getWeeklySessions() == null
+                    || request.getWeeklySessions() < 1
+                    || request.getWeeklySessions() > 6) {
                 throw new BusinessRuleException(
-                        "Weekly sessions must be greater than zero for swimming registration"
+                        "Weekly sessions must be between 1 and 6 for swimming registration"
                 );
             }
             return;
@@ -355,6 +357,9 @@ public class RegistrationService {
                 .activityGroupName(activityGroup != null ? activityGroup.getName() : null)
                 .swimmingLessonType(registration.getSwimmingLessonType())
                 .waterAdaptationLevel(registration.getWaterAdaptationLevel())
+                .weeklySessions(registration.getActivityPricing() != null
+                        ? registration.getActivityPricing().getWeeklySessions()
+                        : null)
                 .healthDeclarationApproved(registration.getHealthDeclarationApproved())
                 .hasMedicalLimitation(registration.getHasMedicalLimitation())
                 .medicalNotes(registration.getMedicalNotes())

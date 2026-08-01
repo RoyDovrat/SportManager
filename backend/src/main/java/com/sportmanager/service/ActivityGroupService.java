@@ -161,6 +161,7 @@ public class ActivityGroupService {
         ActivityGroup group = getGroupEntity(groupId);
 
         validateCanAssign(registration, group);
+        validateHasCapacity(group);
         registration.setActivityGroup(group);
         return registrationService.toResponse(registrationRepository.save(registration));
     }
@@ -236,13 +237,50 @@ public class ActivityGroupService {
         }
 
         if (activityType == ActivityType.SWIMMING) {
-            if (group.getSwimmingLessonType() == null) {
+            Set<AgeGroup> allowed = group.getAgeGroups();
+            Integer registrationWeeklySessions = registration.getActivityPricing() != null
+                    ? registration.getActivityPricing().getWeeklySessions()
+                    : null;
+            if (group.getSwimmingLessonType() == null
+                    || group.getWaterAdaptationLevel() == null
+                    || group.getWeeklySessions() == null
+                    || allowed == null
+                    || allowed.isEmpty()
+                    || registrationWeeklySessions == null) {
                 return false;
             }
-            return group.getSwimmingLessonType() == registration.getSwimmingLessonType();
+            return group.getSwimmingLessonType() == registration.getSwimmingLessonType()
+                    && group.getWaterAdaptationLevel() == registration.getWaterAdaptationLevel()
+                    && Objects.equals(group.getWeeklySessions(), registrationWeeklySessions)
+                    && allowed.contains(registration.getStudent().getAgeGroup());
         }
 
         return false;
+    }
+
+    private void validateHasCapacity(ActivityGroup group) {
+        Integer maxCapacity = resolveMaxCapacity(group.getActivity().getActivityType(),
+                group.getSwimmingLessonType());
+        if (maxCapacity == null) {
+            return;
+        }
+        int memberCount = registrationRepository.findByActivityGroupId(group.getId()).size();
+        if (memberCount >= maxCapacity) {
+            throw new BusinessRuleException(
+                    "This swimming lesson is full (max " + maxCapacity + " participants)"
+            );
+        }
+    }
+
+    private Integer resolveMaxCapacity(ActivityType activityType, SwimmingLessonType lessonType) {
+        if (activityType != ActivityType.SWIMMING || lessonType == null) {
+            return null;
+        }
+        return switch (lessonType) {
+            case PRIVATE -> 1;
+            case PAIR -> 2;
+            case GROUP -> 5;
+        };
     }
 
     private void validateGroupAttributes(
@@ -279,9 +317,19 @@ public class ActivityGroupService {
                         "Swimming lesson type is required for swimming groups"
                 );
             }
-            if (weeklySessions != null) {
+            if (normalizedAgeGroups.isEmpty()) {
                 throw new BusinessRuleException(
-                        "weeklySessions must not be provided for swimming groups"
+                        "At least one age group is required for swimming groups"
+                );
+            }
+            if (waterAdaptationLevel == null) {
+                throw new BusinessRuleException(
+                        "Water adaptation level is required for swimming groups"
+                );
+            }
+            if (weeklySessions == null || weeklySessions < 1 || weeklySessions > 6) {
+                throw new BusinessRuleException(
+                        "Swimming groups require weeklySessions between 1 and 6"
                 );
             }
             return;
@@ -306,10 +354,10 @@ public class ActivityGroupService {
             group.setWaterAdaptationLevel(null);
             group.setWeeklySessions(weeklySessions);
         } else {
-            group.setAgeGroups(new HashSet<>());
+            group.setAgeGroups(normalizedAgeGroups);
             group.setSwimmingLessonType(swimmingLessonType);
             group.setWaterAdaptationLevel(waterAdaptationLevel);
-            group.setWeeklySessions(null);
+            group.setWeeklySessions(weeklySessions);
         }
     }
 
@@ -355,6 +403,7 @@ public class ActivityGroupService {
 
     private ActivityGroupResponse toResponse(ActivityGroup group) {
         int memberCount = registrationRepository.findByActivityGroupId(group.getId()).size();
+        ActivityType activityType = group.getActivity().getActivityType();
 
         return ActivityGroupResponse.builder()
                 .id(group.getId())
@@ -362,7 +411,7 @@ public class ActivityGroupService {
                 .seasonId(group.getSeason().getId())
                 .seasonName(group.getSeason().getName())
                 .activityId(group.getActivity().getId())
-                .activityType(group.getActivity().getActivityType())
+                .activityType(activityType)
                 .ageGroups(group.getAgeGroups() == null
                         ? Set.of()
                         : Set.copyOf(group.getAgeGroups()))
@@ -371,6 +420,7 @@ public class ActivityGroupService {
                 .weeklySessions(group.getWeeklySessions())
                 .isActive(group.getIsActive())
                 .memberCount(memberCount)
+                .maxCapacity(resolveMaxCapacity(activityType, group.getSwimmingLessonType()))
                 .build();
     }
 }

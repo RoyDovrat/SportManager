@@ -25,4 +25,6 @@ public class ActivityGroupResponse {
     private Integer weeklySessions;
     private Boolean isActive;
     private int memberCount;
+    /** Max seats for swimming lesson type; null for football. */
+    private Integer maxCapacity;
 }
