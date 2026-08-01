@@ -17,8 +17,9 @@ export function AdminLayout() {
         <strong>{t('appName')} — {t('nav.admin')}</strong>
         <nav className="layout__nav">
           <NavLink to="/admin" end>
-            {t('nav.adminHome')}
+            {t('nav.dashboard')}
           </NavLink>
+          <NavLink to="/admin/reports">{t('nav.reports')}</NavLink>
           <NavLink to="/admin/seasons">{t('nav.seasons')}</NavLink>
           <NavLink to="/admin/activities">{t('nav.activities')}</NavLink>
           <NavLink to="/admin/activity-pricing">{t('nav.activityPricing')}</NavLink>

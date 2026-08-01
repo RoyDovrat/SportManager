@@ -9,13 +9,14 @@ import { ActivityPricingPage } from '../pages/admin/ActivityPricingPage'
 import { ClothingOrderDetailPage } from '../pages/admin/ClothingOrderDetailPage'
 import { ClothingOrdersPage } from '../pages/admin/ClothingOrdersPage'
 import { ClothingPricingPage } from '../pages/admin/ClothingPricingPage'
+import { DashboardPage } from '../pages/admin/DashboardPage'
 import { KibbutzExportPage } from '../pages/admin/KibbutzExportPage'
 import { PaymentDetailPage } from '../pages/admin/PaymentDetailPage'
 import { PaymentsPage } from '../pages/admin/PaymentsPage'
 import { RegistrationDetailPage } from '../pages/admin/RegistrationDetailPage'
 import { RegistrationsPage } from '../pages/admin/RegistrationsPage'
+import { ReportsPage } from '../pages/admin/ReportsPage'
 import { SeasonsPage } from '../pages/admin/SeasonsPage'
-import { AdminHomePage } from '../pages/AdminHomePage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PublicHomePage } from '../pages/PublicHomePage'
@@ -38,7 +39,8 @@ export function AppRouter() {
 
         <Route path="/admin" element={<RequireAuth />}>
           <Route element={<AdminLayout />}>
-            <Route index element={<AdminHomePage />} />
+            <Route index element={<DashboardPage />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="seasons" element={<SeasonsPage />} />
             <Route path="activities" element={<ActivitiesPage />} />
             <Route path="activity-pricing" element={<ActivityPricingPage />} />

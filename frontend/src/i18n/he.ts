@@ -8,7 +8,9 @@ export const he = {
     swimming: 'שחייה',
     clothing: 'ביגוד',
     admin: 'ניהול',
-    adminHome: 'ראשי',
+    adminHome: 'לוח בקרה',
+    dashboard: 'לוח בקרה',
+    reports: 'דוחות',
     seasons: 'עונות',
     activities: 'חוגים',
     activityPricing: 'מחירי חוגים',
@@ -82,6 +84,23 @@ export const he = {
     paymentsDesc: 'חיובים חודשיים, אישור תשלום וביטול',
     activityGroupsDesc: 'קבוצות חוג ושיוך תלמידים מאושרים',
     kibbutzExportDesc: 'הורדת קובץ Excel לחיוב חודשי בתקציב קיבוץ',
+    reportsDesc: 'סיכום הרשמות, תשלומים וביגוד לפי עונה',
+  },
+
+  dashboard: {
+    title: 'לוח בקרה',
+    signedIn: 'מחובר/ת כ',
+    intro: 'סקירה מהירה של העונה — הרשמות, חיובים פתוחים והכנסה חודשית.',
+    season: 'עונה',
+    selectSeasonPlaceholder: 'בחרו עונה',
+    statsPlaceholder: 'נתוני הלוח יופיעו בשלב הבא.',
+    quickLinks: 'קישורים מהירים',
+  },
+
+  reports: {
+    title: 'דוחות עונה',
+    intro: 'סיכום הרשמות, תשלומים והזמנות ביגוד לעונה שנבחרה.',
+    placeholder: 'בחירת עונה וטבלאות הדוח יופיעו בשלב הבא.',
   },
 
   kibbutzExport: {
