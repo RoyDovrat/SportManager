@@ -15,6 +15,7 @@ export const he = {
     clothingPricing: 'מחירי ביגוד',
     registrations: 'הרשמות',
     clothingOrders: 'הזמנות ביגוד',
+    payments: 'תשלומים',
     publicSite: 'אתר ציבורי',
     logout: 'התנתקות',
     signedInAs: 'מחובר/ת כ',
@@ -76,6 +77,15 @@ export const he = {
     clothingPricingDesc: 'מחירי חליפה קצרה, ארוכה וקפוצ׳ון לפי עונה',
     registrationsDesc: 'סקירת הרשמות, אישור וביטול',
     clothingOrdersDesc: 'הזמנות ביגוד לכדורגל ודילוג אם יש כבר ציוד',
+    paymentsDesc: 'חיובים חודשיים, אישור תשלום וביטול',
+  },
+
+  payments: {
+    title: 'תשלומים',
+    detailTitle: 'פרטי תשלום',
+    placeholderList: 'רשימת התשלומים תופיע כאן בשלב הבא.',
+    placeholderDetail: 'פרטי תשלום {id} יופיעו כאן בשלב הבא.',
+    backToList: 'חזרה לרשימת התשלומים',
   },
 
   clothingOrders: {

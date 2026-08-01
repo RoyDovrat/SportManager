@@ -33,6 +33,11 @@ const setupLinks = [
     labelKey: 'nav.clothingOrders',
     descriptionKey: 'adminHome.clothingOrdersDesc',
   },
+  {
+    to: '/admin/payments',
+    labelKey: 'nav.payments',
+    descriptionKey: 'adminHome.paymentsDesc',
+  },
 ] as const
 
 export function AdminHomePage() {

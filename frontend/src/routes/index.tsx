@@ -7,6 +7,8 @@ import { ActivityPricingPage } from '../pages/admin/ActivityPricingPage'
 import { ClothingOrderDetailPage } from '../pages/admin/ClothingOrderDetailPage'
 import { ClothingOrdersPage } from '../pages/admin/ClothingOrdersPage'
 import { ClothingPricingPage } from '../pages/admin/ClothingPricingPage'
+import { PaymentDetailPage } from '../pages/admin/PaymentDetailPage'
+import { PaymentsPage } from '../pages/admin/PaymentsPage'
 import { RegistrationDetailPage } from '../pages/admin/RegistrationDetailPage'
 import { RegistrationsPage } from '../pages/admin/RegistrationsPage'
 import { SeasonsPage } from '../pages/admin/SeasonsPage'
@@ -42,6 +44,8 @@ export function AppRouter() {
             <Route path="registrations/:id" element={<RegistrationDetailPage />} />
             <Route path="clothing-orders" element={<ClothingOrdersPage />} />
             <Route path="clothing-orders/:id" element={<ClothingOrderDetailPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
+            <Route path="payments/:id" element={<PaymentDetailPage />} />
           </Route>
         </Route>
 

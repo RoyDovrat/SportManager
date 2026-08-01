@@ -1,6 +1,6 @@
 # Frontend Phase F6 — Admin payments (option B)
 
-> **Status:** In progress — Stage 1 done; waiting for approve before Stage 2.  
+> **Status:** In progress — Stages 1–2 done; waiting for approve before Stage 3.  
 > **Goal:** Authenticated admin can list/filter payments, open detail, confirm or cancel, bulk-generate monthly charges, and create clothing payments from a clothing order.  
 > **UI language:** Hebrew (RTL) via `t()` + enum labels.  
 > **Out of scope:** Single monthly create (`POST /monthly`), manual one-time (`POST /manual`), Kibbutz Excel (F8), dashboard (F9), public parent payment UI.  
