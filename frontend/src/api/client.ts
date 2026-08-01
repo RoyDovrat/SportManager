@@ -20,10 +20,10 @@ function isAuthLoginPath(path: string): boolean {
   return path === '/api/auth/login' || path.endsWith('/api/auth/login')
 }
 
-export async function apiRequest<T>(
+async function fetchApiResponse(
   path: string,
   options: ApiRequestOptions = {},
-): Promise<T> {
+): Promise<Response> {
   const url = `${apiBaseUrl}${path.startsWith('/') ? path : `/${path}`}`
   const headers = new Headers(options.headers)
 
@@ -64,6 +64,45 @@ export async function apiRequest<T>(
     )
   }
 
+  return response
+}
+
+/** Parse filename from Content-Disposition (RFC 5987 / quoted form). */
+export function parseContentDispositionFileName(
+  header: string | null,
+): string | null {
+  if (!header) {
+    return null
+  }
+
+  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim())
+    } catch {
+      return utf8Match[1].trim()
+    }
+  }
+
+  const quotedMatch = /filename="([^"]+)"/i.exec(header)
+  if (quotedMatch?.[1]) {
+    return quotedMatch[1]
+  }
+
+  const bareMatch = /filename=([^;]+)/i.exec(header)
+  if (bareMatch?.[1]) {
+    return bareMatch[1].trim().replace(/^["']|["']$/g, '')
+  }
+
+  return null
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<T> {
+  const response = await fetchApiResponse(path, options)
+
   if (response.status === 204) {
     return undefined as T
   }
@@ -74,4 +113,22 @@ export async function apiRequest<T>(
   }
 
   return (await response.json()) as T
+}
+
+export type ApiDownloadResult = {
+  blob: Blob
+  fileName: string | null
+}
+
+/** Authenticated binary download (e.g. Excel). Errors still use JSON ErrorResponse. */
+export async function apiDownload(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<ApiDownloadResult> {
+  const response = await fetchApiResponse(path, options)
+  const blob = await response.blob()
+  const fileName = parseContentDispositionFileName(
+    response.headers.get('Content-Disposition'),
+  )
+  return { blob, fileName }
 }
