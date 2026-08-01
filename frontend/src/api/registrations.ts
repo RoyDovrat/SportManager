@@ -57,6 +57,7 @@ export type RegistrationResponse = {
   activityGroupName: string | null
   swimmingLessonType: SwimmingLessonType | null
   waterAdaptationLevel: WaterAdaptationLevel | null
+  weeklySessions: number | null
   healthDeclarationApproved: boolean
   hasMedicalLimitation: boolean
   medicalNotes: string | null

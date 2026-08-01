@@ -26,12 +26,15 @@ import {
   type WaterAdaptationLevel,
 } from '../../types/enums'
 
+const FOOTBALL_WEEKLY_OPTIONS = [1, 2] as const
+const SWIMMING_WEEKLY_OPTIONS = [1, 2, 3, 4, 5, 6] as const
+
 type CreateForm = {
   name: string
   seasonId: string
   activityType: ActivityType
   ageGroups: AgeGroup[]
-  weeklySessions: '1' | '2'
+  weeklySessions: string
   swimmingLessonType: string
   waterAdaptationLevel: string
   isActive: boolean
@@ -154,7 +157,7 @@ export function ActivityGroupsPage() {
 
     try {
       const isFootball = createForm.activityType === 'FOOTBALL'
-      if (isFootball && createForm.ageGroups.length === 0) {
+      if (createForm.ageGroups.length === 0) {
         setError(t('activityGroups.ageGroupsRequired'))
         setSaving(false)
         return
@@ -164,21 +167,24 @@ export function ActivityGroupsPage() {
         setSaving(false)
         return
       }
+      if (!isFootball && createForm.waterAdaptationLevel === '') {
+        setError(t('activityGroups.waterLevelRequired'))
+        setSaving(false)
+        return
+      }
 
       await createActivityGroup({
         name: createForm.name.trim(),
         seasonId: Number(createForm.seasonId),
         activityType: createForm.activityType,
-        ageGroups: isFootball ? createForm.ageGroups : [],
-        weeklySessions: isFootball ? Number(createForm.weeklySessions) : null,
+        ageGroups: createForm.ageGroups,
+        weeklySessions: Number(createForm.weeklySessions),
         swimmingLessonType: isFootball
           ? null
           : (createForm.swimmingLessonType as SwimmingLessonType),
         waterAdaptationLevel: isFootball
           ? null
-          : createForm.waterAdaptationLevel === ''
-            ? null
-            : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
+          : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
         isActive: createForm.isActive,
       })
       setMessage(t('activityGroups.created'))
@@ -291,13 +297,16 @@ export function ActivityGroupsPage() {
                 onChange={(event) =>
                   setCreateForm({
                     ...createForm,
-                    weeklySessions: event.target.value as '1' | '2',
+                    weeklySessions: event.target.value,
                   })
                 }
                 disabled={saving}
               >
-                <option value="1">1</option>
-                <option value="2">2</option>
+                {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
               </select>
             </label>
           </>
@@ -324,6 +333,28 @@ export function ActivityGroupsPage() {
                 ))}
               </select>
             </label>
+            <p className="clothing-order-form__hint">
+              {t('activityGroups.lessonCapacityHint')}
+            </p>
+
+            <fieldset className="admin-form__checkbox-group">
+              <legend>{t('activityGroups.ageGroups')}</legend>
+              <p className="clothing-order-form__hint">
+                {t('activityGroups.ageGroupsHintSwimming')}
+              </p>
+              {AGE_GROUPS.map((value) => (
+                <label key={value} className="admin-form__checkbox">
+                  <input
+                    type="checkbox"
+                    checked={createForm.ageGroups.includes(value)}
+                    onChange={() => toggleAgeGroup(value)}
+                    disabled={saving}
+                  />
+                  <span>{ageGroupLabel(value)}</span>
+                </label>
+              ))}
+            </fieldset>
+
             <label className="admin-form__field">
               <span>{t('activityGroups.waterLevel')}</span>
               <select
@@ -334,12 +365,34 @@ export function ActivityGroupsPage() {
                     waterAdaptationLevel: event.target.value,
                   })
                 }
+                required
                 disabled={saving}
               >
-                <option value="">{t('common.optional')}</option>
+                <option value="">{t('activityGroups.selectWaterLevel')}</option>
                 {WATER_ADAPTATION_LEVELS.map((value) => (
                   <option key={value} value={value}>
                     {waterAdaptationLevelLabel(value)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="admin-form__field">
+              <span>{t('activityGroups.weeklySessionsSwimming')}</span>
+              <select
+                value={createForm.weeklySessions}
+                onChange={(event) =>
+                  setCreateForm({
+                    ...createForm,
+                    weeklySessions: event.target.value,
+                  })
+                }
+                required
+                disabled={saving}
+              >
+                {SWIMMING_WEEKLY_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
                   </option>
                 ))}
               </select>
@@ -412,6 +465,9 @@ export function ActivityGroupsPage() {
 
       <div className="admin-table-wrap">
         <h2>{t('activityGroups.listTitle')}</h2>
+        <p className="clothing-order-form__hint">
+          {t('activityGroups.listHint')}
+        </p>
         {!seasonId ? (
           <p>{t('activityGroups.selectSeasonFirst')}</p>
         ) : loading ? (
@@ -438,7 +494,11 @@ export function ActivityGroupsPage() {
                   <td>{row.name}</td>
                   <td>{activityTypeLabel(row.activityType)}</td>
                   <td>{formatAttributes(row)}</td>
-                  <td>{row.memberCount}</td>
+                  <td>
+                    {row.maxCapacity != null
+                      ? `${row.memberCount}/${row.maxCapacity}`
+                      : row.memberCount}
+                  </td>
                   <td>
                     {row.isActive ? t('common.active') : t('common.inactive')}
                   </td>

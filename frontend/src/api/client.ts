@@ -43,12 +43,20 @@ export async function apiRequest<T>(
   })
 
   if (!response.ok) {
-    if (response.status === 401 && !isAuthLoginPath(path)) {
+    const errorBody = await parseErrorBody(response)
+
+    // Only clear the session for real auth failures. Spring's /error page used to
+    // return 401 when unhandled exceptions occurred, which logged admins out on create.
+    const isAuthFailure =
+      response.status === 401 &&
+      !isAuthLoginPath(path) &&
+      errorBody?.path !== '/error'
+
+    if (isAuthFailure) {
       clearSession()
       notifyUnauthorized()
     }
 
-    const errorBody = await parseErrorBody(response)
     throw new ApiError(
       errorBody?.message ?? `Request failed with status ${response.status}`,
       response.status,

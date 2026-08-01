@@ -346,6 +346,19 @@ body {
   padding: 0 0.35rem;
 }
 
+.admin-inline-assign {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.admin-inline-assign select {
+  min-width: 10rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+}
+
 .admin-form__actions {
   display: flex;
   flex-wrap: wrap;

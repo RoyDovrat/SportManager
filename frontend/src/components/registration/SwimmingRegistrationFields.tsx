@@ -69,13 +69,17 @@ export function SwimmingRegistrationFields({
 
       <label className="admin-form__field">
         <span>{t('registration.weeklySessions')}</span>
-        <input
-          type="number"
-          min={1}
+        <select
           value={form.weeklySessions}
           onChange={(event) => update('weeklySessions', event.target.value)}
           required
-        />
+        >
+          {[1, 2, 3, 4, 5, 6].map((value) => (
+            <option key={value} value={String(value)}>
+              {value}
+            </option>
+          ))}
+        </select>
       </label>
     </fieldset>
   )

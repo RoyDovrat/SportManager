@@ -266,6 +266,10 @@ export function RegistrationDetailPage() {
                       : '—'
                   }
                 />
+                <DetailRow
+                  label={t('registration.weeklySessions')}
+                  value={registration.weeklySessions ?? '—'}
+                />
               </DetailSection>
             )}
 

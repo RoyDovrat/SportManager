@@ -20,6 +20,8 @@ export type ActivityGroupResponse = {
   weeklySessions: number | null
   isActive: boolean
   memberCount: number
+  /** Swimming only: PRIVATE=1, PAIR=2, GROUP=5 */
+  maxCapacity: number | null
 }
 
 export type ActivityGroupRequest = {
