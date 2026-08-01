@@ -5,6 +5,8 @@ import { PublicLayout } from '../layouts/PublicLayout'
 import { ActivitiesPage } from '../pages/admin/ActivitiesPage'
 import { ActivityPricingPage } from '../pages/admin/ActivityPricingPage'
 import { ClothingPricingPage } from '../pages/admin/ClothingPricingPage'
+import { RegistrationDetailPage } from '../pages/admin/RegistrationDetailPage'
+import { RegistrationsPage } from '../pages/admin/RegistrationsPage'
 import { SeasonsPage } from '../pages/admin/SeasonsPage'
 import { AdminHomePage } from '../pages/AdminHomePage'
 import { LoginPage } from '../pages/LoginPage'
@@ -32,6 +34,8 @@ export function AppRouter() {
             <Route path="activities" element={<ActivitiesPage />} />
             <Route path="activity-pricing" element={<ActivityPricingPage />} />
             <Route path="clothing-pricing" element={<ClothingPricingPage />} />
+            <Route path="registrations" element={<RegistrationsPage />} />
+            <Route path="registrations/:id" element={<RegistrationDetailPage />} />
           </Route>
         </Route>
 

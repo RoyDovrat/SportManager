@@ -23,6 +23,11 @@ const setupLinks = [
     labelKey: 'nav.clothingPricing',
     descriptionKey: 'adminHome.clothingPricingDesc',
   },
+  {
+    to: '/admin/registrations',
+    labelKey: 'nav.registrations',
+    descriptionKey: 'adminHome.registrationsDesc',
+  },
 ] as const
 
 export function AdminHomePage() {

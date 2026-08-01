@@ -12,6 +12,7 @@ export const he = {
     activities: 'חוגים',
     activityPricing: 'מחירי חוגים',
     clothingPricing: 'מחירי ביגוד',
+    registrations: 'הרשמות',
     publicSite: 'אתר ציבורי',
     logout: 'התנתקות',
     signedInAs: 'מחובר/ת כ',
@@ -51,6 +52,15 @@ export const he = {
     activitiesDesc: 'ניהול חוגי כדורגל ושחייה',
     activityPricingDesc: 'מחיר חודשי לפי עונה, קבוצת גיל או סוג שיעור',
     clothingPricingDesc: 'מחירי חליפה קצרה, ארוכה וקפוצ׳ון לפי עונה',
+    registrationsDesc: 'סקירת הרשמות, אישור וביטול',
+  },
+
+  registrations: {
+    title: 'הרשמות',
+    detailTitle: 'פרטי הרשמה',
+    placeholderList: 'רשימת ההרשמות תופיע כאן בשלב הבא.',
+    placeholderDetail: 'פרטי הרשמה {id} יופיעו כאן בשלב הבא.',
+    backToList: 'חזרה לרשימת ההרשמות',
   },
 
   common: {
