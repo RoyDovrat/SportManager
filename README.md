@@ -73,6 +73,8 @@ The API allows the origins in `app.cors.allowed-origins` (credentials + standard
 **Public (no JWT):**
 
 - `GET /api/health`
+- `GET /api/seasons/active`
+- `GET /api/activities/active`
 - `POST /api/auth/login`
 - `POST /api/registrations`
 
@@ -102,6 +104,8 @@ Creates return `201`. Unassign from a group (`DELETE .../activity-groups/registr
 
 React 19 + Vite + TypeScript. Lives in `frontend/`.
 
+UI language is **Hebrew (RTL)**. Copy lives in `frontend/src/i18n/he.ts` and is accessed with `t('…')`. API enum values stay English; displayed labels are Hebrew via `i18n/labels.ts`.
+
 ### Prerequisites
 
 - Node.js 20+ (npm)
@@ -127,18 +131,26 @@ npm run dev
 
 App: `http://localhost:5173`
 
-- Public shell: `/` (includes API health check)
-- Admin login: `/admin/login`
-- Admin home (JWT required): `/admin`
-- Admin setup:
-  - Seasons: `/admin/seasons`
-  - Activities: `/admin/activities`
-  - Activity pricing: `/admin/activity-pricing`
-  - Clothing pricing: `/admin/clothing-pricing`
+**Public (no login):**
+
+- Home: `/`
+- Football registration: `/register/football`
+- Swimming registration: `/register/swimming`
+
+Registrations are created as **PENDING** until an admin approves them.
+
+**Admin (JWT):**
+
+- Login: `/admin/login`
+- Home: `/admin`
+- Seasons: `/admin/seasons`
+- Activities: `/admin/activities`
+- Activity pricing: `/admin/activity-pricing`
+- Clothing pricing: `/admin/clothing-pricing`
 
 Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
 
-Typical setup order: create/activate a **season** → ensure **activities** exist → add **activity pricing** and **clothing pricing** for that season.
+Typical setup order before public registration: create/activate a **season** → ensure **activities** exist → add **activity pricing** (and clothing pricing if needed).
 
 ### CORS
 

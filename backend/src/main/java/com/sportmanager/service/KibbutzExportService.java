@@ -45,7 +45,7 @@ public class KibbutzExportService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            Sheet sheet = workbook.createSheet("Kibbutz Billing");
+            Sheet sheet = workbook.createSheet("חיוב קיבוץ");
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle totalStyle = createTotalStyle(workbook);
 
@@ -71,7 +71,7 @@ public class KibbutzExportService {
 
             Row totalRow = sheet.createRow(rowIndex);
             Cell totalLabelCell = totalRow.createCell(0);
-            totalLabelCell.setCellValue("Monthly Total");
+            totalLabelCell.setCellValue("סה״כ חודשי");
             totalLabelCell.setCellStyle(totalStyle);
 
             Cell totalValueCell = totalRow.createCell(3);
@@ -85,32 +85,32 @@ public class KibbutzExportService {
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException ex) {
-            throw new BusinessRuleException("Failed to generate Kibbutz Excel export");
+            throw new BusinessRuleException("יצירת קובץ האקסל לחיוב הקיבוץ נכשלה");
         }
     }
 
     public String buildFileName(int year, int month) {
-        return "kibbutz-billing-%04d-%02d.xlsx".formatted(year, month);
+        return "חיוב-קיבוץ-%04d-%02d.xlsx".formatted(year, month);
     }
 
     private void validateYearMonth(int year, int month) {
         if (year < 2000 || year > 2100) {
-            throw new BusinessRuleException("Year must be between 2000 and 2100");
+            throw new BusinessRuleException("השנה חייבת להיות בין 2000 ל־2100");
         }
         try {
             YearMonth.of(year, month);
         } catch (Exception ex) {
-            throw new BusinessRuleException("Month must be between 1 and 12");
+            throw new BusinessRuleException("החודש חייב להיות בין 1 ל־12");
         }
     }
 
     private void createHeaderRow(Sheet sheet, CellStyle headerStyle) {
         Row header = sheet.createRow(0);
         String[] titles = {
-                "Parent Name",
-                "Student Name",
-                "Budget Number",
-                "Charge Amount"
+                "שם הורה",
+                "שם תלמיד/ה",
+                "מספר תקציב",
+                "סכום לחיוב"
         };
 
         for (int i = 0; i < titles.length; i++) {

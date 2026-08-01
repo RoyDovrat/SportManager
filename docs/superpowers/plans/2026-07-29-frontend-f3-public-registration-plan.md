@@ -1,9 +1,11 @@
 # Frontend Phase F3 — Public registration
 
+> **Status:** F3 implementation complete (Steps 0–6).  
 > **Goal:** Parents can submit football/swimming registrations from the public site (`POST /api/registrations`, no JWT), with clear success/error UX aligned to backend validation.  
+> **UI language:** Hebrew (RTL) via `frontend/src/i18n`.  
 > **Out of scope:** Admin approve/cancel queue (F4), clothing orders, payments, groups, dashboard.  
 > **Depends on:** F0 (API client, public layout) + F2 setup data existing in DB (active season, activities, pricing).  
-> **Branch recommendation:** new `feature/public-registration` after merging/finishing `feature/admin-setup`.
+> **Branch:** `feature/public-registration`
 
 ---
 
@@ -162,10 +164,12 @@ Stacking on `admin-setup` is OK only if you want one long-lived frontend PR; pre
 
 ## Acceptance checklist (end of F3)
 
-- [ ] Public user can register for football without JWT  
-- [ ] Public user can register for swimming without JWT  
-- [ ] Active season/activity loaded without admin login  
-- [ ] Health declaration + kibbutz budget rules enforced (client UX + backend)  
-- [ ] Success shows registration created as PENDING  
-- [ ] Errors use `ApiError` / `ErrorResponse`  
-- [ ] Admin-only APIs remain protected  
+- [x] Step 0: `GET /api/seasons/active` and `GET /api/activities/active` are public  
+- [x] Public user can register for football without JWT  
+- [x] Public user can register for swimming without JWT  
+- [x] Active season/activity loaded without admin login  
+- [x] Health declaration + kibbutz budget rules enforced (client UX + backend)  
+- [x] Success shows registration created as PENDING  
+- [x] Errors use `ApiError` / `ErrorResponse`  
+- [x] Admin-only APIs remain protected  
+- [x] Hebrew UI + README public registration URLs
