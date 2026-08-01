@@ -30,3 +30,19 @@ export type WaterAdaptationLevel = (typeof WATER_ADAPTATION_LEVELS)[number]
 
 export const REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'CANCELLED'] as const
 export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number]
+
+export const CLOTHING_SIZES = [
+  'YOUTH_4',
+  'YOUTH_6',
+  'YOUTH_8',
+  'YOUTH_10',
+  'YOUTH_12',
+  'YOUTH_14',
+  'XS',
+  'S',
+  'M',
+  'L',
+  'XL',
+  'XXL',
+] as const
+export type ClothingSize = (typeof CLOTHING_SIZES)[number]

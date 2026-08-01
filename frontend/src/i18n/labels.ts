@@ -2,6 +2,7 @@ import { t } from './t'
 import type {
   ActivityType,
   AgeGroup,
+  ClothingSize,
   Gender,
   RegistrationStatus,
   SwimmingLessonType,
@@ -30,4 +31,8 @@ export function waterAdaptationLevelLabel(value: WaterAdaptationLevel): string {
 
 export function registrationStatusLabel(value: RegistrationStatus): string {
   return t(`enums.registrationStatus.${value}`)
+}
+
+export function clothingSizeLabel(value: ClothingSize): string {
+  return t(`enums.clothingSize.${value}`)
 }

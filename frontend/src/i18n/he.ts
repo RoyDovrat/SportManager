@@ -273,6 +273,20 @@ export const he = {
       APPROVED: 'מאושר',
       CANCELLED: 'מבוטל',
     },
+    clothingSize: {
+      YOUTH_4: 'נוער 4',
+      YOUTH_6: 'נוער 6',
+      YOUTH_8: 'נוער 8',
+      YOUTH_10: 'נוער 10',
+      YOUTH_12: 'נוער 12',
+      YOUTH_14: 'נוער 14',
+      XS: 'XS',
+      S: 'S',
+      M: 'M',
+      L: 'L',
+      XL: 'XL',
+      XXL: 'XXL',
+    },
   },
 } as const
 
