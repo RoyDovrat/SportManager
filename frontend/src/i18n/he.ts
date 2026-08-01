@@ -292,6 +292,9 @@ export const he = {
     registrationId: 'מספר הרשמה',
     status: 'סטטוס',
     registerAnother: 'הרשמה נוספת',
+    clothingAfterApprove:
+      'לאחר אישור המנהל/ת ניתן להזמין ביגוד בדף הזמנת הביגוד.',
+    clothingLink: 'הזמנת ביגוד (לאחר אישור)',
   },
 
   notFound: {

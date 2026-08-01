@@ -60,8 +60,11 @@ export function FootballRegistrationPage() {
           {t('registration.status')}:{' '}
           <strong>{registrationStatusLabel(success.status)}</strong>
         </p>
+        <p>{t('registration.clothingAfterApprove')}</p>
         <p>
           <Link to="/">{t('registration.cancel')}</Link>
+          {' · '}
+          <Link to="/register/clothing">{t('registration.clothingLink')}</Link>
           {' · '}
           <button type="button" onClick={() => setSuccess(null)}>
             {t('registration.registerAnother')}
