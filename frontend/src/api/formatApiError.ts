@@ -1,3 +1,4 @@
+import { t } from '../i18n/t'
 import { ApiError } from './types'
 
 export function formatApiError(error: unknown): string {
@@ -16,5 +17,5 @@ export function formatApiError(error: unknown): string {
     return error.message
   }
 
-  return 'Something went wrong'
+  return t('common.errorGeneric')
 }

@@ -8,6 +8,12 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
+  activityTypeLabel,
+  ageGroupLabel,
+  swimmingLessonTypeLabel,
+} from '../../i18n/labels'
+import { t } from '../../i18n/t'
+import {
   ACTIVITY_TYPES,
   AGE_GROUPS,
   SWIMMING_LESSON_TYPES,
@@ -116,7 +122,7 @@ export function ActivityPricingPage() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (typeof selectedSeasonId !== 'number') {
-      setError('Select a season first.')
+      setError(t('activityPricing.selectSeasonFirst'))
       return
     }
 
@@ -140,7 +146,7 @@ export function ActivityPricingPage() {
         weeklySessions: createForm.activityType === 'SWIMMING' ? weeklySessions : null,
         monthlyPrice,
       })
-      setMessage('Activity pricing created.')
+      setMessage(t('activityPricing.created'))
       setCreateForm(emptyCreateForm)
       await loadPricing(selectedSeasonId)
     } catch (err) {
@@ -173,7 +179,7 @@ export function ActivityPricingPage() {
           ? { weeklySessions }
           : {}),
       })
-      setMessage('Activity pricing updated.')
+      setMessage(t('activityPricing.updated'))
       cancelEdit()
       await loadPricing(selectedSeasonId)
     } catch (err) {
@@ -188,14 +194,14 @@ export function ActivityPricingPage() {
 
   return (
     <section className="admin-page">
-      <h1>Activity pricing</h1>
-      <p>Prices are scoped to a season. Football uses age group; swimming uses lesson type and weekly sessions.</p>
+      <h1>{t('activityPricing.title')}</h1>
+      <p>{t('activityPricing.intro')}</p>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
-        <span>Season</span>
+        <span>{t('activityPricing.season')}</span>
         <select
           value={selectedSeasonId === '' ? '' : String(selectedSeasonId)}
           onChange={(event) => {
@@ -206,12 +212,12 @@ export function ActivityPricingPage() {
           disabled={loadingSeasons || seasons.length === 0}
         >
           {seasons.length === 0 ? (
-            <option value="">No seasons available</option>
+            <option value="">{t('activityPricing.noSeasons')}</option>
           ) : (
             seasons.map((season) => (
               <option key={season.id} value={season.id}>
                 {season.name}
-                {season.isActive ? ' (active)' : ''}
+                {season.isActive ? ` ${t('activityPricing.activeSuffix')}` : ''}
               </option>
             ))
           )}
@@ -219,10 +225,10 @@ export function ActivityPricingPage() {
       </label>
 
       <form className="admin-form" onSubmit={handleCreate}>
-        <h2>Create pricing</h2>
+        <h2>{t('activityPricing.createTitle')}</h2>
 
         <label className="admin-form__field">
-          <span>Activity type</span>
+          <span>{t('activities.activityType')}</span>
           <select
             value={createForm.activityType}
             onChange={(event) =>
@@ -234,7 +240,7 @@ export function ActivityPricingPage() {
           >
             {ACTIVITY_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type}
+                {activityTypeLabel(type)}
               </option>
             ))}
           </select>
@@ -242,7 +248,7 @@ export function ActivityPricingPage() {
 
         {isFootball ? (
           <label className="admin-form__field">
-            <span>Age group</span>
+            <span>{t('activityPricing.ageGroup')}</span>
             <select
               value={createForm.ageGroup}
               onChange={(event) =>
@@ -254,7 +260,7 @@ export function ActivityPricingPage() {
             >
               {AGE_GROUPS.map((group) => (
                 <option key={group} value={group}>
-                  {group}
+                  {ageGroupLabel(group)}
                 </option>
               ))}
             </select>
@@ -262,7 +268,7 @@ export function ActivityPricingPage() {
         ) : (
           <>
             <label className="admin-form__field">
-              <span>Swimming lesson type</span>
+              <span>{t('activityPricing.lessonType')}</span>
               <select
                 value={createForm.swimmingLessonType}
                 onChange={(event) =>
@@ -274,13 +280,13 @@ export function ActivityPricingPage() {
               >
                 {SWIMMING_LESSON_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {swimmingLessonTypeLabel(type)}
                   </option>
                 ))}
               </select>
             </label>
             <label className="admin-form__field">
-              <span>Weekly sessions</span>
+              <span>{t('activityPricing.weeklySessions')}</span>
               <input
                 type="number"
                 min={1}
@@ -295,7 +301,7 @@ export function ActivityPricingPage() {
         )}
 
         <label className="admin-form__field">
-          <span>Monthly price</span>
+          <span>{t('activityPricing.monthlyPrice')}</span>
           <input
             type="number"
             min={0.01}
@@ -310,23 +316,25 @@ export function ActivityPricingPage() {
 
         <div className="admin-form__actions">
           <button type="submit" disabled={saving || typeof selectedSeasonId !== 'number'}>
-            {saving && editingId === null ? 'Saving…' : 'Create'}
+            {saving && editingId === null ? t('common.saving') : t('common.create')}
           </button>
         </div>
       </form>
 
       {editingRow && (
         <form className="admin-form" onSubmit={handleUpdate}>
-          <h2>Edit pricing #{editingRow.id}</h2>
+          <h2>{t('activityPricing.editTitle')}</h2>
           <p>
-            {editingRow.activityType}
-            {editingRow.ageGroup ? ` · ${editingRow.ageGroup}` : ''}
-            {editingRow.swimmingLessonType ? ` · ${editingRow.swimmingLessonType}` : ''}
+            {activityTypeLabel(editingRow.activityType)}
+            {editingRow.ageGroup ? ` · ${ageGroupLabel(editingRow.ageGroup)}` : ''}
+            {editingRow.swimmingLessonType
+              ? ` · ${swimmingLessonTypeLabel(editingRow.swimmingLessonType)}`
+              : ''}
           </p>
 
           {editingRow.activityType === 'SWIMMING' && (
             <label className="admin-form__field">
-              <span>Weekly sessions</span>
+              <span>{t('activityPricing.weeklySessions')}</span>
               <input
                 type="number"
                 min={1}
@@ -340,7 +348,7 @@ export function ActivityPricingPage() {
           )}
 
           <label className="admin-form__field">
-            <span>Monthly price</span>
+            <span>{t('activityPricing.monthlyPrice')}</span>
             <input
               type="number"
               min={0.01}
@@ -355,48 +363,52 @@ export function ActivityPricingPage() {
 
           <div className="admin-form__actions">
             <button type="submit" disabled={saving}>
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
             <button type="button" onClick={cancelEdit} disabled={saving}>
-              Cancel edit
+              {t('common.cancelEdit')}
             </button>
           </div>
         </form>
       )}
 
       <div className="admin-table-wrap">
-        <h2>Pricing for selected season</h2>
+        <h2>{t('activityPricing.forSeason')}</h2>
         {loadingRows ? (
-          <p>Loading pricing…</p>
+          <p>{t('activityPricing.loading')}</p>
         ) : typeof selectedSeasonId !== 'number' ? (
-          <p>Select a season to view pricing.</p>
+          <p>{t('activityPricing.selectSeason')}</p>
         ) : rows.length === 0 ? (
-          <p>No activity pricing for this season yet.</p>
+          <p>{t('activityPricing.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Activity</th>
-                <th>Age group</th>
-                <th>Lesson type</th>
-                <th>Weekly sessions</th>
-                <th>Monthly price</th>
-                <th>Actions</th>
+                <th>{t('common.id')}</th>
+                <th>{t('activities.activityType')}</th>
+                <th>{t('activityPricing.ageGroup')}</th>
+                <th>{t('activityPricing.lessonType')}</th>
+                <th>{t('activityPricing.weeklySessions')}</th>
+                <th>{t('activityPricing.monthlyPrice')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id}>
                   <td>{row.id}</td>
-                  <td>{row.activityType}</td>
-                  <td>{row.ageGroup ?? '—'}</td>
-                  <td>{row.swimmingLessonType ?? '—'}</td>
+                  <td>{activityTypeLabel(row.activityType)}</td>
+                  <td>{row.ageGroup ? ageGroupLabel(row.ageGroup) : '—'}</td>
+                  <td>
+                    {row.swimmingLessonType
+                      ? swimmingLessonTypeLabel(row.swimmingLessonType)
+                      : '—'}
+                  </td>
                   <td>{row.weeklySessions ?? '—'}</td>
                   <td>{row.monthlyPrice}</td>
                   <td className="admin-table__actions">
                     <button type="button" onClick={() => startEdit(row)}>
-                      Edit
+                      {t('common.edit')}
                     </button>
                   </td>
                 </tr>

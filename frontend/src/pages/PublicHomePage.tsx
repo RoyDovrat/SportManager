@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../api'
 import { getHealth } from '../api/health'
+import { t } from '../i18n/t'
 
 type HealthCheckState =
   | { status: 'idle' }
@@ -24,7 +25,7 @@ export function PublicHomePage() {
           ? error.message
           : error instanceof Error
             ? error.message
-            : 'Unknown error calling the API'
+            : t('common.errorGeneric')
 
       setCheck({ status: 'error', message })
     }
@@ -32,40 +33,40 @@ export function PublicHomePage() {
 
   return (
     <section className="admin-page">
-      <h1>SportManager</h1>
-      <p>Register a student for the active season.</p>
+      <h1>{t('publicHome.title')}</h1>
+      <p>{t('publicHome.subtitle')}</p>
 
       <ul className="admin-home__cards">
         <li>
           <Link to="/register/football" className="admin-home__card">
-            <strong>Football registration</strong>
-            <span>Sign up for football activities.</span>
+            <strong>{t('publicHome.footballTitle')}</strong>
+            <span>{t('publicHome.footballDesc')}</span>
           </Link>
         </li>
         <li>
           <Link to="/register/swimming" className="admin-home__card">
-            <strong>Swimming registration</strong>
-            <span>Sign up for swimming lessons.</span>
+            <strong>{t('publicHome.swimmingTitle')}</strong>
+            <span>{t('publicHome.swimmingDesc')}</span>
           </Link>
         </li>
       </ul>
 
       <div className="health-check">
-        <h2>API connection check</h2>
-        <p>Calls the public backend endpoint GET /api/health.</p>
+        <h2>{t('publicHome.healthTitle')}</h2>
+        <p>{t('publicHome.healthHint')}</p>
         <button type="button" onClick={handleCheckHealth} disabled={check.status === 'loading'}>
-          {check.status === 'loading' ? 'Checking…' : 'Check API health'}
+          {check.status === 'loading' ? t('publicHome.healthChecking') : t('publicHome.healthButton')}
         </button>
 
         {check.status === 'ok' && (
           <p className="health-check__ok">
-            Backend responded: <code>{check.value}</code>
+            {t('publicHome.healthOk')}: <code>{check.value}</code>
           </p>
         )}
 
         {check.status === 'error' && (
           <p className="health-check__error">
-            Request failed: {check.message}
+            {t('publicHome.healthFail')}: {check.message}
           </p>
         )}
       </div>

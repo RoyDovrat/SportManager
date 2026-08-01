@@ -9,6 +9,7 @@ import {
 } from '../../api/clothingPricing'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { t } from '../../i18n/t'
 
 type PriceForm = {
   shortKitPrice: string
@@ -101,7 +102,7 @@ export function ClothingPricingPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (typeof selectedSeasonId !== 'number') {
-      setError('Select a season first.')
+      setError(t('clothingPricing.selectSeasonFirst'))
       return
     }
 
@@ -118,13 +119,13 @@ export function ClothingPricingPage() {
     try {
       if (current) {
         await updateClothingPricing(current.id, payload)
-        setMessage('Clothing pricing updated.')
+        setMessage(t('clothingPricing.updated'))
       } else {
         await createClothingPricing({
           seasonId: selectedSeasonId,
           ...payload,
         })
-        setMessage('Clothing pricing created.')
+        setMessage(t('clothingPricing.created'))
       }
 
       const pricingData = await listClothingPricing()
@@ -139,14 +140,14 @@ export function ClothingPricingPage() {
 
   return (
     <section className="admin-page">
-      <h1>Clothing pricing</h1>
-      <p>One clothing price set per season (short kit, long kit, hoodie).</p>
+      <h1>{t('clothingPricing.title')}</h1>
+      <p>{t('clothingPricing.intro')}</p>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
-        <span>Season</span>
+        <span>{t('clothingPricing.season')}</span>
         <select
           value={selectedSeasonId === '' ? '' : String(selectedSeasonId)}
           onChange={(event) => {
@@ -156,12 +157,12 @@ export function ClothingPricingPage() {
           disabled={loadingSeasons || seasons.length === 0}
         >
           {seasons.length === 0 ? (
-            <option value="">No seasons available</option>
+            <option value="">{t('clothingPricing.noSeasons')}</option>
           ) : (
             seasons.map((season) => (
               <option key={season.id} value={season.id}>
                 {season.name}
-                {season.isActive ? ' (active)' : ''}
+                {season.isActive ? ` ${t('clothingPricing.activeSuffix')}` : ''}
               </option>
             ))
           )}
@@ -171,14 +172,14 @@ export function ClothingPricingPage() {
       <form className="admin-form" onSubmit={handleSubmit}>
         <h2>
           {loadingCurrent
-            ? 'Loading…'
+            ? t('clothingPricing.loading')
             : current
-              ? `Edit clothing pricing #${current.id}`
-              : 'Create clothing pricing'}
+              ? t('clothingPricing.editTitle')
+              : t('clothingPricing.createTitle')}
         </h2>
 
         <label className="admin-form__field">
-          <span>Short kit price</span>
+          <span>{t('clothingPricing.shortKit')}</span>
           <input
             type="number"
             min={0.01}
@@ -191,7 +192,7 @@ export function ClothingPricingPage() {
         </label>
 
         <label className="admin-form__field">
-          <span>Long kit price</span>
+          <span>{t('clothingPricing.longKit')}</span>
           <input
             type="number"
             min={0.01}
@@ -204,7 +205,7 @@ export function ClothingPricingPage() {
         </label>
 
         <label className="admin-form__field">
-          <span>Hoodie price</span>
+          <span>{t('clothingPricing.hoodie')}</span>
           <input
             type="number"
             min={0.01}
@@ -218,25 +219,25 @@ export function ClothingPricingPage() {
 
         <div className="admin-form__actions">
           <button type="submit" disabled={saving || loadingCurrent || typeof selectedSeasonId !== 'number'}>
-            {saving ? 'Saving…' : current ? 'Save changes' : 'Create'}
+            {saving ? t('common.saving') : current ? t('common.save') : t('common.create')}
           </button>
         </div>
       </form>
 
       <div className="admin-table-wrap">
-        <h2>All clothing pricing</h2>
+        <h2>{t('clothingPricing.all')}</h2>
         {allPricing.length === 0 ? (
-          <p>No clothing pricing yet.</p>
+          <p>{t('clothingPricing.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Season</th>
-                <th>Short kit</th>
-                <th>Long kit</th>
-                <th>Hoodie</th>
-                <th>Actions</th>
+                <th>{t('common.id')}</th>
+                <th>{t('clothingPricing.season')}</th>
+                <th>{t('clothingPricing.shortKit')}</th>
+                <th>{t('clothingPricing.longKit')}</th>
+                <th>{t('clothingPricing.hoodie')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -249,7 +250,7 @@ export function ClothingPricingPage() {
                   <td>{row.hoodiePrice}</td>
                   <td className="admin-table__actions">
                     <button type="button" onClick={() => setSelectedSeasonId(row.seasonId)}>
-                      Open
+                      {t('common.open')}
                     </button>
                   </td>
                 </tr>

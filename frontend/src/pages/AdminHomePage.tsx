@@ -1,26 +1,27 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { t } from '../i18n/t'
 
 const setupLinks = [
   {
     to: '/admin/seasons',
-    label: 'Seasons',
-    description: 'Create seasons and set which one is active.',
+    labelKey: 'nav.seasons',
+    descriptionKey: 'adminHome.seasonsDesc',
   },
   {
     to: '/admin/activities',
-    label: 'Activities',
-    description: 'Manage football and swimming activities.',
+    labelKey: 'nav.activities',
+    descriptionKey: 'adminHome.activitiesDesc',
   },
   {
     to: '/admin/activity-pricing',
-    label: 'Activity pricing',
-    description: 'Monthly prices by season, age group, or swimming lesson type.',
+    labelKey: 'nav.activityPricing',
+    descriptionKey: 'adminHome.activityPricingDesc',
   },
   {
     to: '/admin/clothing-pricing',
-    label: 'Clothing pricing',
-    description: 'Short kit, long kit, and hoodie prices per season.',
+    labelKey: 'nav.clothingPricing',
+    descriptionKey: 'adminHome.clothingPricingDesc',
   },
 ] as const
 
@@ -29,18 +30,18 @@ export function AdminHomePage() {
 
   return (
     <section className="admin-page">
-      <h1>Admin home</h1>
+      <h1>{t('adminHome.title')}</h1>
       <p>
-        Signed in as <strong>{username}</strong>. Configure the season setup below before opening
-        registration.
+        {t('adminHome.signedIn')} <strong>{username}</strong>.
       </p>
+      <p>{t('adminHome.intro')}</p>
 
       <ul className="admin-home__cards">
         {setupLinks.map((link) => (
           <li key={link.to}>
             <Link to={link.to} className="admin-home__card">
-              <strong>{link.label}</strong>
-              <span>{link.description}</span>
+              <strong>{t(link.labelKey)}</strong>
+              <span>{t(link.descriptionKey)}</span>
             </Link>
           </li>
         ))}
