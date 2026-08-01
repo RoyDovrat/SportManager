@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatApiError } from '../../api/formatApiError'
+import { formatPublicApiError } from '../../api/formatPublicApiError'
 import { getActiveSeason, listActiveActivities } from '../../api/publicCatalog'
 import type { ActivityResponse } from '../../api/activities'
 import type { SeasonResponse } from '../../api/seasons'
@@ -58,7 +58,7 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
         if (!cancelled) {
           setSeason(null)
           setActivity(null)
-          setError(formatApiError(err))
+          setError(formatPublicApiError(err))
         }
       } finally {
         if (!cancelled) {

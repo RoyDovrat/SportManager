@@ -3,6 +3,7 @@ export type { ApiRequestOptions } from './client'
 export { login } from './auth'
 export type { AuthResponse, LoginRequest } from './auth'
 export { formatApiError } from './formatApiError'
+export { formatPublicApiError } from './formatPublicApiError'
 export { getHealth } from './health'
 export type { HealthResponse } from './health'
 export {
