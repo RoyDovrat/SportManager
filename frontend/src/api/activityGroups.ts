@@ -14,9 +14,10 @@ export type ActivityGroupResponse = {
   seasonName: string
   activityId: number
   activityType: ActivityType
-  ageGroup: AgeGroup | null
+  ageGroups: AgeGroup[]
   swimmingLessonType: SwimmingLessonType | null
   waterAdaptationLevel: WaterAdaptationLevel | null
+  weeklySessions: number | null
   isActive: boolean
   memberCount: number
 }
@@ -25,17 +26,19 @@ export type ActivityGroupRequest = {
   name: string
   seasonId: number
   activityType: ActivityType
-  ageGroup?: AgeGroup | null
+  ageGroups?: AgeGroup[] | null
   swimmingLessonType?: SwimmingLessonType | null
   waterAdaptationLevel?: WaterAdaptationLevel | null
+  weeklySessions?: number | null
   isActive: boolean
 }
 
 export type ActivityGroupUpdateRequest = {
   name: string
-  ageGroup?: AgeGroup | null
+  ageGroups?: AgeGroup[] | null
   swimmingLessonType?: SwimmingLessonType | null
   waterAdaptationLevel?: WaterAdaptationLevel | null
+  weeklySessions?: number | null
   isActive: boolean
 }
 
@@ -115,6 +118,14 @@ export function listGroupRegistrations(
 ): Promise<RegistrationResponse[]> {
   return apiRequest<RegistrationResponse[]>(
     `/api/activity-groups/${groupId}/registrations`,
+  )
+}
+
+export function listEligibleRegistrations(
+  groupId: number,
+): Promise<RegistrationResponse[]> {
+  return apiRequest<RegistrationResponse[]>(
+    `/api/activity-groups/${groupId}/eligible-registrations`,
   )
 }
 

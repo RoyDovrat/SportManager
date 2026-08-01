@@ -30,7 +30,8 @@ type CreateForm = {
   name: string
   seasonId: string
   activityType: ActivityType
-  ageGroup: string
+  ageGroups: AgeGroup[]
+  weeklySessions: '1' | '2'
   swimmingLessonType: string
   waterAdaptationLevel: string
   isActive: boolean
@@ -40,7 +41,8 @@ const emptyCreateForm: CreateForm = {
   name: '',
   seasonId: '',
   activityType: 'FOOTBALL',
-  ageGroup: '',
+  ageGroups: [],
+  weeklySessions: '1',
   swimmingLessonType: '',
   waterAdaptationLevel: '',
   isActive: true,
@@ -132,6 +134,18 @@ export function ActivityGroupsPage() {
     })
   }
 
+  function toggleAgeGroup(value: AgeGroup) {
+    setCreateForm((prev) => {
+      const exists = prev.ageGroups.includes(value)
+      return {
+        ...prev,
+        ageGroups: exists
+          ? prev.ageGroups.filter((item) => item !== value)
+          : [...prev.ageGroups, value],
+      }
+    })
+  }
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
@@ -140,19 +154,26 @@ export function ActivityGroupsPage() {
 
     try {
       const isFootball = createForm.activityType === 'FOOTBALL'
+      if (isFootball && createForm.ageGroups.length === 0) {
+        setError(t('activityGroups.ageGroupsRequired'))
+        setSaving(false)
+        return
+      }
+      if (!isFootball && createForm.swimmingLessonType === '') {
+        setError(t('activityGroups.lessonTypeRequired'))
+        setSaving(false)
+        return
+      }
+
       await createActivityGroup({
         name: createForm.name.trim(),
         seasonId: Number(createForm.seasonId),
         activityType: createForm.activityType,
-        ageGroup:
-          createForm.ageGroup === ''
-            ? null
-            : (createForm.ageGroup as AgeGroup),
+        ageGroups: isFootball ? createForm.ageGroups : [],
+        weeklySessions: isFootball ? Number(createForm.weeklySessions) : null,
         swimmingLessonType: isFootball
           ? null
-          : createForm.swimmingLessonType === ''
-            ? null
-            : (createForm.swimmingLessonType as SwimmingLessonType),
+          : (createForm.swimmingLessonType as SwimmingLessonType),
         waterAdaptationLevel: isFootball
           ? null
           : createForm.waterAdaptationLevel === ''
@@ -227,7 +248,8 @@ export function ActivityGroupsPage() {
               setCreateForm({
                 ...createForm,
                 activityType: event.target.value as ActivityType,
-                ageGroup: '',
+                ageGroups: [],
+                weeklySessions: '1',
                 swimmingLessonType: '',
                 waterAdaptationLevel: '',
               })
@@ -243,43 +265,44 @@ export function ActivityGroupsPage() {
         </label>
 
         {createForm.activityType === 'FOOTBALL' ? (
-          <label className="admin-form__field">
-            <span>{t('activityGroups.ageGroup')}</span>
-            <select
-              value={createForm.ageGroup}
-              onChange={(event) =>
-                setCreateForm({ ...createForm, ageGroup: event.target.value })
-              }
-              required
-              disabled={saving}
-            >
-              <option value="">{t('activityGroups.selectAgeGroup')}</option>
-              {AGE_GROUPS.map((value) => (
-                <option key={value} value={value}>
-                  {ageGroupLabel(value)}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
           <>
+            <fieldset className="admin-form__checkbox-group">
+              <legend>{t('activityGroups.ageGroups')}</legend>
+              <p className="clothing-order-form__hint">
+                {t('activityGroups.ageGroupsHint')}
+              </p>
+              {AGE_GROUPS.map((value) => (
+                <label key={value} className="admin-form__checkbox">
+                  <input
+                    type="checkbox"
+                    checked={createForm.ageGroups.includes(value)}
+                    onChange={() => toggleAgeGroup(value)}
+                    disabled={saving}
+                  />
+                  <span>{ageGroupLabel(value)}</span>
+                </label>
+              ))}
+            </fieldset>
+
             <label className="admin-form__field">
-              <span>{t('activityGroups.ageGroupOptional')}</span>
+              <span>{t('activityGroups.weeklySessions')}</span>
               <select
-                value={createForm.ageGroup}
+                value={createForm.weeklySessions}
                 onChange={(event) =>
-                  setCreateForm({ ...createForm, ageGroup: event.target.value })
+                  setCreateForm({
+                    ...createForm,
+                    weeklySessions: event.target.value as '1' | '2',
+                  })
                 }
                 disabled={saving}
               >
-                <option value="">{t('common.optional')}</option>
-                {AGE_GROUPS.map((value) => (
-                  <option key={value} value={value}>
-                    {ageGroupLabel(value)}
-                  </option>
-                ))}
+                <option value="1">1</option>
+                <option value="2">2</option>
               </select>
             </label>
+          </>
+        ) : (
+          <>
             <label className="admin-form__field">
               <span>{t('activityGroups.lessonType')}</span>
               <select
@@ -290,9 +313,10 @@ export function ActivityGroupsPage() {
                     swimmingLessonType: event.target.value,
                   })
                 }
+                required
                 disabled={saving}
               >
-                <option value="">{t('common.optional')}</option>
+                <option value="">{t('activityGroups.selectLessonType')}</option>
                 {SWIMMING_LESSON_TYPES.map((value) => (
                   <option key={value} value={value}>
                     {swimmingLessonTypeLabel(value)}
@@ -435,8 +459,11 @@ export function ActivityGroupsPage() {
 
 function formatAttributes(row: ActivityGroupResponse): string {
   const parts: string[] = []
-  if (row.ageGroup) {
-    parts.push(ageGroupLabel(row.ageGroup))
+  if (row.ageGroups?.length) {
+    parts.push(row.ageGroups.map((value) => ageGroupLabel(value)).join(', '))
+  }
+  if (row.weeklySessions != null) {
+    parts.push(`${t('activityGroups.weeklySessionsShort')}: ${row.weeklySessions}`)
   }
   if (row.swimmingLessonType) {
     parts.push(swimmingLessonTypeLabel(row.swimmingLessonType))

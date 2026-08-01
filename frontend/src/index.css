@@ -333,6 +333,19 @@ body {
   gap: 0.5rem;
 }
 
+.admin-form__checkbox-group {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-form__checkbox-group legend {
+  padding: 0 0.35rem;
+}
+
 .admin-form__actions {
   display: flex;
   flex-wrap: wrap;

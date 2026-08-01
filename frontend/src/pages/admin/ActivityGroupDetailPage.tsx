@@ -5,6 +5,7 @@ import {
   assignRegistrationToGroup,
   deactivateActivityGroup,
   getActivityGroup,
+  listEligibleRegistrations,
   listGroupRegistrations,
   unassignRegistrationFromGroup,
   updateActivityGroup,
@@ -31,7 +32,8 @@ import {
 
 type EditForm = {
   name: string
-  ageGroup: string
+  ageGroups: AgeGroup[]
+  weeklySessions: '1' | '2'
   swimmingLessonType: string
   waterAdaptationLevel: string
   isActive: boolean
@@ -40,11 +42,17 @@ type EditForm = {
 function toEditForm(group: ActivityGroupResponse): EditForm {
   return {
     name: group.name,
-    ageGroup: group.ageGroup ?? '',
+    ageGroups: group.ageGroups ?? [],
+    weeklySessions:
+      group.weeklySessions === 2 ? '2' : '1',
     swimmingLessonType: group.swimmingLessonType ?? '',
     waterAdaptationLevel: group.waterAdaptationLevel ?? '',
     isActive: group.isActive,
   }
+}
+
+function studentLabel(row: RegistrationResponse): string {
+  return `${row.studentFirstName} ${row.studentLastName}`
 }
 
 export function ActivityGroupDetailPage() {
@@ -54,11 +62,12 @@ export function ActivityGroupDetailPage() {
   const [group, setGroup] = useState<ActivityGroupResponse | null>(null)
   const [form, setForm] = useState<EditForm | null>(null)
   const [members, setMembers] = useState<RegistrationResponse[]>([])
+  const [eligible, setEligible] = useState<RegistrationResponse[]>([])
+  const [selectedRegistrationId, setSelectedRegistrationId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [acting, setActing] = useState(false)
   const [assigning, setAssigning] = useState(false)
-  const [registrationIdInput, setRegistrationIdInput] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -68,6 +77,7 @@ export function ActivityGroupDetailPage() {
       setGroup(null)
       setForm(null)
       setMembers([])
+      setEligible([])
       setLoading(false)
       return
     }
@@ -79,18 +89,22 @@ export function ActivityGroupDetailPage() {
     }
 
     try {
-      const [data, memberData] = await Promise.all([
+      const [data, memberData, eligibleData] = await Promise.all([
         getActivityGroup(groupId),
         listGroupRegistrations(groupId),
+        listEligibleRegistrations(groupId),
       ])
       setGroup(data)
       setForm(toEditForm(data))
       setMembers(memberData)
+      setEligible(eligibleData)
+      setSelectedRegistrationId('')
     } catch (err) {
       setError(formatApiError(err))
       setGroup(null)
       setForm(null)
       setMembers([])
+      setEligible([])
     } finally {
       setLoading(false)
     }
@@ -100,6 +114,21 @@ export function ActivityGroupDetailPage() {
     void loadGroupAndMembers({ clearMessage: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId])
+
+  function toggleAgeGroup(value: AgeGroup) {
+    setForm((prev) => {
+      if (!prev) {
+        return prev
+      }
+      const exists = prev.ageGroups.includes(value)
+      return {
+        ...prev,
+        ageGroups: exists
+          ? prev.ageGroups.filter((item) => item !== value)
+          : [...prev.ageGroups, value],
+      }
+    })
+  }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -113,15 +142,24 @@ export function ActivityGroupDetailPage() {
 
     try {
       const isFootball = group.activityType === 'FOOTBALL'
+      if (isFootball && form.ageGroups.length === 0) {
+        setError(t('activityGroups.ageGroupsRequired'))
+        setSaving(false)
+        return
+      }
+      if (!isFootball && form.swimmingLessonType === '') {
+        setError(t('activityGroups.lessonTypeRequired'))
+        setSaving(false)
+        return
+      }
+
       const updated = await updateActivityGroup(group.id, {
         name: form.name.trim(),
-        ageGroup:
-          form.ageGroup === '' ? null : (form.ageGroup as AgeGroup),
+        ageGroups: isFootball ? form.ageGroups : [],
+        weeklySessions: isFootball ? Number(form.weeklySessions) : null,
         swimmingLessonType: isFootball
           ? null
-          : form.swimmingLessonType === ''
-            ? null
-            : (form.swimmingLessonType as SwimmingLessonType),
+          : (form.swimmingLessonType as SwimmingLessonType),
         waterAdaptationLevel: isFootball
           ? null
           : form.waterAdaptationLevel === ''
@@ -132,6 +170,8 @@ export function ActivityGroupDetailPage() {
       setGroup(updated)
       setForm(toEditForm(updated))
       setMessage(t('activityGroups.updated'))
+      const eligibleData = await listEligibleRegistrations(group.id)
+      setEligible(eligibleData)
     } catch (err) {
       setError(formatApiError(err))
     } finally {
@@ -183,9 +223,9 @@ export function ActivityGroupDetailPage() {
       return
     }
 
-    const registrationId = Number(registrationIdInput)
+    const registrationId = Number(selectedRegistrationId)
     if (!Number.isFinite(registrationId) || registrationId <= 0) {
-      setError(t('activityGroups.registrationIdRequired'))
+      setError(t('activityGroups.selectStudentRequired'))
       return
     }
 
@@ -195,7 +235,7 @@ export function ActivityGroupDetailPage() {
 
     try {
       await assignRegistrationToGroup(group.id, registrationId)
-      setRegistrationIdInput('')
+      setSelectedRegistrationId('')
       setMessage(t('activityGroups.assigned'))
       await loadGroupAndMembers()
     } catch (err) {
@@ -287,43 +327,44 @@ export function ActivityGroupDetailPage() {
             </label>
 
             {group.activityType === 'FOOTBALL' ? (
-              <label className="admin-form__field">
-                <span>{t('activityGroups.ageGroup')}</span>
-                <select
-                  value={form.ageGroup}
-                  onChange={(event) =>
-                    setForm({ ...form, ageGroup: event.target.value })
-                  }
-                  required
-                  disabled={saving}
-                >
-                  <option value="">{t('activityGroups.selectAgeGroup')}</option>
-                  {AGE_GROUPS.map((value) => (
-                    <option key={value} value={value}>
-                      {ageGroupLabel(value)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
               <>
+                <fieldset className="admin-form__checkbox-group">
+                  <legend>{t('activityGroups.ageGroups')}</legend>
+                  <p className="clothing-order-form__hint">
+                    {t('activityGroups.ageGroupsHint')}
+                  </p>
+                  {AGE_GROUPS.map((value) => (
+                    <label key={value} className="admin-form__checkbox">
+                      <input
+                        type="checkbox"
+                        checked={form.ageGroups.includes(value)}
+                        onChange={() => toggleAgeGroup(value)}
+                        disabled={saving}
+                      />
+                      <span>{ageGroupLabel(value)}</span>
+                    </label>
+                  ))}
+                </fieldset>
+
                 <label className="admin-form__field">
-                  <span>{t('activityGroups.ageGroupOptional')}</span>
+                  <span>{t('activityGroups.weeklySessions')}</span>
                   <select
-                    value={form.ageGroup}
+                    value={form.weeklySessions}
                     onChange={(event) =>
-                      setForm({ ...form, ageGroup: event.target.value })
+                      setForm({
+                        ...form,
+                        weeklySessions: event.target.value as '1' | '2',
+                      })
                     }
                     disabled={saving}
                   >
-                    <option value="">{t('common.optional')}</option>
-                    {AGE_GROUPS.map((value) => (
-                      <option key={value} value={value}>
-                        {ageGroupLabel(value)}
-                      </option>
-                    ))}
+                    <option value="1">1</option>
+                    <option value="2">2</option>
                   </select>
                 </label>
+              </>
+            ) : (
+              <>
                 <label className="admin-form__field">
                   <span>{t('activityGroups.lessonType')}</span>
                   <select
@@ -334,9 +375,10 @@ export function ActivityGroupDetailPage() {
                         swimmingLessonType: event.target.value,
                       })
                     }
+                    required
                     disabled={saving}
                   >
-                    <option value="">{t('common.optional')}</option>
+                    <option value="">{t('activityGroups.selectLessonType')}</option>
                     {SWIMMING_LESSON_TYPES.map((value) => (
                       <option key={value} value={value}>
                         {swimmingLessonTypeLabel(value)}
@@ -392,20 +434,43 @@ export function ActivityGroupDetailPage() {
               {t('activityGroups.assignHint')}
             </p>
             <label className="admin-form__field">
-              <span>{t('activityGroups.registrationId')}</span>
-              <input
-                type="number"
-                min={1}
-                value={registrationIdInput}
-                onChange={(event) => setRegistrationIdInput(event.target.value)}
+              <span>{t('activityGroups.selectStudent')}</span>
+              <select
+                value={selectedRegistrationId}
+                onChange={(event) =>
+                  setSelectedRegistrationId(event.target.value)
+                }
                 required
-                disabled={assigning || saving || acting}
-              />
+                disabled={assigning || saving || acting || eligible.length === 0}
+              >
+                <option value="">
+                  {eligible.length === 0
+                    ? t('activityGroups.eligibleEmpty')
+                    : t('activityGroups.selectStudentPlaceholder')}
+                </option>
+                {eligible.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {studentLabel(row)}
+                    {row.studentAgeGroup
+                      ? ` · ${ageGroupLabel(row.studentAgeGroup)}`
+                      : ''}
+                    {row.swimmingLessonType
+                      ? ` · ${swimmingLessonTypeLabel(row.swimmingLessonType)}`
+                      : ''}
+                  </option>
+                ))}
+              </select>
             </label>
             <div className="admin-form__actions">
               <button
                 type="submit"
-                disabled={assigning || saving || acting}
+                disabled={
+                  assigning ||
+                  saving ||
+                  acting ||
+                  eligible.length === 0 ||
+                  selectedRegistrationId === ''
+                }
               >
                 {assigning
                   ? t('activityGroups.assigning')
@@ -424,6 +489,7 @@ export function ActivityGroupDetailPage() {
                   <tr>
                     <th>{t('common.id')}</th>
                     <th>{t('activityGroups.student')}</th>
+                    <th>{t('activityGroups.ageGroup')}</th>
                     <th>{t('common.status')}</th>
                     <th>{t('common.actions')}</th>
                   </tr>
@@ -436,9 +502,8 @@ export function ActivityGroupDetailPage() {
                           {member.id}
                         </Link>
                       </td>
-                      <td>
-                        {member.studentFirstName} {member.studentLastName}
-                      </td>
+                      <td>{studentLabel(member)}</td>
+                      <td>{ageGroupLabel(member.studentAgeGroup)}</td>
                       <td>{registrationStatusLabel(member.status)}</td>
                       <td className="admin-table__actions">
                         <button
