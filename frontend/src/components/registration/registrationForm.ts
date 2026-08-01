@@ -1,5 +1,10 @@
 import type { RegistrationRequest } from '../../api/registrations'
-import type { AgeGroup, Gender } from '../../types/enums'
+import type {
+  AgeGroup,
+  Gender,
+  SwimmingLessonType,
+  WaterAdaptationLevel,
+} from '../../types/enums'
 
 export type RegistrationCommonForm = {
   parentFirstName: string
@@ -37,10 +42,23 @@ export const emptyRegistrationCommonForm: RegistrationCommonForm = {
   specialRequests: '',
 }
 
+export type SwimmingFormExtras = {
+  swimmingLessonType: SwimmingLessonType
+  waterAdaptationLevel: WaterAdaptationLevel
+  weeklySessions: string
+}
+
+export const emptySwimmingFormExtras: SwimmingFormExtras = {
+  swimmingLessonType: 'GROUP',
+  waterAdaptationLevel: 'NOT_INDEPENDENT',
+  weeklySessions: '1',
+}
+
 export function toRegistrationRequest(
   form: RegistrationCommonForm,
   seasonId: number,
   activityId: number,
+  swimming?: SwimmingFormExtras,
 ): RegistrationRequest {
   return {
     parentFirstName: form.parentFirstName.trim(),
@@ -60,5 +78,12 @@ export function toRegistrationRequest(
     healthDeclarationApproved: form.healthDeclarationApproved,
     medicalNotes: form.medicalNotes.trim() || null,
     specialRequests: form.specialRequests.trim() || null,
+    ...(swimming
+      ? {
+          swimmingLessonType: swimming.swimmingLessonType,
+          waterAdaptationLevel: swimming.waterAdaptationLevel,
+          weeklySessions: Number(swimming.weeklySessions),
+        }
+      : {}),
   }
 }
