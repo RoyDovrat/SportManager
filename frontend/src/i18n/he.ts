@@ -59,7 +59,7 @@ export const he = {
 
   clothingOrders: {
     title: 'הזמנות ביגוד',
-    intro: 'סננו לפי עונה או מספר זהות. יצירת הזמנה חדשה תתווסף בשלב הבא.',
+    intro: 'צרו הזמנת ביגוד להרשמת כדורגל מאושרת, או סמנו שיש כבר ציוד.',
     detailTitle: 'פרטי הזמנת ביגוד',
     placeholderList: 'רשימת הזמנות הביגוד תופיע כאן בשלב הבא.',
     placeholderDetail: 'פרטי הזמנה {id} יופיעו כאן בשלב הבא.',
@@ -75,9 +75,22 @@ export const he = {
     student: 'תלמיד/ה',
     identity: 'מספר זהות',
     season: 'עונה',
-    alreadyHas: 'יש כבר ציוד',
+    alreadyHas: 'יש כבר ציוד (ללא הזמנה)',
     paymentRequired: 'נדרש תשלום ביגוד',
     viewDetails: 'פרטים',
+    createTitle: 'הזמנה חדשה',
+    createHint: 'נדרשת הרשמת כדורגל מאושרת בעונה שנבחרה.',
+    selectSeason: 'בחרו עונה',
+    create: 'יצירת הזמנה',
+    createdOrder: 'הזמנת הביגוד נוצרה.',
+    createdSkip: 'נרשם דילוג — יש כבר ציוד.',
+    shortKit: 'חליפה קצרה',
+    longKit: 'חליפה ארוכה',
+    hoodie: 'קפוצ׳ון',
+    quantity: 'כמות',
+    size: 'מידה',
+    selectSize: 'בחרו מידה',
+    shirtNumber: 'מספר חולצה (אופציונלי)',
   },
 
   registrations: {
