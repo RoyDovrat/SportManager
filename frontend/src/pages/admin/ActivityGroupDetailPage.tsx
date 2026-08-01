@@ -14,6 +14,10 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import type { RegistrationResponse } from '../../api/registrations'
 import {
+  StatusBadge,
+  registrationStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   activityTypeLabel,
   ageGroupLabel,
   registrationStatusLabel,
@@ -639,7 +643,13 @@ export function ActivityGroupDetailPage() {
                           <td>{member.weeklySessions ?? '—'}</td>
                         </>
                       )}
-                      <td>{registrationStatusLabel(member.status)}</td>
+                      <td>
+                        <StatusBadge
+                          tone={registrationStatusTone(member.status)}
+                        >
+                          {registrationStatusLabel(member.status)}
+                        </StatusBadge>
+                      </td>
                       <td className="admin-table__actions">
                         <button
                           type="button"

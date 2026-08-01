@@ -135,24 +135,26 @@ export function ClothingOrderPage() {
 
   if (success) {
     return (
-      <section className="admin-page">
-        <h1>{t('publicClothing.title')}</h1>
-        <p className="admin-page__ok">
-          {success.alreadyHasClothing
-            ? t('publicClothing.successSkip')
-            : t('publicClothing.successOrder')}
-        </p>
-        <p>
-          {t('publicClothing.orderId')}: <strong>{success.id}</strong>
-        </p>
-        <p>{t('publicClothing.successHint')}</p>
-        <p>
-          <Link to="/">{t('common.backHome')}</Link>
-          {' · '}
-          <button type="button" onClick={() => setSuccess(null)}>
-            {t('publicClothing.orderAnother')}
-          </button>
-        </p>
+      <section className="public-page">
+        <div className="public-page__panel admin-page">
+          <h1>{t('publicClothing.title')}</h1>
+          <p className="admin-page__ok">
+            {success.alreadyHasClothing
+              ? t('publicClothing.successSkip')
+              : t('publicClothing.successOrder')}
+          </p>
+          <p>
+            {t('publicClothing.orderId')}: <strong>{success.id}</strong>
+          </p>
+          <p>{t('publicClothing.successHint')}</p>
+          <p>
+            <Link to="/">{t('common.backHome')}</Link>
+            {' · '}
+            <button type="button" onClick={() => setSuccess(null)}>
+              {t('publicClothing.orderAnother')}
+            </button>
+          </p>
+        </div>
       </section>
     )
   }
@@ -160,7 +162,8 @@ export function ClothingOrderPage() {
   const formDisabled = catalogLoading || !season || submitting
 
   return (
-    <section className="admin-page">
+    <section className="public-page">
+      <div className="public-page__panel admin-page">
       <h1>{t('publicClothing.title')}</h1>
       <p>{t('publicClothing.intro')}</p>
       <p className="clothing-order-form__hint">{t('publicClothing.approvedHint')}</p>
@@ -265,6 +268,7 @@ export function ClothingOrderPage() {
           <Link to="/">{t('registration.cancel')}</Link>
         </div>
       </form>
+      </div>
     </section>
   )
 }

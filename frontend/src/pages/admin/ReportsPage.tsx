@@ -7,6 +7,11 @@ import {
 } from '../../api/reports'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
+  StatusBadge,
+  paymentStatusTone,
+  registrationStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   activityTypeLabel,
   paymentStatusLabel,
   paymentTypeLabel,
@@ -192,7 +197,13 @@ export function ReportsPage() {
                           {row.studentFirstName} {row.studentLastName}
                         </td>
                         <td>{activityTypeLabel(row.activityType)}</td>
-                        <td>{registrationStatusLabel(row.status)}</td>
+                        <td>
+                          <StatusBadge
+                            tone={registrationStatusTone(row.status)}
+                          >
+                            {registrationStatusLabel(row.status)}
+                          </StatusBadge>
+                        </td>
                         <td>{row.registrationDate}</td>
                         <td className="admin-table__actions">
                           <Link to={`/admin/registrations/${row.id}`}>
@@ -263,7 +274,11 @@ export function ReportsPage() {
                         </td>
                         <td>{formatAmount(row.amount)}</td>
                         <td>{paymentTypeLabel(row.paymentType)}</td>
-                        <td>{paymentStatusLabel(row.status)}</td>
+                        <td>
+                          <StatusBadge tone={paymentStatusTone(row.status)}>
+                            {paymentStatusLabel(row.status)}
+                          </StatusBadge>
+                        </td>
                         <td className="admin-table__actions">
                           <Link to={`/admin/payments/${row.id}`}>
                             {t('reports.view')}

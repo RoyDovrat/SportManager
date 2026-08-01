@@ -9,6 +9,10 @@ import {
 } from '../../api/payments'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
+  StatusBadge,
+  paymentStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   paymentMethodLabel,
   paymentStatusLabel,
   paymentTypeLabel,
@@ -345,7 +349,11 @@ export function PaymentsPage() {
                   <td>{formatAmount(row.amount)}</td>
                   <td>{row.chargeMonth ?? '—'}</td>
                   <td>{paymentTypeLabel(row.paymentType)}</td>
-                  <td>{paymentStatusLabel(row.status)}</td>
+                  <td>
+                    <StatusBadge tone={paymentStatusTone(row.status)}>
+                      {paymentStatusLabel(row.status)}
+                    </StatusBadge>
+                  </td>
                   <td>
                     {row.paymentMethod
                       ? paymentMethodLabel(row.paymentMethod)

@@ -8,6 +8,10 @@ import {
   type RegistrationResponse,
 } from '../../api/registrations'
 import {
+  StatusBadge,
+  registrationStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   activityTypeLabel,
   ageGroupLabel,
   genderLabel,
@@ -178,7 +182,13 @@ export function RegistrationDetailPage() {
               />
               <DetailRow
                 label={t('common.status')}
-                value={registrationStatusLabel(registration.status)}
+                value={
+                  <StatusBadge
+                    tone={registrationStatusTone(registration.status)}
+                  >
+                    {registrationStatusLabel(registration.status)}
+                  </StatusBadge>
+                }
               />
               <DetailRow
                 label={t('registrations.activity')}
@@ -326,7 +336,7 @@ function DetailRow({
   value,
 }: {
   label: string
-  value: string | number
+  value: ReactNode
 }) {
   return (
     <div className="admin-detail__row">

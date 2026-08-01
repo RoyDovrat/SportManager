@@ -35,7 +35,9 @@ export function PublicLayout() {
   return (
     <div className="layout layout--public">
       <header className="layout__header">
-        <strong>{t('appName')}</strong>
+        <NavLink to="/" end className="layout__brand">
+          {t('appName')}
+        </NavLink>
         <nav className="layout__nav">
           <NavLink to="/" end>
             {t('nav.home')}
@@ -43,7 +45,9 @@ export function PublicLayout() {
           <NavLink to="/register/football">{t('nav.football')}</NavLink>
           <NavLink to="/register/swimming">{t('nav.swimming')}</NavLink>
           <NavLink to="/register/clothing">{t('nav.clothing')}</NavLink>
-          <NavLink to="/admin">{t('nav.admin')}</NavLink>
+          <NavLink to="/admin" className="nav-admin-link">
+            {t('nav.admin')}
+          </NavLink>
         </nav>
       </header>
       <main className="layout__main">

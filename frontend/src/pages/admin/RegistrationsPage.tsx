@@ -7,6 +7,10 @@ import {
 } from '../../api/registrations'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
+  StatusBadge,
+  registrationStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   activityTypeLabel,
   registrationStatusLabel,
 } from '../../i18n/labels'
@@ -178,7 +182,11 @@ export function RegistrationsPage() {
                   <td>{row.phoneNumber}</td>
                   <td>{activityTypeLabel(row.activityType)}</td>
                   <td>{row.seasonName}</td>
-                  <td>{registrationStatusLabel(row.status)}</td>
+                  <td>
+                    <StatusBadge tone={registrationStatusTone(row.status)}>
+                      {registrationStatusLabel(row.status)}
+                    </StatusBadge>
+                  </td>
                   <td>
                     {row.isKibbutzMember ? t('common.yes') : t('common.no')}
                   </td>

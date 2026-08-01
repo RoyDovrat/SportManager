@@ -8,6 +8,10 @@ import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { useAuth } from '../../auth/AuthContext'
 import {
+  StatusBadge,
+  registrationStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   activityTypeLabel,
   registrationStatusLabel,
 } from '../../i18n/labels'
@@ -248,7 +252,7 @@ export function DashboardPage() {
           </div>
 
           {summary && (
-            <>
+            <div className="dashboard-panel">
               <h2>{t('dashboard.paymentSummary')}</h2>
               <div className="dashboard-stats">
                 <div className="dashboard-stat">
@@ -278,60 +282,68 @@ export function DashboardPage() {
                   </strong>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
-          <div className="admin-table-wrap">
+          <div className="dashboard-panel">
             <h2>{t('dashboard.recentRegistrations')}</h2>
             {dashboard.recentRegistrations.length === 0 ? (
               <p>{t('dashboard.recentEmpty')}</p>
             ) : (
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>{t('common.id')}</th>
-                    <th>{t('dashboard.student')}</th>
-                    <th>{t('dashboard.activity')}</th>
-                    <th>{t('common.status')}</th>
-                    <th>{t('dashboard.registrationDate')}</th>
-                    <th>{t('common.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.recentRegistrations.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.id}</td>
-                      <td>
-                        {row.studentFirstName} {row.studentLastName}
-                      </td>
-                      <td>{activityTypeLabel(row.activityType)}</td>
-                      <td>{registrationStatusLabel(row.status)}</td>
-                      <td>{row.registrationDate}</td>
-                      <td className="admin-table__actions">
-                        <Link to={`/admin/registrations/${row.id}`}>
-                          {t('dashboard.viewRegistration')}
-                        </Link>
-                      </td>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>{t('common.id')}</th>
+                      <th>{t('dashboard.student')}</th>
+                      <th>{t('dashboard.activity')}</th>
+                      <th>{t('common.status')}</th>
+                      <th>{t('dashboard.registrationDate')}</th>
+                      <th>{t('common.actions')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {dashboard.recentRegistrations.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.id}</td>
+                        <td>
+                          {row.studentFirstName} {row.studentLastName}
+                        </td>
+                        <td>{activityTypeLabel(row.activityType)}</td>
+                        <td>
+                          <StatusBadge tone={registrationStatusTone(row.status)}>
+                            {registrationStatusLabel(row.status)}
+                          </StatusBadge>
+                        </td>
+                        <td>{row.registrationDate}</td>
+                        <td className="admin-table__actions">
+                          <Link to={`/admin/registrations/${row.id}`}>
+                            {t('dashboard.viewRegistration')}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </>
       )}
 
-      <h2>{t('dashboard.quickLinks')}</h2>
-      <ul className="admin-home__cards">
-        {quickLinks.map((link) => (
-          <li key={link.to}>
-            <Link to={link.to} className="admin-home__card">
-              <strong>{t(link.labelKey)}</strong>
-              <span>{t(link.descriptionKey)}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="dashboard-panel">
+        <h2>{t('dashboard.quickLinks')}</h2>
+        <ul className="admin-home__cards">
+          {quickLinks.map((link) => (
+            <li key={link.to}>
+              <Link to={link.to} className="admin-home__card">
+                <strong>{t(link.labelKey)}</strong>
+                <span>{t(link.descriptionKey)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </section>
   )
 }

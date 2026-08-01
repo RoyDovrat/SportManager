@@ -12,6 +12,10 @@ import {
   type SwimmingFormExtras,
 } from '../../components/registration/registrationForm'
 import { useRegistrationCatalog } from '../../components/registration/useRegistrationCatalog'
+import {
+  StatusBadge,
+  registrationStatusTone,
+} from '../../components/ui/StatusBadge'
 import { registrationStatusLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 
@@ -60,23 +64,27 @@ export function SwimmingRegistrationPage() {
 
   if (success) {
     return (
-      <section className="admin-page">
-        <h1>{t('registration.swimmingTitle')}</h1>
-        <p className="admin-page__ok">{t('registration.success')}</p>
-        <p>
-          {t('registration.registrationId')}: <strong>{success.id}</strong>
-        </p>
-        <p>
-          {t('registration.status')}:{' '}
-          <strong>{registrationStatusLabel(success.status)}</strong>
-        </p>
-        <p>
-          <Link to="/">{t('registration.cancel')}</Link>
-          {' · '}
-          <button type="button" onClick={() => setSuccess(null)}>
-            {t('registration.registerAnother')}
-          </button>
-        </p>
+      <section className="public-page">
+        <div className="public-page__panel admin-page">
+          <h1>{t('registration.swimmingTitle')}</h1>
+          <p className="admin-page__ok">{t('registration.success')}</p>
+          <p>
+            {t('registration.registrationId')}: <strong>{success.id}</strong>
+          </p>
+          <p>
+            {t('registration.status')}:{' '}
+            <StatusBadge tone={registrationStatusTone(success.status)}>
+              {registrationStatusLabel(success.status)}
+            </StatusBadge>
+          </p>
+          <p>
+            <Link to="/">{t('registration.cancel')}</Link>
+            {' · '}
+            <button type="button" onClick={() => setSuccess(null)}>
+              {t('registration.registerAnother')}
+            </button>
+          </p>
+        </div>
       </section>
     )
   }
@@ -85,40 +93,45 @@ export function SwimmingRegistrationPage() {
     catalog.loading || !catalog.season || !catalog.activity || submitting
 
   return (
-    <section className="admin-page">
-      <h1>{t('registration.swimmingTitle')}</h1>
-      <p>{t('registration.swimmingIntro')}</p>
+    <section className="public-page">
+      <div className="public-page__panel admin-page">
+        <h1>{t('registration.swimmingTitle')}</h1>
+        <p>{t('registration.swimmingIntro')}</p>
 
-      {catalog.loading && <p>{t('registration.loadingCatalog')}</p>}
-      {catalog.error && <p className="admin-page__error">{catalog.error}</p>}
-      {error && <p className="admin-page__error">{error}</p>}
+        {catalog.loading && <p>{t('registration.loadingCatalog')}</p>}
+        {catalog.error && <p className="admin-page__error">{catalog.error}</p>}
+        {error && <p className="admin-page__error">{error}</p>}
 
-      {!catalog.loading && catalog.season && catalog.activity && (
-        <p className="admin-page__ok">
-          {t('registration.seasonLabel')}: <strong>{catalog.season.name}</strong>
-        </p>
-      )}
+        {!catalog.loading && catalog.season && catalog.activity && (
+          <p className="admin-page__ok">
+            {t('registration.seasonLabel')}:{' '}
+            <strong>{catalog.season.name}</strong>
+          </p>
+        )}
 
-      <form className="admin-form registration-form" onSubmit={handleSubmit}>
-        <RegistrationCommonFields
-          form={form}
-          onChange={setForm}
-          disabled={formDisabled}
-        />
+        <form className="admin-form registration-form" onSubmit={handleSubmit}>
+          <RegistrationCommonFields
+            form={form}
+            onChange={setForm}
+            disabled={formDisabled}
+          />
 
-        <SwimmingRegistrationFields
-          form={swimming}
-          onChange={setSwimming}
-          disabled={formDisabled}
-        />
+          <SwimmingRegistrationFields
+            form={swimming}
+            onChange={setSwimming}
+            disabled={formDisabled}
+          />
 
-        <div className="admin-form__actions">
-          <button type="submit" disabled={formDisabled}>
-            {submitting ? t('registration.submitting') : t('registration.submit')}
-          </button>
-          <Link to="/">{t('registration.cancel')}</Link>
-        </div>
-      </form>
+          <div className="admin-form__actions">
+            <button type="submit" disabled={formDisabled}>
+              {submitting
+                ? t('registration.submitting')
+                : t('registration.submit')}
+            </button>
+            <Link to="/">{t('registration.cancel')}</Link>
+          </div>
+        </form>
+      </div>
     </section>
   )
 }

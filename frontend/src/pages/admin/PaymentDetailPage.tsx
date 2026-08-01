@@ -8,6 +8,10 @@ import {
   type PaymentResponse,
 } from '../../api/payments'
 import {
+  StatusBadge,
+  paymentStatusTone,
+} from '../../components/ui/StatusBadge'
+import {
   paymentMethodLabel,
   paymentStatusLabel,
   paymentTypeLabel,
@@ -223,7 +227,11 @@ export function PaymentDetailPage() {
               <DetailRow label={t('common.id')} value={payment.id} />
               <DetailRow
                 label={t('common.status')}
-                value={paymentStatusLabel(payment.status)}
+                value={
+                  <StatusBadge tone={paymentStatusTone(payment.status)}>
+                    {paymentStatusLabel(payment.status)}
+                  </StatusBadge>
+                }
               />
               <DetailRow
                 label={t('payments.type')}
@@ -300,7 +308,7 @@ function DetailRow({
   value,
 }: {
   label: string
-  value: string | number
+  value: ReactNode
 }) {
   return (
     <div className="admin-detail__row">
