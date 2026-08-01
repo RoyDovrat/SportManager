@@ -217,6 +217,13 @@ body {
   min-width: 12rem;
 }
 
+.admin-filters__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
 .admin-detail {
   display: flex;
   flex-direction: column;

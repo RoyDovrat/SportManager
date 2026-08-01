@@ -59,10 +59,25 @@ export const he = {
 
   clothingOrders: {
     title: 'הזמנות ביגוד',
+    intro: 'סננו לפי עונה או מספר זהות. יצירת הזמנה חדשה תתווסף בשלב הבא.',
     detailTitle: 'פרטי הזמנת ביגוד',
     placeholderList: 'רשימת הזמנות הביגוד תופיע כאן בשלב הבא.',
     placeholderDetail: 'פרטי הזמנה {id} יופיעו כאן בשלב הבא.',
     backToList: 'חזרה להזמנות הביגוד',
+    filterSeason: 'עונה',
+    filterIdentity: 'מספר זהות תלמיד/ה',
+    identityPlaceholder: 'אופציונלי',
+    applyFilter: 'סינון',
+    clearIdentity: 'ניקוי זהות',
+    allSeasons: 'כל העונות',
+    listTitle: 'רשימת הזמנות',
+    empty: 'אין הזמנות ביגוד להצגה',
+    student: 'תלמיד/ה',
+    identity: 'מספר זהות',
+    season: 'עונה',
+    alreadyHas: 'יש כבר ציוד',
+    paymentRequired: 'נדרש תשלום ביגוד',
+    viewDetails: 'פרטים',
   },
 
   registrations: {
