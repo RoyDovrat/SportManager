@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import {
   listRegistrations,
@@ -18,10 +18,26 @@ import {
 
 const ALL = ''
 
+function initialStatus(param: string | null): string {
+  if (param === ALL) {
+    return ALL
+  }
+  if (
+    param != null &&
+    (REGISTRATION_STATUSES as readonly string[]).includes(param)
+  ) {
+    return param
+  }
+  return 'PENDING'
+}
+
 export function RegistrationsPage() {
+  const [searchParams] = useSearchParams()
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [seasonId, setSeasonId] = useState<string>(ALL)
-  const [status, setStatus] = useState<string>('PENDING')
+  const [status, setStatus] = useState(() =>
+    initialStatus(searchParams.get('status')),
+  )
   const [rows, setRows] = useState<RegistrationResponse[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -34,9 +50,18 @@ export function RegistrationsPage() {
       try {
         const data = await listSeasons()
         setSeasons(data)
-        const active = data.find((season) => season.isActive)
-        if (active) {
-          setSeasonId(String(active.id))
+        const fromQuery = searchParams.get('seasonId')
+        if (
+          fromQuery != null &&
+          fromQuery !== ALL &&
+          data.some((season) => String(season.id) === fromQuery)
+        ) {
+          setSeasonId(fromQuery)
+        } else {
+          const active = data.find((season) => season.isActive)
+          if (active) {
+            setSeasonId(String(active.id))
+          }
         }
         setFiltersReady(true)
       } catch (err) {
@@ -46,7 +71,7 @@ export function RegistrationsPage() {
     }
 
     void loadSeasons()
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if (!filtersReady) {

@@ -115,7 +115,16 @@ export function ReportsPage() {
             {t('reports.showingSeason')}: <strong>{report.seasonName}</strong>
           </p>
 
-          <section className="admin-detail__section">
+          <nav className="reports-jump" aria-label={t('reports.jumpNav')}>
+            <a href="#report-registrations">{t('reports.registrationsTitle')}</a>
+            <a href="#report-payments">{t('reports.paymentsTitle')}</a>
+            <a href="#report-clothing">{t('reports.clothingTitle')}</a>
+          </nav>
+
+          <section
+            id="report-registrations"
+            className="admin-detail__section"
+          >
             <h2>{t('reports.registrationsTitle')}</h2>
             <div className="dashboard-stats">
               <div className="dashboard-stat">
@@ -160,7 +169,7 @@ export function ReportsPage() {
               </div>
             </div>
 
-            <div className="admin-table-wrap">
+            <div className="admin-table-wrap admin-table-wrap--scroll">
               {report.registrations.items.length === 0 ? (
                 <p>{t('reports.registrationsEmpty')}</p>
               ) : (
@@ -198,7 +207,7 @@ export function ReportsPage() {
             </div>
           </section>
 
-          <section className="admin-detail__section">
+          <section id="report-payments" className="admin-detail__section">
             <h2>{t('reports.paymentsTitle')}</h2>
             <div className="dashboard-stats">
               <div className="dashboard-stat">
@@ -230,7 +239,7 @@ export function ReportsPage() {
               </div>
             </div>
 
-            <div className="admin-table-wrap">
+            <div className="admin-table-wrap admin-table-wrap--scroll">
               {report.payments.items.length === 0 ? (
                 <p>{t('reports.paymentsEmpty')}</p>
               ) : (
@@ -268,7 +277,7 @@ export function ReportsPage() {
             </div>
           </section>
 
-          <section className="admin-detail__section">
+          <section id="report-clothing" className="admin-detail__section">
             <h2>{t('reports.clothingTitle')}</h2>
             <div className="dashboard-stats">
               <div className="dashboard-stat">
@@ -297,7 +306,7 @@ export function ReportsPage() {
               </div>
             </div>
 
-            <div className="admin-table-wrap">
+            <div className="admin-table-wrap admin-table-wrap--scroll">
               {report.clothing.items.length === 0 ? (
                 <p>{t('reports.clothingEmpty')}</p>
               ) : (

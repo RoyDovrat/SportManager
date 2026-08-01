@@ -188,7 +188,13 @@ export function DashboardPage() {
                 {t('dashboard.pendingRegistrations')}
               </span>
               <strong className="dashboard-stat__value">
-                <Link to="/admin/registrations">
+                <Link
+                  to={
+                    seasonId === ''
+                      ? '/admin/registrations?status=PENDING'
+                      : `/admin/registrations?status=PENDING&seasonId=${encodeURIComponent(seasonId)}`
+                  }
+                >
                   {dashboard.pendingRegistrations}
                 </Link>
               </strong>
@@ -222,8 +228,10 @@ export function DashboardPage() {
                 {t('dashboard.openCharges')}
               </span>
               <strong className="dashboard-stat__value">
-                {dashboard.openChargesCount} ·{' '}
-                {formatAmount(dashboard.openChargesAmount)}
+                <Link to="/admin/payments?status=PENDING">
+                  {dashboard.openChargesCount} ·{' '}
+                  {formatAmount(dashboard.openChargesAmount)}
+                </Link>
               </strong>
             </div>
             <div className="dashboard-stat">

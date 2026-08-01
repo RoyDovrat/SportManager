@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import {
   createClothingPayment,
@@ -23,6 +23,19 @@ import {
 
 const ALL = ''
 
+function initialPaymentStatus(param: string | null): string {
+  if (param === ALL) {
+    return ALL
+  }
+  if (
+    param != null &&
+    (PAYMENT_STATUSES as readonly string[]).includes(param)
+  ) {
+    return param
+  }
+  return 'PENDING'
+}
+
 /** Convert `<input type="month">` value `YYYY-MM` → `YYYY-MM-01`. */
 function toChargeMonthParam(monthValue: string): string | null {
   if (!monthValue) {
@@ -45,8 +58,11 @@ function currentMonthValue(): string {
 }
 
 export function PaymentsPage() {
+  const [searchParams] = useSearchParams()
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
-  const [status, setStatus] = useState<string>('PENDING')
+  const [status, setStatus] = useState(() =>
+    initialPaymentStatus(searchParams.get('status')),
+  )
   const [paymentType, setPaymentType] = useState<string>(ALL)
   const [chargeMonth, setChargeMonth] = useState('')
   const [rows, setRows] = useState<PaymentResponse[]>([])
