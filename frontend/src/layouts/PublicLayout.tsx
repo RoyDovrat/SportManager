@@ -42,6 +42,7 @@ export function PublicLayout() {
           </NavLink>
           <NavLink to="/register/football">{t('nav.football')}</NavLink>
           <NavLink to="/register/swimming">{t('nav.swimming')}</NavLink>
+          <NavLink to="/register/clothing">{t('nav.clothing')}</NavLink>
           <NavLink to="/admin">{t('nav.admin')}</NavLink>
         </nav>
       </header>

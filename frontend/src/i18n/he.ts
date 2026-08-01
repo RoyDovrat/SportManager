@@ -6,6 +6,7 @@ export const he = {
     home: 'דף הבית',
     football: 'כדורגל',
     swimming: 'שחייה',
+    clothing: 'ביגוד',
     admin: 'ניהול',
     adminHome: 'ראשי',
     seasons: 'עונות',
@@ -26,12 +27,19 @@ export const he = {
     footballDesc: 'הרשמת תלמיד/ה לחוגי כדורגל',
     swimmingTitle: 'הרשמה לשחייה',
     swimmingDesc: 'הרשמת תלמיד/ה לשיעורי שחייה',
+    clothingTitle: 'הזמנת ביגוד',
+    clothingDesc: 'לאחר אישור הרשמת כדורגל — הזמנה או דילוג אם יש ציוד',
     healthTitle: 'בדיקת חיבור לשרת',
     healthHint: 'קורא ל־GET /api/health',
     healthButton: 'בדיקת בריאות המערכת',
     healthChecking: 'בודק…',
     healthOk: 'השרת השיב',
     healthFail: 'הבקשה נכשלה',
+  },
+
+  publicClothing: {
+    title: 'הזמנת ביגוד',
+    placeholder: 'טופס הזמנת הביגוד יופיע כאן בשלב הבא.',
   },
 
   login: {

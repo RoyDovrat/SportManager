@@ -14,6 +14,7 @@ import { AdminHomePage } from '../pages/AdminHomePage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PublicHomePage } from '../pages/PublicHomePage'
+import { ClothingOrderPage } from '../pages/public/ClothingOrderPage'
 import { FootballRegistrationPage } from '../pages/public/FootballRegistrationPage'
 import { SwimmingRegistrationPage } from '../pages/public/SwimmingRegistrationPage'
 
@@ -25,6 +26,7 @@ export function AppRouter() {
           <Route index element={<PublicHomePage />} />
           <Route path="register/football" element={<FootballRegistrationPage />} />
           <Route path="register/swimming" element={<SwimmingRegistrationPage />} />
+          <Route path="register/clothing" element={<ClothingOrderPage />} />
         </Route>
 
         <Route path="/admin/login" element={<LoginPage />} />

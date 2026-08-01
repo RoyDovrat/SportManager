@@ -20,6 +20,12 @@ export function PublicHomePage() {
             <span>{t('publicHome.swimmingDesc')}</span>
           </Link>
         </li>
+        <li>
+          <Link to="/register/clothing" className="admin-home__card">
+            <strong>{t('publicHome.clothingTitle')}</strong>
+            <span>{t('publicHome.clothingDesc')}</span>
+          </Link>
+        </li>
       </ul>
     </section>
   )
