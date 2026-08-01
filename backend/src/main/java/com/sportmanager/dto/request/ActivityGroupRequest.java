@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 public class ActivityGroupRequest {
@@ -22,11 +24,13 @@ public class ActivityGroupRequest {
     @NotNull(message = "Activity type is required")
     private ActivityType activityType;
 
-    private AgeGroup ageGroup;
+    private Set<AgeGroup> ageGroups;
 
     private SwimmingLessonType swimmingLessonType;
 
     private WaterAdaptationLevel waterAdaptationLevel;
+
+    private Integer weeklySessions;
 
     @NotNull(message = "Is active is required")
     private Boolean isActive;

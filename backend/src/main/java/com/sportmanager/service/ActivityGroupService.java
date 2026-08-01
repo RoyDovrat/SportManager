@@ -9,7 +9,10 @@ import com.sportmanager.entity.ActivityGroup;
 import com.sportmanager.entity.Registration;
 import com.sportmanager.entity.Season;
 import com.sportmanager.enums.ActivityType;
+import com.sportmanager.enums.AgeGroup;
 import com.sportmanager.enums.RegistrationStatus;
+import com.sportmanager.enums.SwimmingLessonType;
+import com.sportmanager.enums.WaterAdaptationLevel;
 import com.sportmanager.exception.BusinessRuleException;
 import com.sportmanager.exception.ConflictException;
 import com.sportmanager.exception.ResourceNotFoundException;
@@ -21,8 +24,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +43,13 @@ public class ActivityGroupService {
     public ActivityGroupResponse createGroup(ActivityGroupRequest request) {
         Season season = getSeason(request.getSeasonId());
         Activity activity = getActivity(request.getActivityType());
-        validateGroupAttributes(request.getActivityType(), request);
+        validateGroupAttributes(
+                request.getActivityType(),
+                request.getAgeGroups(),
+                request.getSwimmingLessonType(),
+                request.getWaterAdaptationLevel(),
+                request.getWeeklySessions()
+        );
         validateNameAvailable(season, activity, request.getName(), null);
 
         ActivityGroup group = new ActivityGroup();
@@ -46,7 +57,14 @@ public class ActivityGroupService {
         group.setSeason(season);
         group.setActivity(activity);
         group.setIsActive(request.getIsActive());
-        applyTypeSpecificAttributes(group, request.getActivityType(), request);
+        applyTypeSpecificAttributes(
+                group,
+                request.getActivityType(),
+                request.getAgeGroups(),
+                request.getSwimmingLessonType(),
+                request.getWaterAdaptationLevel(),
+                request.getWeeklySessions()
+        );
 
         return toResponse(activityGroupRepository.save(group));
     }
@@ -58,9 +76,10 @@ public class ActivityGroupService {
 
         validateGroupAttributes(
                 activityType,
-                request.getAgeGroup(),
+                request.getAgeGroups(),
                 request.getSwimmingLessonType(),
-                request.getWaterAdaptationLevel()
+                request.getWaterAdaptationLevel(),
+                request.getWeeklySessions()
         );
         validateNameAvailable(
                 group.getSeason(),
@@ -71,16 +90,14 @@ public class ActivityGroupService {
 
         group.setName(request.getName().trim());
         group.setIsActive(request.getIsActive());
-
-        if (activityType == ActivityType.FOOTBALL) {
-            group.setAgeGroup(request.getAgeGroup());
-            group.setSwimmingLessonType(null);
-            group.setWaterAdaptationLevel(null);
-        } else {
-            group.setAgeGroup(request.getAgeGroup());
-            group.setSwimmingLessonType(request.getSwimmingLessonType());
-            group.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
-        }
+        applyTypeSpecificAttributes(
+                group,
+                activityType,
+                request.getAgeGroups(),
+                request.getSwimmingLessonType(),
+                request.getWaterAdaptationLevel(),
+                request.getWeeklySessions()
+        );
 
         return toResponse(activityGroupRepository.save(group));
     }
@@ -119,6 +136,21 @@ public class ActivityGroupService {
     public List<RegistrationResponse> getGroupRegistrations(Long groupId) {
         getGroupEntity(groupId);
         return registrationRepository.findByActivityGroupId(groupId).stream()
+                .map(registrationService::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RegistrationResponse> getEligibleRegistrations(Long groupId) {
+        ActivityGroup group = getGroupEntity(groupId);
+        Long seasonId = group.getSeason().getId();
+        Long activityId = group.getActivity().getId();
+
+        return registrationRepository.findBySeasonIdAndStatus(seasonId, RegistrationStatus.APPROVED)
+                .stream()
+                .filter(registration -> Objects.equals(registration.getActivity().getId(), activityId))
+                .filter(registration -> registration.getActivityGroup() == null)
+                .filter(registration -> isEligibleForGroup(registration, group))
                 .map(registrationService::toResponse)
                 .toList();
     }
@@ -185,75 +217,71 @@ public class ActivityGroupService {
                     "Registration activity must match the activity group activity"
             );
         }
-
-        ActivityType activityType = group.getActivity().getActivityType();
-        if (activityType == ActivityType.FOOTBALL) {
-            if (group.getAgeGroup() == null) {
-                throw new BusinessRuleException("Football groups must have an age group");
-            }
-            if (registration.getStudent().getAgeGroup() != group.getAgeGroup()) {
-                throw new BusinessRuleException(
-                        "Student age group must match the football group age group"
-                );
-            }
-            return;
-        }
-
-        if (activityType == ActivityType.SWIMMING) {
-            if (group.getSwimmingLessonType() != null
-                    && registration.getSwimmingLessonType() != group.getSwimmingLessonType()) {
-                throw new BusinessRuleException(
-                        "Registration swimming lesson type must match the group"
-                );
-            }
-            if (group.getWaterAdaptationLevel() != null
-                    && registration.getWaterAdaptationLevel() != group.getWaterAdaptationLevel()) {
-                throw new BusinessRuleException(
-                        "Registration water adaptation level must match the group"
-                );
-            }
-            if (group.getAgeGroup() != null
-                    && registration.getStudent().getAgeGroup() != group.getAgeGroup()) {
-                throw new BusinessRuleException(
-                        "Student age group must match the swimming group age group"
-                );
-            }
+        if (!isEligibleForGroup(registration, group)) {
+            throw new BusinessRuleException(
+                    "Registration does not match the activity group rules"
+            );
         }
     }
 
-    private void validateGroupAttributes(ActivityType activityType, ActivityGroupRequest request) {
-        validateGroupAttributes(
-                activityType,
-                request.getAgeGroup(),
-                request.getSwimmingLessonType(),
-                request.getWaterAdaptationLevel()
-        );
+    private boolean isEligibleForGroup(Registration registration, ActivityGroup group) {
+        ActivityType activityType = group.getActivity().getActivityType();
+
+        if (activityType == ActivityType.FOOTBALL) {
+            Set<AgeGroup> allowed = group.getAgeGroups();
+            if (allowed == null || allowed.isEmpty()) {
+                return false;
+            }
+            return allowed.contains(registration.getStudent().getAgeGroup());
+        }
+
+        if (activityType == ActivityType.SWIMMING) {
+            if (group.getSwimmingLessonType() == null) {
+                return false;
+            }
+            return group.getSwimmingLessonType() == registration.getSwimmingLessonType();
+        }
+
+        return false;
     }
 
     private void validateGroupAttributes(
             ActivityType activityType,
-            com.sportmanager.enums.AgeGroup ageGroup,
-            com.sportmanager.enums.SwimmingLessonType swimmingLessonType,
-            com.sportmanager.enums.WaterAdaptationLevel waterAdaptationLevel
+            Set<AgeGroup> ageGroups,
+            SwimmingLessonType swimmingLessonType,
+            WaterAdaptationLevel waterAdaptationLevel,
+            Integer weeklySessions
     ) {
+        Set<AgeGroup> normalizedAgeGroups = normalizeAgeGroups(ageGroups);
+
         if (activityType == ActivityType.FOOTBALL) {
-            if (ageGroup == null) {
-                throw new BusinessRuleException("Age group is required for football groups");
+            if (normalizedAgeGroups.isEmpty()) {
+                throw new BusinessRuleException(
+                        "At least one age group is required for football groups"
+                );
             }
             if (swimmingLessonType != null || waterAdaptationLevel != null) {
                 throw new BusinessRuleException(
                         "Swimming attributes must not be provided for football groups"
                 );
             }
+            if (weeklySessions == null || (weeklySessions != 1 && weeklySessions != 2)) {
+                throw new BusinessRuleException(
+                        "Football groups require weeklySessions of 1 or 2"
+                );
+            }
             return;
         }
 
         if (activityType == ActivityType.SWIMMING) {
-            if (swimmingLessonType == null
-                    && waterAdaptationLevel == null
-                    && ageGroup == null) {
+            if (swimmingLessonType == null) {
                 throw new BusinessRuleException(
-                        "Swimming groups require at least one of: swimmingLessonType, waterAdaptationLevel, ageGroup"
+                        "Swimming lesson type is required for swimming groups"
+                );
+            }
+            if (weeklySessions != null) {
+                throw new BusinessRuleException(
+                        "weeklySessions must not be provided for swimming groups"
                 );
             }
             return;
@@ -265,17 +293,31 @@ public class ActivityGroupService {
     private void applyTypeSpecificAttributes(
             ActivityGroup group,
             ActivityType activityType,
-            ActivityGroupRequest request
+            Set<AgeGroup> ageGroups,
+            SwimmingLessonType swimmingLessonType,
+            WaterAdaptationLevel waterAdaptationLevel,
+            Integer weeklySessions
     ) {
+        Set<AgeGroup> normalizedAgeGroups = normalizeAgeGroups(ageGroups);
+
         if (activityType == ActivityType.FOOTBALL) {
-            group.setAgeGroup(request.getAgeGroup());
+            group.setAgeGroups(normalizedAgeGroups);
             group.setSwimmingLessonType(null);
             group.setWaterAdaptationLevel(null);
+            group.setWeeklySessions(weeklySessions);
         } else {
-            group.setAgeGroup(request.getAgeGroup());
-            group.setSwimmingLessonType(request.getSwimmingLessonType());
-            group.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
+            group.setAgeGroups(new HashSet<>());
+            group.setSwimmingLessonType(swimmingLessonType);
+            group.setWaterAdaptationLevel(waterAdaptationLevel);
+            group.setWeeklySessions(null);
         }
+    }
+
+    private Set<AgeGroup> normalizeAgeGroups(Set<AgeGroup> ageGroups) {
+        if (ageGroups == null || ageGroups.isEmpty()) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(ageGroups);
     }
 
     private void validateNameAvailable(
@@ -321,9 +363,12 @@ public class ActivityGroupService {
                 .seasonName(group.getSeason().getName())
                 .activityId(group.getActivity().getId())
                 .activityType(group.getActivity().getActivityType())
-                .ageGroup(group.getAgeGroup())
+                .ageGroups(group.getAgeGroups() == null
+                        ? Set.of()
+                        : Set.copyOf(group.getAgeGroups()))
                 .swimmingLessonType(group.getSwimmingLessonType())
                 .waterAdaptationLevel(group.getWaterAdaptationLevel())
+                .weeklySessions(group.getWeeklySessions())
                 .isActive(group.getIsActive())
                 .memberCount(memberCount)
                 .build();

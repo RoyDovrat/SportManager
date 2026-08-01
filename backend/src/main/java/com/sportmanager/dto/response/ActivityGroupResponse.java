@@ -7,6 +7,8 @@ import com.sportmanager.enums.WaterAdaptationLevel;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Set;
+
 @Getter
 @Builder
 public class ActivityGroupResponse {
@@ -17,9 +19,10 @@ public class ActivityGroupResponse {
     private String seasonName;
     private Long activityId;
     private ActivityType activityType;
-    private AgeGroup ageGroup;
+    private Set<AgeGroup> ageGroups;
     private SwimmingLessonType swimmingLessonType;
     private WaterAdaptationLevel waterAdaptationLevel;
+    private Integer weeklySessions;
     private Boolean isActive;
     private int memberCount;
 }

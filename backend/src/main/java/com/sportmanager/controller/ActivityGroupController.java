@@ -75,6 +75,13 @@ public class ActivityGroupController {
         return ResponseEntity.ok(activityGroupService.getGroupRegistrations(groupId));
     }
 
+    @GetMapping("/{groupId}/eligible-registrations")
+    public ResponseEntity<List<RegistrationResponse>> getEligibleRegistrations(
+            @PathVariable Long groupId
+    ) {
+        return ResponseEntity.ok(activityGroupService.getEligibleRegistrations(groupId));
+    }
+
     @PostMapping("/{groupId}/registrations/{registrationId}")
     public ResponseEntity<RegistrationResponse> assignRegistration(
             @PathVariable Long groupId,

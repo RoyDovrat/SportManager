@@ -7,7 +7,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -38,9 +40,14 @@ public class ActivityGroup {
     @JoinColumn(name = "activity_id", nullable = false)
     private Activity activity;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "activity_group_age_groups",
+            joinColumns = @JoinColumn(name = "group_id")
+    )
     @Enumerated(EnumType.STRING)
-    @Column(name = "age_group")
-    private AgeGroup ageGroup;
+    @Column(name = "age_group", nullable = false)
+    private Set<AgeGroup> ageGroups = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "swimming_lesson_type")
@@ -49,6 +56,9 @@ public class ActivityGroup {
     @Enumerated(EnumType.STRING)
     @Column(name = "water_adaptation_level")
     private WaterAdaptationLevel waterAdaptationLevel;
+
+    @Column(name = "weekly_sessions")
+    private Integer weeklySessions;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

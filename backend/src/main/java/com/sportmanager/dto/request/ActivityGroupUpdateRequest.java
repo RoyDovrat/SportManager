@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Set;
+
 @Getter
 @Setter
 public class ActivityGroupUpdateRequest {
@@ -15,11 +17,13 @@ public class ActivityGroupUpdateRequest {
     @NotBlank(message = "Group name is required")
     private String name;
 
-    private AgeGroup ageGroup;
+    private Set<AgeGroup> ageGroups;
 
     private SwimmingLessonType swimmingLessonType;
 
     private WaterAdaptationLevel waterAdaptationLevel;
+
+    private Integer weeklySessions;
 
     @NotNull(message = "Is active is required")
     private Boolean isActive;
