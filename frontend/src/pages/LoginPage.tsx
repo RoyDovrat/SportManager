@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api'
 import { useAuth } from '../auth/AuthContext'
+import { t } from '../i18n/t'
 
 export function LoginPage() {
   const { login, isAuthenticated } = useAuth()
@@ -30,7 +31,7 @@ export function LoginPage() {
           ? err.message
           : err instanceof Error
             ? err.message
-            : 'Login failed'
+            : t('login.failed')
 
       setError(message)
     } finally {
@@ -41,11 +42,11 @@ export function LoginPage() {
   return (
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit}>
-        <h1>Admin login</h1>
-        <p className="login-form__hint">Sign in to manage SportManager.</p>
+        <h1>{t('login.title')}</h1>
+        <p className="login-form__hint">{t('login.hint')}</p>
 
         <label className="login-form__field">
-          <span>Username</span>
+          <span>{t('login.username')}</span>
           <input
             name="username"
             autoComplete="username"
@@ -56,7 +57,7 @@ export function LoginPage() {
         </label>
 
         <label className="login-form__field">
-          <span>Password</span>
+          <span>{t('login.password')}</span>
           <input
             type="password"
             name="password"
@@ -70,11 +71,11 @@ export function LoginPage() {
         {error && <p className="login-form__error">{error}</p>}
 
         <button type="submit" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign in'}
+          {submitting ? t('login.submitting') : t('login.submit')}
         </button>
 
         <p className="login-form__footer">
-          <Link to="/">Back to public site</Link>
+          <Link to="/">{t('login.backPublic')}</Link>
         </p>
       </form>
     </div>

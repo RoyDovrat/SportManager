@@ -9,6 +9,7 @@ import {
   type SeasonResponse,
 } from '../../api/seasons'
 import { formatApiError } from '../../api/formatApiError'
+import { t } from '../../i18n/t'
 
 const emptyForm: SeasonRequest = {
   name: '',
@@ -70,10 +71,10 @@ export function SeasonsPage() {
     try {
       if (editingId === null) {
         await createSeason(form)
-        setMessage('Season created.')
+        setMessage(t('seasons.created'))
       } else {
         await updateSeason(editingId, form)
-        setMessage('Season updated.')
+        setMessage(t('seasons.updated'))
       }
       resetForm()
       await loadSeasons()
@@ -89,7 +90,7 @@ export function SeasonsPage() {
     setMessage(null)
     try {
       await activateSeason(seasonId)
-      setMessage('Season activated.')
+      setMessage(t('seasons.activated'))
       await loadSeasons()
     } catch (err) {
       setError(formatApiError(err))
@@ -101,7 +102,7 @@ export function SeasonsPage() {
     setMessage(null)
     try {
       await deactivateSeason(seasonId)
-      setMessage('Season deactivated.')
+      setMessage(t('seasons.deactivated'))
       await loadSeasons()
     } catch (err) {
       setError(formatApiError(err))
@@ -110,17 +111,17 @@ export function SeasonsPage() {
 
   return (
     <section className="admin-page">
-      <h1>Seasons</h1>
-      <p>Create, edit, and activate seasons. Only one season should be active at a time.</p>
+      <h1>{t('seasons.title')}</h1>
+      <p>{t('seasons.intro')}</p>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       <form className="admin-form" onSubmit={handleSubmit}>
-        <h2>{editingId === null ? 'Create season' : `Edit season #${editingId}`}</h2>
+        <h2>{editingId === null ? t('seasons.createTitle') : t('seasons.editTitle')}</h2>
 
         <label className="admin-form__field">
-          <span>Name</span>
+          <span>{t('seasons.name')}</span>
           <input
             value={form.name}
             onChange={(event) => setForm({ ...form, name: event.target.value })}
@@ -129,7 +130,7 @@ export function SeasonsPage() {
         </label>
 
         <label className="admin-form__field">
-          <span>Start date</span>
+          <span>{t('seasons.startDate')}</span>
           <input
             type="date"
             value={form.startDate}
@@ -139,7 +140,7 @@ export function SeasonsPage() {
         </label>
 
         <label className="admin-form__field">
-          <span>End date</span>
+          <span>{t('seasons.endDate')}</span>
           <input
             type="date"
             value={form.endDate}
@@ -154,37 +155,37 @@ export function SeasonsPage() {
             checked={form.isActive}
             onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
           />
-          <span>Active</span>
+          <span>{t('common.active')}</span>
         </label>
 
         <div className="admin-form__actions">
           <button type="submit" disabled={saving}>
-            {saving ? 'Saving…' : editingId === null ? 'Create' : 'Save changes'}
+            {saving ? t('common.saving') : editingId === null ? t('common.create') : t('common.save')}
           </button>
           {editingId !== null && (
             <button type="button" onClick={resetForm} disabled={saving}>
-              Cancel edit
+              {t('common.cancelEdit')}
             </button>
           )}
         </div>
       </form>
 
       <div className="admin-table-wrap">
-        <h2>Existing seasons</h2>
+        <h2>{t('seasons.existing')}</h2>
         {loading ? (
-          <p>Loading seasons…</p>
+          <p>{t('seasons.loading')}</p>
         ) : seasons.length === 0 ? (
-          <p>No seasons yet.</p>
+          <p>{t('seasons.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('common.id')}</th>
+                <th>{t('common.name')}</th>
+                <th>{t('common.start')}</th>
+                <th>{t('common.end')}</th>
+                <th>{t('common.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -194,18 +195,18 @@ export function SeasonsPage() {
                   <td>{season.name}</td>
                   <td>{season.startDate}</td>
                   <td>{season.endDate}</td>
-                  <td>{season.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>{season.isActive ? t('common.active') : t('common.inactive')}</td>
                   <td className="admin-table__actions">
                     <button type="button" onClick={() => startEdit(season)}>
-                      Edit
+                      {t('common.edit')}
                     </button>
                     {season.isActive ? (
                       <button type="button" onClick={() => void handleDeactivate(season.id)}>
-                        Deactivate
+                        {t('common.deactivate')}
                       </button>
                     ) : (
                       <button type="button" onClick={() => void handleActivate(season.id)}>
-                        Activate
+                        {t('common.activate')}
                       </button>
                     )}
                   </td>

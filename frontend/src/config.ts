@@ -3,7 +3,7 @@ function resolveApiBaseUrl(): string {
 
   if (typeof raw !== 'string' || raw.trim() === '') {
     throw new Error(
-      'VITE_API_BASE_URL is not set. Copy .env.example to .env and restart the dev server.',
+      'VITE_API_BASE_URL לא מוגדר. העתיקו את .env.example ל־.env והפעילו מחדש את שרת הפיתוח.',
     )
   }
 

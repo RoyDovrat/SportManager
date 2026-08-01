@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom'
+import { t } from '../i18n/t'
 
 export function NotFoundPage() {
   return (
     <section>
-      <h1>Page not found</h1>
+      <h1>{t('notFound.title')}</h1>
       <p>
-        <Link to="/">Back to public home</Link>
+        <Link to="/">{t('notFound.backPublic')}</Link>
         {' · '}
-        <Link to="/admin">Admin home</Link>
+        <Link to="/admin">{t('notFound.backAdmin')}</Link>
       </p>
     </section>
   )

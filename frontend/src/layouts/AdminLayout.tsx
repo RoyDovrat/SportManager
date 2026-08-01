@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { t } from '../i18n/t'
 
 export function AdminLayout() {
   const { username, logout } = useAuth()
@@ -13,21 +14,21 @@ export function AdminLayout() {
   return (
     <div className="layout layout--admin">
       <header className="layout__header">
-        <strong>SportManager Admin</strong>
+        <strong>{t('appName')} — {t('nav.admin')}</strong>
         <nav className="layout__nav">
           <NavLink to="/admin" end>
-            Home
+            {t('nav.adminHome')}
           </NavLink>
-          <NavLink to="/admin/seasons">Seasons</NavLink>
-          <NavLink to="/admin/activities">Activities</NavLink>
-          <NavLink to="/admin/activity-pricing">Activity pricing</NavLink>
-          <NavLink to="/admin/clothing-pricing">Clothing pricing</NavLink>
-          <NavLink to="/">Public site</NavLink>
+          <NavLink to="/admin/seasons">{t('nav.seasons')}</NavLink>
+          <NavLink to="/admin/activities">{t('nav.activities')}</NavLink>
+          <NavLink to="/admin/activity-pricing">{t('nav.activityPricing')}</NavLink>
+          <NavLink to="/admin/clothing-pricing">{t('nav.clothingPricing')}</NavLink>
+          <NavLink to="/">{t('nav.publicSite')}</NavLink>
           <span className="layout__user">
-            Signed in as <strong>{username ?? 'admin'}</strong>
+            {t('nav.signedInAs')} <strong>{username ?? 'admin'}</strong>
           </span>
           <button type="button" className="layout__logout" onClick={handleLogout}>
-            Log out
+            {t('nav.logout')}
           </button>
         </nav>
       </header>
