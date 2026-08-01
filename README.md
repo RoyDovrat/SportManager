@@ -152,10 +152,12 @@ Registrations are created as **PENDING** until an admin approves them. Clothing 
 - Registration detail: `/admin/registrations/:id` (approve / cancel)
 - Clothing orders list: `/admin/clothing-orders` (create/skip + filter by season / identity)
 - Clothing order detail: `/admin/clothing-orders/:id`
+- Payments list: `/admin/payments` (filters; generate monthly charges; create clothing payment)
+- Payment detail: `/admin/payments/:id` (confirm / cancel)
 
 Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
 
-Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → parents order clothing at `/register/clothing` → admin views orders at `/admin/clothing-orders`.
+Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → parents order clothing at `/register/clothing` → admin generates monthly charges / clothing payments at `/admin/payments` → confirm Bit/PayBox/Kibbutz.
 
 ### CORS
 

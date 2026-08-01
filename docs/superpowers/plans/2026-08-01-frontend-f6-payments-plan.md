@@ -1,6 +1,6 @@
 # Frontend Phase F6 — Admin payments (option B)
 
-> **Status:** In progress — Stages 1–2 done; waiting for approve before Stage 3.  
+> **Status:** F6 implementation complete (Stages 1–6).  
 > **Goal:** Authenticated admin can list/filter payments, open detail, confirm or cancel, bulk-generate monthly charges, and create clothing payments from a clothing order.  
 > **UI language:** Hebrew (RTL) via `t()` + enum labels.  
 > **Out of scope:** Single monthly create (`POST /monthly`), manual one-time (`POST /manual`), Kibbutz Excel (F8), dashboard (F9), public parent payment UI.  
@@ -148,12 +148,13 @@ frontend/src/
 
 ## Acceptance checklist (end of F6)
 
-- [ ] Admin opens `/admin/payments` when logged in  
-- [ ] List filters by status / type / charge month; default favors `PENDING`  
-- [ ] Detail shows payment data  
-- [ ] Confirm works (BIT/PAYBOX for non-kibbutz; kibbutz OK)  
-- [ ] Cancel works for pending charges  
-- [ ] Bulk monthly generate reports created/skipped  
-- [ ] Clothing payment create from order id  
-- [ ] Errors via `formatApiError`  
-- [ ] Hebrew UI + README payment URLs  
+- [x] Admin opens `/admin/payments` when logged in  
+- [x] List filters by status / type / charge month; default favors `PENDING`  
+- [x] Detail shows payment data  
+- [x] Confirm works (BIT/PAYBOX for non-kibbutz; kibbutz OK)  
+- [x] Cancel works for pending charges  
+- [x] Bulk monthly generate reports created/skipped  
+- [x] Clothing payment create from order id  
+- [x] Errors via `formatApiError`  
+- [x] Hebrew UI + README payment URLs  
+
