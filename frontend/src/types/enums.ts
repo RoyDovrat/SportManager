@@ -16,3 +16,17 @@ export type AgeGroup = (typeof AGE_GROUPS)[number]
 
 export const SWIMMING_LESSON_TYPES = ['PRIVATE', 'PAIR', 'GROUP'] as const
 export type SwimmingLessonType = (typeof SWIMMING_LESSON_TYPES)[number]
+
+export const GENDERS = ['MALE', 'FEMALE'] as const
+export type Gender = (typeof GENDERS)[number]
+
+export const WATER_ADAPTATION_LEVELS = [
+  'NOT_INDEPENDENT',
+  'INDEPENDENT_NO_HEAD',
+  'INDEPENDENT_WITH_HEAD',
+  'BASIC_SWIMMING',
+] as const
+export type WaterAdaptationLevel = (typeof WATER_ADAPTATION_LEVELS)[number]
+
+export const REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'CANCELLED'] as const
+export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number]
