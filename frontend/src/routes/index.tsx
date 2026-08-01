@@ -10,6 +10,8 @@ import { AdminHomePage } from '../pages/AdminHomePage'
 import { LoginPage } from '../pages/LoginPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { PublicHomePage } from '../pages/PublicHomePage'
+import { FootballRegistrationPage } from '../pages/public/FootballRegistrationPage'
+import { SwimmingRegistrationPage } from '../pages/public/SwimmingRegistrationPage'
 
 export function AppRouter() {
   return (
@@ -17,6 +19,8 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<PublicLayout />}>
           <Route index element={<PublicHomePage />} />
+          <Route path="register/football" element={<FootballRegistrationPage />} />
+          <Route path="register/swimming" element={<SwimmingRegistrationPage />} />
         </Route>
 
         <Route path="/admin/login" element={<LoginPage />} />

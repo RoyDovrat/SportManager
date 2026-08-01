@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../api'
 import { getHealth } from '../api/health'
 
@@ -30,13 +31,28 @@ export function PublicHomePage() {
   }
 
   return (
-    <section>
-      <h1>Public home</h1>
-      <p>Public registration and info will live here (later phases).</p>
+    <section className="admin-page">
+      <h1>SportManager</h1>
+      <p>Register a student for the active season.</p>
+
+      <ul className="admin-home__cards">
+        <li>
+          <Link to="/register/football" className="admin-home__card">
+            <strong>Football registration</strong>
+            <span>Sign up for football activities.</span>
+          </Link>
+        </li>
+        <li>
+          <Link to="/register/swimming" className="admin-home__card">
+            <strong>Swimming registration</strong>
+            <span>Sign up for swimming lessons.</span>
+          </Link>
+        </li>
+      </ul>
 
       <div className="health-check">
         <h2>API connection check</h2>
-        <p>Calls the public backend endpoint GET /api/health (CORS + client smoke test).</p>
+        <p>Calls the public backend endpoint GET /api/health.</p>
         <button type="button" onClick={handleCheckHealth} disabled={check.status === 'loading'}>
           {check.status === 'loading' ? 'Checking…' : 'Check API health'}
         </button>

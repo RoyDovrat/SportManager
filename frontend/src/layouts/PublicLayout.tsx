@@ -8,8 +8,10 @@ export function PublicLayout() {
         <strong>SportManager</strong>
         <nav className="layout__nav">
           <NavLink to="/" end>
-            Public home
+            Home
           </NavLink>
+          <NavLink to="/register/football">Football</NavLink>
+          <NavLink to="/register/swimming">Swimming</NavLink>
           <NavLink to="/admin">Admin</NavLink>
         </nav>
       </header>
