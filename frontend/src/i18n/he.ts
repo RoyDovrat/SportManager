@@ -47,7 +47,7 @@ export const he = {
   adminHome: {
     title: 'אזור ניהול',
     signedIn: 'מחובר/ת כ',
-    intro: 'הגדירו את העונה לפני פתיחת הרשמות.',
+    intro: 'הגדירו עונה ומחירים, ואז סקרו אישורי הרשמה.',
     seasonsDesc: 'יצירת עונות והפעלת העונה הנוכחית',
     activitiesDesc: 'ניהול חוגי כדורגל ושחייה',
     activityPricingDesc: 'מחיר חודשי לפי עונה, קבוצת גיל או סוג שיעור',
@@ -59,8 +59,6 @@ export const he = {
     title: 'הרשמות',
     intro: 'סננו לפי עונה וסטטוס, ופתחו הרשמה לאישור או ביטול.',
     detailTitle: 'פרטי הרשמה',
-    placeholderList: 'רשימת ההרשמות תופיע כאן בשלב הבא.',
-    placeholderDetail: 'פרטי הרשמה {id} יופיעו כאן בשלב הבא.',
     backToList: 'חזרה לרשימת ההרשמות',
     filterSeason: 'עונה',
     filterStatus: 'סטטוס',

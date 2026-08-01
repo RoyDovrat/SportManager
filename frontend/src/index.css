@@ -326,6 +326,10 @@ body {
   gap: 0.35rem;
 }
 
+.admin-table__actions a {
+  color: inherit;
+}
+
 .registration-form {
   max-width: 36rem;
 }
