@@ -1,6 +1,6 @@
 # Frontend Phase F5b — Public clothing orders (parents)
 
-> **Status:** Plan ready — wait for user approval before implementation.  
+> **Status:** In progress — Stages 0–1 done; waiting for approve before Stage 2.  
 > **Decision:** Option **B** — parents order clothing only after football registration is **APPROVED** (come back later with season + student identity).  
 > **Goal:** Public page to create a clothing order / “already has clothing” skip; admin continues to **list and view** orders (F5 admin slice).  
 > **UI language:** Hebrew (RTL) via `t()`.  
