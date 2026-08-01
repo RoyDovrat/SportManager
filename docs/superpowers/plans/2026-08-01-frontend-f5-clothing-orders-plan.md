@@ -168,5 +168,5 @@ frontend/src/
 - [x] Detail page shows order data  
 - [x] Backend errors surfaced via `formatApiError`  
 - [x] Hebrew UI + README clothing-order URLs  
-- [ ] Public parent clothing order (follow-up — not done in Stages 1–5)
+- [x] Public parent clothing order (follow-up F5b — option B)
 

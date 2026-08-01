@@ -1,6 +1,6 @@
 # Frontend Phase F5b — Public clothing orders (parents)
 
-> **Status:** In progress — Stages 0–1 done; waiting for approve before Stage 2.  
+> **Status:** F5b implementation complete (Stages 0–3).  
 > **Decision:** Option **B** — parents order clothing only after football registration is **APPROVED** (come back later with season + student identity).  
 > **Goal:** Public page to create a clothing order / “already has clothing” skip; admin continues to **list and view** orders (F5 admin slice).  
 > **UI language:** Hebrew (RTL) via `t()`.  
@@ -126,10 +126,11 @@ Reuse form field patterns from admin create (extract shared kit UI only if it st
 
 ## Acceptance checklist
 
-- [ ] Unauthenticated parent can `POST` clothing order  
-- [ ] Public page `/register/clothing` works in Hebrew  
-- [ ] Rejects non-approved / non-football / duplicate (backend messages shown)  
-- [ ] “Already has clothing” skip works publicly  
-- [ ] Admin still lists/views orders at `/admin/clothing-orders`  
-- [ ] List/get clothing APIs remain JWT-protected  
-- [ ] README updated  
+- [x] Unauthenticated parent can `POST` clothing order  
+- [x] Public page `/register/clothing` works in Hebrew  
+- [x] Rejects non-approved / non-football / duplicate (backend messages shown)  
+- [x] “Already has clothing” skip works publicly  
+- [x] Admin still lists/views orders at `/admin/clothing-orders`  
+- [x] List/get clothing APIs remain JWT-protected  
+- [x] README updated  
+

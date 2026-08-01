@@ -136,8 +136,9 @@ App: `http://localhost:5173`
 - Home: `/`
 - Football registration: `/register/football`
 - Swimming registration: `/register/swimming`
+- Clothing order: `/register/clothing` (after football registration is **APPROVED**; identity + kit or “already has clothing”)
 
-Registrations are created as **PENDING** until an admin approves them.
+Registrations are created as **PENDING** until an admin approves them. Clothing orders require an approved football registration for the active season.
 
 **Admin (JWT):**
 
@@ -154,7 +155,7 @@ Registrations are created as **PENDING** until an admin approves them.
 
 Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
 
-Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → clothing orders for approved football registrations at `/admin/clothing-orders`.
+Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → parents order clothing at `/register/clothing` → admin views orders at `/admin/clothing-orders`.
 
 ### CORS
 
