@@ -1,6 +1,6 @@
 # Frontend Phase F4 — Admin registration review (list + detail)
 
-> **Status:** Plan ready — wait for user approval before implementation.  
+> **Status:** In progress — Stage 1 done; waiting for approve before Stage 2.  
 > **Goal:** Authenticated admin can browse registrations (season + status filters), open a detail view, and approve or cancel with clear status rules and Hebrew UX.  
 > **UI language:** Hebrew (RTL) via `frontend/src/i18n` (`t()` + enum labels).  
 > **Out of scope:** Edit registration fields, group assignment, clothing orders, payments, dashboard/reports, parent/student CRUD.  

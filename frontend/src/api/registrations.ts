@@ -63,6 +63,11 @@ export type RegistrationResponse = {
   specialRequests: string | null
 }
 
+export type ListRegistrationsParams = {
+  seasonId?: number | null
+  status?: RegistrationStatus | null
+}
+
 export function createRegistration(
   request: RegistrationRequest,
 ): Promise<RegistrationResponse> {
@@ -70,4 +75,52 @@ export function createRegistration(
     method: 'POST',
     body: request,
   })
+}
+
+function buildRegistrationsQuery(params: ListRegistrationsParams = {}): string {
+  const search = new URLSearchParams()
+
+  if (params.seasonId != null) {
+    search.set('seasonId', String(params.seasonId))
+  }
+  if (params.status != null) {
+    search.set('status', params.status)
+  }
+
+  const query = search.toString()
+  return query ? `?${query}` : ''
+}
+
+export function listRegistrations(
+  params: ListRegistrationsParams = {},
+): Promise<RegistrationResponse[]> {
+  return apiRequest<RegistrationResponse[]>(
+    `/api/registrations${buildRegistrationsQuery(params)}`,
+  )
+}
+
+export function getRegistration(
+  registrationId: number,
+): Promise<RegistrationResponse> {
+  return apiRequest<RegistrationResponse>(
+    `/api/registrations/${registrationId}`,
+  )
+}
+
+export function approveRegistration(
+  registrationId: number,
+): Promise<RegistrationResponse> {
+  return apiRequest<RegistrationResponse>(
+    `/api/registrations/${registrationId}/approve`,
+    { method: 'PATCH' },
+  )
+}
+
+export function cancelRegistration(
+  registrationId: number,
+): Promise<RegistrationResponse> {
+  return apiRequest<RegistrationResponse>(
+    `/api/registrations/${registrationId}/cancel`,
+    { method: 'PATCH' },
+  )
 }
