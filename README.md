@@ -154,10 +154,13 @@ Registrations are created as **PENDING** until an admin approves them. Clothing 
 - Clothing order detail: `/admin/clothing-orders/:id`
 - Payments list: `/admin/payments` (filters; generate monthly charges; create clothing payment)
 - Payment detail: `/admin/payments/:id` (confirm / cancel)
+- Activity groups: `/admin/activity-groups` (create football/swimming groups)
+- Activity group detail: `/admin/activity-groups/:id` (edit; assign matching approved kids — swimming matches lesson type, age, water level, weekly sessions 1–6; capacities 1/2/5)
+- Kibbutz Excel export: `/admin/exports/kibbutz` (download pending kibbutz-budget charges for a month)
 
 Use the admin credentials from `application-local.properties` / env (`ADMIN_DEFAULT_USERNAME` / `ADMIN_DEFAULT_PASSWORD`). A `401` from a protected API call clears the stored session and sends you back to login.
 
-Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → parents order clothing at `/register/clothing` → admin generates monthly charges / clothing payments at `/admin/payments` → confirm Bit/PayBox/Kibbutz.
+Typical flow: create/activate a **season** → ensure **activities** and **pricing** exist → parents register publicly → admin reviews at `/admin/registrations` → parents order clothing at `/register/clothing` → admin places kids in **activity groups** → admin generates monthly charges / clothing payments at `/admin/payments` → confirm Bit/PayBox/Kibbutz → download Kibbutz Excel at `/admin/exports/kibbutz` for accounting.
 
 ### CORS
 
