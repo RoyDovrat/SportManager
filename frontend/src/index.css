@@ -217,6 +217,34 @@ body {
   min-width: 12rem;
 }
 
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.dashboard-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dashboard-stat__label {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.dashboard-stat__value {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.dashboard-stat__hint {
+  font-size: 0.8rem;
+  color: #666;
+}
+
 .admin-filters__identity {
   display: flex;
   flex-wrap: wrap;
