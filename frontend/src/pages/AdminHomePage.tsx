@@ -38,6 +38,11 @@ const setupLinks = [
     labelKey: 'nav.payments',
     descriptionKey: 'adminHome.paymentsDesc',
   },
+  {
+    to: '/admin/activity-groups',
+    labelKey: 'nav.activityGroups',
+    descriptionKey: 'adminHome.activityGroupsDesc',
+  },
 ] as const
 
 export function AdminHomePage() {

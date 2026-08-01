@@ -3,6 +3,8 @@ import { RequireAuth } from '../auth/RequireAuth'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { ActivitiesPage } from '../pages/admin/ActivitiesPage'
+import { ActivityGroupDetailPage } from '../pages/admin/ActivityGroupDetailPage'
+import { ActivityGroupsPage } from '../pages/admin/ActivityGroupsPage'
 import { ActivityPricingPage } from '../pages/admin/ActivityPricingPage'
 import { ClothingOrderDetailPage } from '../pages/admin/ClothingOrderDetailPage'
 import { ClothingOrdersPage } from '../pages/admin/ClothingOrdersPage'
@@ -46,6 +48,8 @@ export function AppRouter() {
             <Route path="clothing-orders/:id" element={<ClothingOrderDetailPage />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="payments/:id" element={<PaymentDetailPage />} />
+            <Route path="activity-groups" element={<ActivityGroupsPage />} />
+            <Route path="activity-groups/:id" element={<ActivityGroupDetailPage />} />
           </Route>
         </Route>
 

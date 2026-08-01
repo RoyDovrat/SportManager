@@ -16,6 +16,7 @@ export const he = {
     registrations: 'הרשמות',
     clothingOrders: 'הזמנות ביגוד',
     payments: 'תשלומים',
+    activityGroups: 'קבוצות',
     publicSite: 'אתר ציבורי',
     logout: 'התנתקות',
     signedInAs: 'מחובר/ת כ',
@@ -78,6 +79,15 @@ export const he = {
     registrationsDesc: 'סקירת הרשמות, אישור וביטול',
     clothingOrdersDesc: 'הזמנות ביגוד לכדורגל ודילוג אם יש כבר ציוד',
     paymentsDesc: 'חיובים חודשיים, אישור תשלום וביטול',
+    activityGroupsDesc: 'קבוצות חוג ושיוך תלמידים מאושרים',
+  },
+
+  activityGroups: {
+    title: 'קבוצות',
+    detailTitle: 'פרטי קבוצה',
+    placeholderList: 'רשימת הקבוצות תופיע כאן בשלב הבא.',
+    placeholderDetail: 'פרטי קבוצה {id} יופיעו כאן בשלב הבא.',
+    backToList: 'חזרה לרשימת הקבוצות',
   },
 
   payments: {
