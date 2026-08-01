@@ -39,7 +39,20 @@ export const he = {
 
   publicClothing: {
     title: 'הזמנת ביגוד',
-    placeholder: 'טופס הזמנת הביגוד יופיע כאן בשלב הבא.',
+    intro: 'הזמנת ביגוד לכדורגל בעונה הפעילה.',
+    approvedHint:
+      'ניתן להזמין רק לאחר שאישור הרשמת הכדורגל אושר על ידי המנהל/ת.',
+    season: 'עונה',
+    identity: 'מספר זהות של התלמיד/ה',
+    alreadyHas: 'יש כבר ציוד (ללא הזמנה)',
+    submit: 'שליחת הזמנה',
+    submitting: 'שולח…',
+    noActiveSeason: 'אין עונה פעילה להזמנת ביגוד.',
+    successOrder: 'הזמנת הביגוד נקלטה.',
+    successSkip: 'נרשם דילוג — יש כבר ציוד.',
+    successHint: 'המשך טיפול בתשלום יבוצע על ידי המנהל/ת במידת הצורך.',
+    orderId: 'מספר הזמנה',
+    orderAnother: 'הזמנה נוספת',
   },
 
   login: {
