@@ -13,6 +13,7 @@ export const he = {
     activityPricing: 'מחירי חוגים',
     clothingPricing: 'מחירי ביגוד',
     registrations: 'הרשמות',
+    clothingOrders: 'הזמנות ביגוד',
     publicSite: 'אתר ציבורי',
     logout: 'התנתקות',
     signedInAs: 'מחובר/ת כ',
@@ -53,6 +54,15 @@ export const he = {
     activityPricingDesc: 'מחיר חודשי לפי עונה, קבוצת גיל או סוג שיעור',
     clothingPricingDesc: 'מחירי חליפה קצרה, ארוכה וקפוצ׳ון לפי עונה',
     registrationsDesc: 'סקירת הרשמות, אישור וביטול',
+    clothingOrdersDesc: 'הזמנות ביגוד לכדורגל ודילוג אם יש כבר ציוד',
+  },
+
+  clothingOrders: {
+    title: 'הזמנות ביגוד',
+    detailTitle: 'פרטי הזמנת ביגוד',
+    placeholderList: 'רשימת הזמנות הביגוד תופיע כאן בשלב הבא.',
+    placeholderDetail: 'פרטי הזמנה {id} יופיעו כאן בשלב הבא.',
+    backToList: 'חזרה להזמנות הביגוד',
   },
 
   registrations: {
