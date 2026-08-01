@@ -82,10 +82,26 @@ export const he = {
 
   payments: {
     title: 'תשלומים',
+    intro: 'סננו חיובים, פתחו פרטים לאישור או ביטול. יצירת חיובים תתווסף בשלבים הבאים.',
     detailTitle: 'פרטי תשלום',
     placeholderList: 'רשימת התשלומים תופיע כאן בשלב הבא.',
     placeholderDetail: 'פרטי תשלום {id} יופיעו כאן בשלב הבא.',
     backToList: 'חזרה לרשימת התשלומים',
+    filterStatus: 'סטטוס',
+    filterType: 'סוג חיוב',
+    filterMonth: 'חודש חיוב',
+    allStatuses: 'כל הסטטוסים',
+    allTypes: 'כל הסוגים',
+    clearMonth: 'ניקוי חודש',
+    listTitle: 'רשימת תשלומים',
+    empty: 'אין תשלומים להצגה',
+    student: 'תלמיד/ה',
+    amount: 'סכום',
+    chargeMonth: 'חודש חיוב',
+    type: 'סוג',
+    method: 'אמצעי תשלום',
+    kibbutz: 'קיבוץ',
+    viewDetails: 'פרטים',
   },
 
   clothingOrders: {
