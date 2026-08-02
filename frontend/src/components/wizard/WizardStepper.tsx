@@ -10,7 +10,11 @@ type WizardStepperProps = {
 
 export function WizardStepper({ steps, currentIndex }: WizardStepperProps) {
   return (
-    <ol className="wizard-stepper" aria-label="progress">
+    <ol
+      className="wizard-stepper"
+      aria-label="progress"
+      style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+    >
       {steps.map((step, index) => {
         const state =
           index < currentIndex

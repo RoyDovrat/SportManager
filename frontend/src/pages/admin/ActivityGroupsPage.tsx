@@ -9,6 +9,12 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
+  TrainingSessionsEditor,
+  draftsToRequest,
+  newTrainingSessionDraft,
+  type TrainingSessionDraft,
+} from '../../components/admin/TrainingSessionsEditor'
+import {
   activityTypeLabel,
   ageGroupLabel,
   swimmingLessonTypeLabel,
@@ -26,7 +32,6 @@ import {
   type WaterAdaptationLevel,
 } from '../../types/enums'
 
-const FOOTBALL_WEEKLY_OPTIONS = [1, 2] as const
 const SWIMMING_WEEKLY_OPTIONS = [1, 2, 3, 4, 5, 6] as const
 
 type CreateForm = {
@@ -38,6 +43,7 @@ type CreateForm = {
   swimmingLessonType: string
   waterAdaptationLevel: string
   isActive: boolean
+  trainingSessions: TrainingSessionDraft[]
 }
 
 const emptyCreateForm: CreateForm = {
@@ -49,6 +55,7 @@ const emptyCreateForm: CreateForm = {
   swimmingLessonType: '',
   waterAdaptationLevel: '',
   isActive: true,
+  trainingSessions: [newTrainingSessionDraft()],
 }
 
 export function ActivityGroupsPage() {
@@ -134,6 +141,7 @@ export function ActivityGroupsPage() {
     setCreateForm({
       ...emptyCreateForm,
       seasonId: seasonId || createForm.seasonId,
+      trainingSessions: [newTrainingSessionDraft()],
     })
   }
 
@@ -172,13 +180,25 @@ export function ActivityGroupsPage() {
         setSaving(false)
         return
       }
+      let weeklySessions = Number(createForm.weeklySessions)
+      if (isFootball) {
+        const activeSessions = createForm.trainingSessions.filter(
+          (session) => session.isActive,
+        )
+        if (activeSessions.length !== 1 && activeSessions.length !== 2) {
+          setError(t('activityGroups.trainingSessionsExactlyOneOrTwo'))
+          setSaving(false)
+          return
+        }
+        weeklySessions = activeSessions.length
+      }
 
       await createActivityGroup({
         name: createForm.name.trim(),
         seasonId: Number(createForm.seasonId),
         activityType: createForm.activityType,
         ageGroups: createForm.ageGroups,
-        weeklySessions: Number(createForm.weeklySessions),
+        weeklySessions,
         swimmingLessonType: isFootball
           ? null
           : (createForm.swimmingLessonType as SwimmingLessonType),
@@ -186,6 +206,9 @@ export function ActivityGroupsPage() {
           ? null
           : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
         isActive: createForm.isActive,
+        trainingSessions: isFootball
+          ? draftsToRequest(createForm.trainingSessions)
+          : undefined,
       })
       setMessage(t('activityGroups.created'))
       resetCreateForm()
@@ -250,16 +273,21 @@ export function ActivityGroupsPage() {
           <span>{t('activityGroups.activityType')}</span>
           <select
             value={createForm.activityType}
-            onChange={(event) =>
+            onChange={(event) => {
+              const nextType = event.target.value as ActivityType
               setCreateForm({
                 ...createForm,
-                activityType: event.target.value as ActivityType,
+                activityType: nextType,
                 ageGroups: [],
                 weeklySessions: '1',
                 swimmingLessonType: '',
                 waterAdaptationLevel: '',
+                trainingSessions:
+                  nextType === 'FOOTBALL'
+                    ? [newTrainingSessionDraft()]
+                    : [],
               })
-            }
+            }}
             disabled={saving || !filtersReady}
           >
             {ACTIVITY_TYPES.map((value) => (
@@ -290,25 +318,30 @@ export function ActivityGroupsPage() {
               ))}
             </fieldset>
 
-            <label className="admin-form__field">
-              <span>{t('activityGroups.weeklySessions')}</span>
-              <select
-                value={createForm.weeklySessions}
-                onChange={(event) =>
-                  setCreateForm({
-                    ...createForm,
-                    weeklySessions: event.target.value,
-                  })
-                }
-                disabled={saving}
-              >
-                {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <TrainingSessionsEditor
+              sessions={createForm.trainingSessions}
+              onChange={(trainingSessions) => {
+                const activeCount = trainingSessions.filter(
+                  (session) => session.isActive,
+                ).length
+                setCreateForm({
+                  ...createForm,
+                  trainingSessions,
+                  weeklySessions:
+                    activeCount === 1 || activeCount === 2
+                      ? String(activeCount)
+                      : createForm.weeklySessions,
+                })
+              }}
+              disabled={saving}
+            />
+            <p className="clothing-order-form__hint">
+              {t('activityGroups.weeklySessionsFromSchedule', {
+                count: createForm.trainingSessions.filter(
+                  (session) => session.isActive,
+                ).length,
+              })}
+            </p>
           </>
         ) : (
           <>
@@ -519,12 +552,20 @@ export function ActivityGroupsPage() {
 
 function formatAttributes(row: ActivityGroupResponse): string {
   const parts: string[] = []
-  if (row.ageGroups?.length) {
+  const isFootball = row.activityType === 'FOOTBALL'
+
+  if (!isFootball && row.ageGroups?.length) {
     parts.push(row.ageGroups.map((value) => ageGroupLabel(value)).join(', '))
   }
-  if (row.weeklySessions != null) {
-    parts.push(`${t('activityGroups.weeklySessionsShort')}: ${row.weeklySessions}`)
+
+  const weeklySessions = isFootball
+    ? (row.trainingSessions?.filter((session) => session.isActive).length ||
+        row.weeklySessions)
+    : row.weeklySessions
+  if (weeklySessions != null) {
+    parts.push(`${t('activityGroups.weeklySessionsShort')}: ${weeklySessions}`)
   }
+
   if (row.swimmingLessonType) {
     parts.push(swimmingLessonTypeLabel(row.swimmingLessonType))
   }

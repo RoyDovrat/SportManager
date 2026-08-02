@@ -15,16 +15,15 @@ import {
 import { t } from '../../i18n/t'
 import {
   ACTIVITY_TYPES,
-  AGE_GROUPS,
   SWIMMING_LESSON_TYPES,
   type ActivityType,
-  type AgeGroup,
   type SwimmingLessonType,
 } from '../../types/enums'
 
+const FOOTBALL_WEEKLY_OPTIONS = [1, 2] as const
+
 type CreateFormState = {
   activityType: ActivityType
-  ageGroup: AgeGroup
   swimmingLessonType: SwimmingLessonType
   weeklySessions: string
   monthlyPrice: string
@@ -37,7 +36,6 @@ type EditFormState = {
 
 const emptyCreateForm: CreateFormState = {
   activityType: 'FOOTBALL',
-  ageGroup: 'GRADE_1',
   swimmingLessonType: 'GROUP',
   weeklySessions: '1',
   monthlyPrice: '',
@@ -131,19 +129,16 @@ export function ActivityPricingPage() {
     setMessage(null)
 
     const monthlyPrice = Number(createForm.monthlyPrice)
-    const weeklySessions =
-      createForm.weeklySessions.trim() === ''
-        ? null
-        : Number(createForm.weeklySessions)
+    const weeklySessions = Number(createForm.weeklySessions)
 
     try {
       await createActivityPricing({
         seasonId: selectedSeasonId,
         activityType: createForm.activityType,
-        ageGroup: createForm.activityType === 'FOOTBALL' ? createForm.ageGroup : null,
+        ageGroup: null,
         swimmingLessonType:
           createForm.activityType === 'SWIMMING' ? createForm.swimmingLessonType : null,
-        weeklySessions: createForm.activityType === 'SWIMMING' ? weeklySessions : null,
+        weeklySessions,
         monthlyPrice,
       })
       setMessage(t('activityPricing.created'))
@@ -175,9 +170,7 @@ export function ActivityPricingPage() {
     try {
       await updateActivityPricing(editingId, {
         monthlyPrice,
-        ...(editingRow.activityType === 'SWIMMING'
-          ? { weeklySessions }
-          : {}),
+        weeklySessions,
       })
       setMessage(t('activityPricing.updated'))
       cancelEdit()
@@ -235,6 +228,7 @@ export function ActivityPricingPage() {
               setCreateForm({
                 ...createForm,
                 activityType: event.target.value as ActivityType,
+                weeklySessions: '1',
               })
             }
           >
@@ -248,19 +242,17 @@ export function ActivityPricingPage() {
 
         {isFootball ? (
           <label className="admin-form__field">
-            <span>{t('activityPricing.ageGroup')}</span>
+            <span>{t('activityPricing.weeklySessions')}</span>
             <select
-              value={createForm.ageGroup}
+              value={createForm.weeklySessions}
               onChange={(event) =>
-                setCreateForm({
-                  ...createForm,
-                  ageGroup: event.target.value as AgeGroup,
-                })
+                setCreateForm({ ...createForm, weeklySessions: event.target.value })
               }
+              required
             >
-              {AGE_GROUPS.map((group) => (
-                <option key={group} value={group}>
-                  {ageGroupLabel(group)}
+              {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
+                <option key={value} value={value}>
+                  {value}
                 </option>
               ))}
             </select>
@@ -330,9 +322,29 @@ export function ActivityPricingPage() {
             {editingRow.swimmingLessonType
               ? ` · ${swimmingLessonTypeLabel(editingRow.swimmingLessonType)}`
               : ''}
+            {editingRow.weeklySessions != null
+              ? ` · ${t('activityPricing.weeklySessions')}: ${editingRow.weeklySessions}`
+              : ''}
           </p>
 
-          {editingRow.activityType === 'SWIMMING' && (
+          {editingRow.activityType === 'FOOTBALL' ? (
+            <label className="admin-form__field">
+              <span>{t('activityPricing.weeklySessions')}</span>
+              <select
+                value={editForm.weeklySessions}
+                onChange={(event) =>
+                  setEditForm({ ...editForm, weeklySessions: event.target.value })
+                }
+                required
+              >
+                {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
             <label className="admin-form__field">
               <span>{t('activityPricing.weeklySessions')}</span>
               <input

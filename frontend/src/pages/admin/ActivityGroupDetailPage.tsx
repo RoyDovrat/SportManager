@@ -14,6 +14,12 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import type { RegistrationResponse } from '../../api/registrations'
 import {
+  TrainingSessionsEditor,
+  draftsFromSessions,
+  draftsToRequest,
+  type TrainingSessionDraft,
+} from '../../components/admin/TrainingSessionsEditor'
+import {
   StatusBadge,
   registrationStatusTone,
 } from '../../components/ui/StatusBadge'
@@ -34,7 +40,6 @@ import {
   type WaterAdaptationLevel,
 } from '../../types/enums'
 
-const FOOTBALL_WEEKLY_OPTIONS = [1, 2] as const
 const SWIMMING_WEEKLY_OPTIONS = [1, 2, 3, 4, 5, 6] as const
 
 type EditForm = {
@@ -44,6 +49,7 @@ type EditForm = {
   swimmingLessonType: string
   waterAdaptationLevel: string
   isActive: boolean
+  trainingSessions: TrainingSessionDraft[]
 }
 
 function toEditForm(group: ActivityGroupResponse): EditForm {
@@ -54,6 +60,7 @@ function toEditForm(group: ActivityGroupResponse): EditForm {
     swimmingLessonType: group.swimmingLessonType ?? '',
     waterAdaptationLevel: group.waterAdaptationLevel ?? '',
     isActive: group.isActive,
+    trainingSessions: draftsFromSessions(group.trainingSessions),
   }
 }
 
@@ -182,11 +189,23 @@ export function ActivityGroupDetailPage() {
         setSaving(false)
         return
       }
+      let weeklySessions = Number(form.weeklySessions)
+      if (isFootball) {
+        const activeSessions = form.trainingSessions.filter(
+          (session) => session.isActive,
+        )
+        if (activeSessions.length !== 1 && activeSessions.length !== 2) {
+          setError(t('activityGroups.trainingSessionsExactlyOneOrTwo'))
+          setSaving(false)
+          return
+        }
+        weeklySessions = activeSessions.length
+      }
 
       const updated = await updateActivityGroup(group.id, {
         name: form.name.trim(),
         ageGroups: form.ageGroups,
-        weeklySessions: Number(form.weeklySessions),
+        weeklySessions,
         swimmingLessonType: isFootball
           ? null
           : (form.swimmingLessonType as SwimmingLessonType),
@@ -194,6 +213,9 @@ export function ActivityGroupDetailPage() {
           ? null
           : (form.waterAdaptationLevel as WaterAdaptationLevel),
         isActive: form.isActive,
+        trainingSessions: isFootball
+          ? draftsToRequest(form.trainingSessions)
+          : undefined,
       })
       setGroup(updated)
       setForm(toEditForm(updated))
@@ -398,25 +420,30 @@ export function ActivityGroupDetailPage() {
                   ))}
                 </fieldset>
 
-                <label className="admin-form__field">
-                  <span>{t('activityGroups.weeklySessions')}</span>
-                  <select
-                    value={form.weeklySessions}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        weeklySessions: event.target.value,
-                      })
-                    }
-                    disabled={saving}
-                  >
-                    {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <TrainingSessionsEditor
+                  sessions={form.trainingSessions}
+                  onChange={(trainingSessions) => {
+                    const activeCount = trainingSessions.filter(
+                      (session) => session.isActive,
+                    ).length
+                    setForm({
+                      ...form,
+                      trainingSessions,
+                      weeklySessions:
+                        activeCount === 1 || activeCount === 2
+                          ? String(activeCount)
+                          : form.weeklySessions,
+                    })
+                  }}
+                  disabled={saving}
+                />
+                <p className="clothing-order-form__hint">
+                  {t('activityGroups.weeklySessionsFromSchedule', {
+                    count: form.trainingSessions.filter(
+                      (session) => session.isActive,
+                    ).length,
+                  })}
+                </p>
               </>
             ) : (
               <>

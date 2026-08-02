@@ -3,9 +3,18 @@ import type { RegistrationResponse } from './registrations'
 import type {
   ActivityType,
   AgeGroup,
+  DayOfWeek,
   SwimmingLessonType,
   WaterAdaptationLevel,
 } from '../types/enums'
+
+export type GroupTrainingSession = {
+  id?: number
+  dayOfWeek: DayOfWeek
+  startTime: string // "HH:mm" or "HH:mm:ss"
+  endTime?: string | null
+  isActive: boolean
+}
 
 export type ActivityGroupResponse = {
   id: number
@@ -22,6 +31,7 @@ export type ActivityGroupResponse = {
   memberCount: number
   /** Swimming only: PRIVATE=1, PAIR=2, GROUP=5 */
   maxCapacity: number | null
+  trainingSessions?: GroupTrainingSession[]
 }
 
 export type ActivityGroupRequest = {
@@ -33,6 +43,7 @@ export type ActivityGroupRequest = {
   waterAdaptationLevel?: WaterAdaptationLevel | null
   weeklySessions?: number | null
   isActive: boolean
+  trainingSessions?: GroupTrainingSession[]
 }
 
 export type ActivityGroupUpdateRequest = {
@@ -42,6 +53,7 @@ export type ActivityGroupUpdateRequest = {
   waterAdaptationLevel?: WaterAdaptationLevel | null
   weeklySessions?: number | null
   isActive: boolean
+  trainingSessions?: GroupTrainingSession[]
 }
 
 export type ListActivityGroupsParams = {

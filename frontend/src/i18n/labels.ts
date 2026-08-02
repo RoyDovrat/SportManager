@@ -3,6 +3,7 @@ import type {
   ActivityType,
   AgeGroup,
   ClothingSize,
+  DayOfWeek,
   Gender,
   PaymentMethod,
   PaymentStatus,
@@ -50,4 +51,8 @@ export function paymentTypeLabel(value: PaymentType): string {
 
 export function paymentMethodLabel(value: PaymentMethod): string {
   return t(`enums.paymentMethod.${value}`)
+}
+
+export function dayOfWeekLabel(value: DayOfWeek | string): string {
+  return t(`enums.dayOfWeek.${value}`)
 }

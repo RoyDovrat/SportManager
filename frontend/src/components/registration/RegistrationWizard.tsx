@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   createRegistration,
   type RegistrationResponse,
@@ -25,24 +25,37 @@ import {
   type RegistrationCommonForm,
   type SwimmingFormExtras,
 } from './registrationForm'
+import { FootballCatalogPanel } from './FootballCatalogPanel'
 import { useRegistrationCatalog } from './useRegistrationCatalog'
 import { ActivityStep } from './steps/ActivityStep'
 import { HealthStep } from './steps/HealthStep'
 import { ParentStep } from './steps/ParentStep'
 import { StudentStep } from './steps/StudentStep'
 
-const STEPS = [
+type StepDef = { id: string; labelKey: string }
+
+const SWIMMING_STEPS: StepDef[] = [
   { id: 'parent', labelKey: 'wizard.steps.parent' },
   { id: 'student', labelKey: 'wizard.steps.student' },
   { id: 'activity', labelKey: 'wizard.steps.activity' },
   { id: 'health', labelKey: 'wizard.steps.health' },
   { id: 'done', labelKey: 'wizard.steps.done' },
-] as const
+]
+
+const FOOTBALL_STEPS: StepDef[] = [
+  { id: 'catalog', labelKey: 'wizard.steps.catalog' },
+  { id: 'parent', labelKey: 'wizard.steps.parent' },
+  { id: 'student', labelKey: 'wizard.steps.student' },
+  { id: 'activity', labelKey: 'wizard.steps.activity' },
+  { id: 'health', labelKey: 'wizard.steps.health' },
+  { id: 'done', labelKey: 'wizard.steps.done' },
+]
 
 type RegistrationWizardProps = {
   activityType: ActivityType
   title: string
   intro: string
+  headerBrand?: ReactNode
 }
 
 function validateParent(form: RegistrationCommonForm): string | null {
@@ -82,6 +95,7 @@ export function RegistrationWizard({
   activityType,
   title,
   intro,
+  headerBrand,
 }: RegistrationWizardProps) {
   const catalog = useRegistrationCatalog(activityType)
   const [step, setStep] = useState(0)
@@ -95,14 +109,40 @@ export function RegistrationWizard({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<RegistrationResponse | null>(null)
 
-  const steps = STEPS.map((item) => ({
-    id: item.id,
-    label: t(item.labelKey),
-  }))
-
   const isSwimming = activityType === 'SWIMMING'
+  const isFootball = activityType === 'FOOTBALL'
+  const stepDefs = isFootball ? FOOTBALL_STEPS : SWIMMING_STEPS
+  const doneIndex = stepDefs.length - 1
+  const healthIndex = doneIndex - 1
+  const lastFormIndex = healthIndex
+
+  const steps = useMemo(
+    () =>
+      stepDefs.map((item) => ({
+        id: item.id,
+        label: t(item.labelKey),
+      })),
+    [stepDefs],
+  )
+
+  const currentStepId = stepDefs[step]?.id ?? 'parent'
+
   const formDisabled =
     catalog.loading || !catalog.season || !catalog.activity || submitting
+
+  const highlightedGroupId =
+    isFootball && catalog.footballCatalog
+      ? (catalog.footballCatalog.groups.find((group) =>
+          group.ageGroups.includes(form.ageGroup),
+        )?.id ?? null)
+      : null
+
+  const matchedFootballGroup =
+    isFootball && catalog.footballCatalog && highlightedGroupId != null
+      ? (catalog.footballCatalog.groups.find(
+          (group) => group.id === highlightedGroupId,
+        ) ?? null)
+      : null
 
   async function submitRegistration() {
     if (!catalog.season || !catalog.activity) {
@@ -126,7 +166,7 @@ export function RegistrationWizard({
         ),
       )
       setSuccess(response)
-      setStep(4)
+      setStep(doneIndex)
       setForm(emptyRegistrationCommonForm)
       setSwimming(emptySwimmingFormExtras)
     } catch (err) {
@@ -138,25 +178,25 @@ export function RegistrationWizard({
 
   function goNext() {
     setError(null)
-    if (step === 0) {
+    if (currentStepId === 'parent') {
       const message = validateParent(form)
       if (message) {
         setError(message)
         return
       }
     }
-    if (step === 1) {
+    if (currentStepId === 'student') {
       const message = validateStudent(form)
       if (message) {
         setError(message)
         return
       }
     }
-    if (step === 3) {
+    if (currentStepId === 'health') {
       void submitRegistration()
       return
     }
-    setStep((current) => Math.min(current + 1, 3))
+    setStep((current) => Math.min(current + 1, lastFormIndex))
   }
 
   function goBack() {
@@ -182,6 +222,7 @@ export function RegistrationWizard({
         subtitle={intro}
         steps={steps}
         currentIndex={0}
+        headerBrand={headerBrand}
         footer={<Link to="/">{t('registration.cancel')}</Link>}
       >
         <p>{t('registration.loadingCatalog')}</p>
@@ -197,6 +238,7 @@ export function RegistrationWizard({
         currentIndex={0}
         error={catalog.error}
         showStepper={false}
+        headerBrand={headerBrand}
         footer={<Link to="/" className="btn">{t('common.backHome')}</Link>}
       >
         <p>{catalog.error ?? t('common.errorGeneric')}</p>
@@ -204,13 +246,14 @@ export function RegistrationWizard({
     )
   }
 
-  if (success && step === 4) {
+  if (success && step === doneIndex) {
     return (
       <WizardShell
         title={title}
         steps={steps}
-        currentIndex={4}
+        currentIndex={doneIndex}
         showStepper
+        headerBrand={headerBrand}
         footer={
           <>
             <Link to="/" className="btn">
@@ -261,6 +304,8 @@ export function RegistrationWizard({
       steps={steps}
       currentIndex={step}
       error={error}
+      headerBrand={headerBrand}
+      bodyClassName="wizard-card__body--scroll"
       footer={
         <>
           {step > 0 ? (
@@ -283,7 +328,7 @@ export function RegistrationWizard({
             className="btn"
             disabled={formDisabled}
           >
-            {step === 3
+            {currentStepId === 'health'
               ? submitting
                 ? t('registration.submitting')
                 : t('registration.submit')
@@ -297,13 +342,24 @@ export function RegistrationWizard({
         onSubmit={handleFormSubmit}
         noValidate
       >
-        {step === 0 && (
+        {currentStepId === 'catalog' &&
+          (catalog.footballCatalog ? (
+            <FootballCatalogPanel
+              catalog={catalog.footballCatalog}
+              highlightedGroupId={null}
+              showPriceList
+              variant="step"
+            />
+          ) : (
+            <p>{t('footballCatalog.empty')}</p>
+          ))}
+        {currentStepId === 'parent' && (
           <ParentStep form={form} onChange={setForm} disabled={formDisabled} />
         )}
-        {step === 1 && (
+        {currentStepId === 'student' && (
           <StudentStep form={form} onChange={setForm} disabled={formDisabled} />
         )}
-        {step === 2 && (
+        {currentStepId === 'activity' && (
           <ActivityStep
             activityLabel={activityTypeLabel(activityType)}
             seasonName={catalog.season.name}
@@ -311,10 +367,11 @@ export function RegistrationWizard({
             onChange={setForm}
             swimming={isSwimming ? swimming : undefined}
             onSwimmingChange={isSwimming ? setSwimming : undefined}
+            footballMatchedGroup={matchedFootballGroup}
             disabled={formDisabled}
           />
         )}
-        {step === 3 && (
+        {currentStepId === 'health' && (
           <HealthStep form={form} onChange={setForm} disabled={formDisabled} />
         )}
       </form>

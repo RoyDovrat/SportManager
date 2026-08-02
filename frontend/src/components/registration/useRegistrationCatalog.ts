@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { formatPublicApiError } from '../../api/formatPublicApiError'
-import { getActiveSeason, listActiveActivities } from '../../api/publicCatalog'
+import {
+  getActiveSeason,
+  getFootballCatalog,
+  listActiveActivities,
+  type FootballCatalogResponse,
+} from '../../api/publicCatalog'
 import type { ActivityResponse } from '../../api/activities'
 import type { SeasonResponse } from '../../api/seasons'
 import { activityTypeLabel } from '../../i18n/labels'
@@ -12,6 +17,7 @@ type CatalogState = {
   error: string | null
   season: SeasonResponse | null
   activity: ActivityResponse | null
+  footballCatalog: FootballCatalogResponse | null
 }
 
 export function useRegistrationCatalog(activityType: ActivityType): CatalogState {
@@ -19,6 +25,8 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
   const [error, setError] = useState<string | null>(null)
   const [season, setSeason] = useState<SeasonResponse | null>(null)
   const [activity, setActivity] = useState<ActivityResponse | null>(null)
+  const [footballCatalog, setFootballCatalog] =
+    useState<FootballCatalogResponse | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -44,6 +52,7 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
         if (!matched) {
           setSeason(activeSeason)
           setActivity(null)
+          setFootballCatalog(null)
           setError(
             t('registration.noActiveActivity', {
               type: activityTypeLabel(activityType),
@@ -52,12 +61,22 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
           return
         }
 
+        let nextFootballCatalog: FootballCatalogResponse | null = null
+        if (activityType === 'FOOTBALL') {
+          nextFootballCatalog = await getFootballCatalog()
+          if (cancelled) {
+            return
+          }
+        }
+
         setSeason(activeSeason)
         setActivity(matched)
+        setFootballCatalog(nextFootballCatalog)
       } catch (err) {
         if (!cancelled) {
           setSeason(null)
           setActivity(null)
+          setFootballCatalog(null)
           setError(formatPublicApiError(err))
         }
       } finally {
@@ -74,5 +93,5 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
     }
   }, [activityType])
 
-  return { loading, error, season, activity }
+  return { loading, error, season, activity, footballCatalog }
 }

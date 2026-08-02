@@ -43,7 +43,12 @@ export {
   updateSeason,
 } from './seasons'
 export type { SeasonRequest, SeasonResponse } from './seasons'
-export { getActiveSeason, listActiveActivities } from './publicCatalog'
+export {
+  getActiveSeason,
+  getFootballCatalog,
+  listActiveActivities,
+} from './publicCatalog'
+export type { FootballCatalogResponse } from './publicCatalog'
 export { createRegistration } from './registrations'
 export type { RegistrationRequest, RegistrationResponse } from './registrations'
 export { ApiError, isErrorResponse } from './types'

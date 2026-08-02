@@ -5,10 +5,12 @@ import {
   type WaterAdaptationLevel,
 } from '../../../types/enums'
 import {
+  dayOfWeekLabel,
   swimmingLessonTypeLabel,
   waterAdaptationLevelLabel,
 } from '../../../i18n/labels'
 import { t } from '../../../i18n/t'
+import type { FootballCatalogResponse } from '../../../api/publicCatalog'
 import type {
   RegistrationCommonForm,
   SwimmingFormExtras,
@@ -21,7 +23,12 @@ type ActivityStepProps = {
   onChange: (next: RegistrationCommonForm) => void
   swimming?: SwimmingFormExtras
   onSwimmingChange?: (next: SwimmingFormExtras) => void
+  footballMatchedGroup?: FootballCatalogResponse['groups'][number] | null
   disabled?: boolean
+}
+
+function formatTime(value: string): string {
+  return value.length >= 5 ? value.slice(0, 5) : value
 }
 
 export function ActivityStep({
@@ -31,6 +38,7 @@ export function ActivityStep({
   onChange,
   swimming,
   onSwimmingChange,
+  footballMatchedGroup = null,
   disabled = false,
 }: ActivityStepProps) {
   return (
@@ -45,6 +53,51 @@ export function ActivityStep({
           <input value={seasonName} disabled readOnly />
         </label>
       </div>
+
+      {footballMatchedGroup && (
+        <div className="football-catalog__group football-catalog__group--match football-activity-summary">
+          <div className="football-catalog__group-head">
+            <h3 className="football-catalog__group-name">
+              {footballMatchedGroup.name}
+            </h3>
+            <span className="football-catalog__match-badge">
+              {footballMatchedGroup.weeklySessions != null
+                ? t('footballCatalog.priceBySessions', {
+                    count: footballMatchedGroup.weeklySessions,
+                  })
+                : t('footballCatalog.weeklySessions')}
+            </span>
+          </div>
+          <div className="football-catalog__sessions">
+            <span className="football-catalog__label">
+              {t('footballCatalog.schedule')}
+            </span>
+            <ul className="football-catalog__session-list">
+              {footballMatchedGroup.trainingSessions
+                .filter((session) => session.isActive)
+                .map((session) => (
+                  <li key={session.id}>
+                    {dayOfWeekLabel(session.dayOfWeek)}{' '}
+                    {formatTime(session.startTime)}
+                    {session.endTime
+                      ? `–${formatTime(session.endTime)}`
+                      : ''}
+                  </li>
+                ))}
+            </ul>
+          </div>
+          <p className="football-catalog__price">
+            <span className="football-catalog__label">
+              {t('footballCatalog.monthlyPrice')}
+            </span>
+            {footballMatchedGroup.monthlyPrice != null
+              ? t('footballCatalog.priceAmount', {
+                  amount: footballMatchedGroup.monthlyPrice,
+                })
+              : t('footballCatalog.priceUnavailable')}
+          </p>
+        </div>
+      )}
 
       {swimming && onSwimmingChange && (
         <>

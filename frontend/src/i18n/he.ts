@@ -80,6 +80,7 @@ export const he = {
     back: 'חזרה',
     successTitle: 'הפעולה הושלמה בהצלחה!',
     steps: {
+      catalog: 'פרטי אימונים',
       parent: 'פרטי הורה',
       student: 'פרטי ילד',
       activity: 'פרטי פעילות',
@@ -133,7 +134,7 @@ export const he = {
     intro: 'הגדירו עונה ומחירים, סקרו הרשמות, ונהלו חיובים ותשלומים.',
     seasonsDesc: 'יצירת עונות והפעלת העונה הנוכחית',
     activitiesDesc: 'ניהול חוגי כדורגל ושחייה',
-    activityPricingDesc: 'מחיר חודשי לפי עונה, קבוצת גיל או סוג שיעור',
+    activityPricingDesc: 'מחיר חודשי לפי עונה, אימונים בשבוע או סוג שיעור',
     clothingPricingDesc: 'מחירי חליפה קצרה, ארוכה וקפוצ׳ון לפי עונה',
     registrationsDesc: 'סקירת הרשמות, אישור וביטול',
     clothingOrdersDesc: 'הזמנות ביגוד לכדורגל ודילוג אם יש כבר ציוד',
@@ -225,7 +226,7 @@ export const he = {
   activityGroups: {
     title: 'קבוצות',
     intro:
-      'צרו קבוצה, ואז בפרטי הקבוצה בחרו ילדים רשומים שמתאימים לה. בשחייה: סוג שיעור, גיל, רמת מים ומפגשים בשבוע (1–6). קיבולת: פרטי 1 / זוגי 2 / קבוצתי 5.',
+      'צרו קבוצה, ואז בפרטי הקבוצה בחרו ילדים רשומים שמתאימים לה. בכדורגל: קבוצות גיל, אימונים בשבוע ומפגשי אימון (יום ושעה). בשחייה: סוג שיעור, גיל, רמת מים ומפגשים בשבוע (1–6). קיבולת: פרטי 1 / זוגי 2 / קבוצתי 5.',
     listHint: 'פתחו קבוצה כדי לשייך אליה ילדים רשומים שמתאימים למאפייניה.',
     detailTitle: 'פרטי קבוצה',
     placeholderList: 'רשימת הקבוצות תופיע כאן בשלב הבא.',
@@ -243,6 +244,8 @@ export const he = {
     ageGroupsRequired: 'יש לבחור לפחות קבוצת גיל אחת.',
     ageGroupsHintSwimming: 'רק ילדים מקבוצות הגיל שנבחרו יופיעו לשיוך.',
     weeklySessions: 'אימונים בשבוע',
+    weeklySessionsFromSchedule:
+      'מספר האימונים בשבוע (ולפי זה המחיר) נקבע לפי מספר האימונים הפעילים בלוח: {count}',
     weeklySessionsSwimming: 'מפגשים בשבוע (1–6)',
     weeklySessionsShort: 'מפגשים/שבוע',
     lessonType: 'סוג שיעור שחייה',
@@ -293,6 +296,18 @@ export const he = {
     membersTitle: 'משתתפי הקבוצה',
     membersEmpty: 'אין משתתפים בקבוצה.',
     student: 'תלמיד/ה',
+    trainingSessions: 'מפגשי אימון',
+    trainingSessionsExactlyOneOrTwo:
+      'לקבוצת כדורגל פעילה יש להגדיר בדיוק אימון אחד או שני אימונים פעילים בשבוע.',
+    trainingSessionsHint:
+      'הוסיפו ימי אימון ושעות. מספר האימונים הפעילים (1 או 2) הוא מספר האימונים בשבוע, ולפיו נקבע המחיר.',
+    trainingSessionsEmpty: 'עדיין לא נוספו מפגשי אימון.',
+    trainingSessionsMin: 'יש להוסיף לפחות {count} מפגשי אימון פעילים.',
+    addSession: 'הוספת מפגש',
+    removeSession: 'הסרה',
+    dayOfWeek: 'יום',
+    startTime: 'שעת התחלה',
+    endTime: 'שעת סיום (אופציונלי)',
   },
 
   payments: {
@@ -487,7 +502,8 @@ export const he = {
 
   activityPricing: {
     title: 'מחירי חוגים',
-    intro: 'המחירים לפי עונה. בכדורגל לפי קבוצת גיל; בשחייה לפי סוג שיעור ומספר מפגשים בשבוע.',
+    intro:
+      'המחירים לפי עונה. בכדורגל לפי מספר אימונים בשבוע (1 או 2); בשחייה לפי סוג שיעור ומספר מפגשים בשבוע.',
     season: 'עונה',
     noSeasons: 'אין עונות זמינות',
     activeSuffix: '(פעילה)',
@@ -571,6 +587,23 @@ export const he = {
     clothingLink: 'הזמנת ביגוד (לאחר אישור)',
   },
 
+  footballCatalog: {
+    title: 'קבוצות כדורגל בעונה',
+    seasonLine: 'עונה: {season}',
+    empty: 'אין כרגע קבוצות כדורגל פעילות להצגה.',
+    ageGroups: 'קבוצות גיל',
+    weeklySessions: 'אימונים בשבוע',
+    schedule: 'ימים ושעות',
+    noSchedule: 'אין לוח אימונים',
+    monthlyPrice: 'מחיר חודשי',
+    pricesTitle: 'מחירון לפי מספר אימונים בשבוע',
+    priceBySessions: '{count} אימונים בשבוע',
+    priceAmount: '₪{amount}',
+    priceUnavailable: 'מחיר יפורסם בהמשך',
+    matchedGroup: 'הקבוצה המתאימה',
+    logoAlt: 'לוגו מועדון כדורגל',
+  },
+
   notFound: {
     title: 'הדף לא נמצא',
     backPublic: 'חזרה לדף הבית',
@@ -601,6 +634,15 @@ export const he = {
     gender: {
       MALE: 'זכר',
       FEMALE: 'נקבה',
+    },
+    dayOfWeek: {
+      MONDAY: 'יום שני',
+      TUESDAY: 'יום שלישי',
+      WEDNESDAY: 'יום רביעי',
+      THURSDAY: 'יום חמישי',
+      FRIDAY: 'יום שישי',
+      SATURDAY: 'יום שבת',
+      SUNDAY: 'יום ראשון',
     },
     waterAdaptationLevel: {
       NOT_INDEPENDENT: 'לא עצמאי במים',

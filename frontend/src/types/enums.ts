@@ -59,3 +59,14 @@ export type PaymentType = (typeof PAYMENT_TYPES)[number]
 
 export const PAYMENT_METHODS = ['BIT', 'PAYBOX', 'KIBBUTZ_BUDGET'] as const
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
+
+export const DAYS_OF_WEEK = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+] as const
+export type DayOfWeek = (typeof DAYS_OF_WEEK)[number]

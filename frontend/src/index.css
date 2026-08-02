@@ -955,6 +955,18 @@ body:has(.wizard-page) {
   border-bottom: 1px solid var(--border);
 }
 
+.wizard-card__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.wizard-card__titles {
+  min-width: 0;
+  flex: 1;
+}
+
 .wizard-card__header h1 {
   margin: 0;
   font-size: clamp(1.45rem, 2.2vw, 1.7rem);
@@ -1056,7 +1068,17 @@ body:has(.wizard-page) {
   flex: 1;
   min-height: 0;
   padding: 0.9rem 1.45rem;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.wizard-card__body--scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.wizard-card__body > form {
+  min-height: min-content;
 }
 
 .wizard-card__footer {
@@ -1836,3 +1858,227 @@ body:has(.wizard-page) {
   resize: vertical;
   min-height: 5rem;
 }
+
+.training-sessions-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.training-sessions-editor__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.65rem 0.85rem;
+  align-items: end;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--accent-green-soft);
+}
+
+.football-registration {
+  height: 100%;
+  min-height: 0;
+}
+
+.football-registration__logo {
+  display: block;
+  flex-shrink: 0;
+  width: clamp(3.75rem, 9vw, 5.25rem);
+  height: auto;
+  object-fit: contain;
+  /* Keep original crest colors — no tint/filters */
+}
+
+@media (max-width: 720px) {
+  .football-registration__logo {
+    width: clamp(3.25rem, 16vw, 4.25rem);
+  }
+}
+
+.football-catalog {
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgb(31 138 76 / 22%);
+  background:
+    linear-gradient(180deg, rgb(232 246 238 / 70%) 0%, #fff 42%),
+    var(--surface-elevated);
+}
+
+.football-catalog--step {
+  margin-bottom: 0;
+}
+
+.football-activity-summary {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+}
+
+.football-activity-summary .football-catalog__group-name {
+  font-size: 1rem;
+}
+
+.football-activity-summary .football-catalog__meta,
+.football-activity-summary .football-catalog__sessions,
+.football-activity-summary .football-catalog__price {
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.football-activity-summary .football-catalog__session-list {
+  margin-top: 0.15rem;
+}
+
+.football-catalog__prices-block {
+  padding: 0.85rem 1.1rem 0.35rem;
+  border-bottom: 1px solid rgb(31 138 76 / 16%);
+  background: rgb(232 246 238 / 35%);
+}
+
+.football-catalog__prices-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.football-catalog__prices-list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.football-catalog__prices-list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.football-catalog__prices-list strong {
+  color: var(--accent-green);
+  font-weight: 800;
+}
+
+.football-catalog__band {
+  padding: 0.9rem 1.1rem 0.85rem;
+  background:
+    linear-gradient(120deg, var(--accent-green) 0%, #176b3c 55%, var(--navy-800) 100%);
+  color: #fff;
+}
+
+.football-catalog__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.football-catalog__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.92;
+}
+
+.football-catalog__empty {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  color: var(--text-muted);
+}
+
+.football-catalog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.football-catalog__group {
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: #fff;
+  border-inline-start: 4px solid rgb(31 138 76 / 35%);
+}
+
+.football-catalog__group--match {
+  border-color: var(--accent-green);
+  border-inline-start-color: var(--accent-green);
+  background:
+    linear-gradient(180deg, var(--accent-green-soft) 0%, #fff 70%);
+  box-shadow: 0 0 0 1px rgb(31 138 76 / 18%);
+}
+
+.football-catalog__group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.football-catalog__group-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.football-catalog__match-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-green);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.football-catalog__meta,
+.football-catalog__price,
+.football-catalog__sessions {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.football-catalog__label {
+  display: inline-block;
+  margin-inline-end: 0.35rem;
+  font-weight: 700;
+  color: var(--navy-700);
+}
+
+.football-catalog__session-list {
+  margin: 0.25rem 0 0;
+  padding-inline-start: 1.1rem;
+}
+
+.football-catalog__price {
+  margin-top: 0.55rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+
+@media (max-width: 640px) {
+  .training-sessions-editor__row {
+    grid-template-columns: 1fr;
+  }
+
+  .football-catalog__band {
+    padding: 0.8rem 0.9rem;
+  }
+}
+
