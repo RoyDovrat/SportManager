@@ -53,6 +53,11 @@ const navGroups = [
         labelKey: 'nav.clothingPricing',
         icon: 'pricing' as const,
       },
+      {
+        to: '/admin/swimming-registration',
+        labelKey: 'nav.swimmingRegistration',
+        icon: 'activities' as const,
+      },
     ],
   },
 ] as const

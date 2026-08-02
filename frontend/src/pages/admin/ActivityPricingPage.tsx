@@ -129,7 +129,8 @@ export function ActivityPricingPage() {
     setMessage(null)
 
     const monthlyPrice = Number(createForm.monthlyPrice)
-    const weeklySessions = Number(createForm.weeklySessions)
+    const weeklySessions =
+      createForm.activityType === 'SWIMMING' ? 1 : Number(createForm.weeklySessions)
 
     try {
       await createActivityPricing({
@@ -163,9 +164,11 @@ export function ActivityPricingPage() {
 
     const monthlyPrice = Number(editForm.monthlyPrice)
     const weeklySessions =
-      editForm.weeklySessions.trim() === ''
-        ? null
-        : Number(editForm.weeklySessions)
+      editingRow.activityType === 'SWIMMING'
+        ? 1
+        : editForm.weeklySessions.trim() === ''
+          ? null
+          : Number(editForm.weeklySessions)
 
     try {
       await updateActivityPricing(editingId, {
@@ -267,6 +270,7 @@ export function ActivityPricingPage() {
                   setCreateForm({
                     ...createForm,
                     swimmingLessonType: event.target.value as SwimmingLessonType,
+                    weeklySessions: '1',
                   })
                 }
               >
@@ -277,23 +281,16 @@ export function ActivityPricingPage() {
                 ))}
               </select>
             </label>
-            <label className="admin-form__field">
-              <span>{t('activityPricing.weeklySessions')}</span>
-              <input
-                type="number"
-                min={1}
-                value={createForm.weeklySessions}
-                onChange={(event) =>
-                  setCreateForm({ ...createForm, weeklySessions: event.target.value })
-                }
-                required
-              />
-            </label>
+            <p className="admin-form__hint">{t('activityPricing.swimmingUnitHint')}</p>
           </>
         )}
 
         <label className="admin-form__field">
-          <span>{t('activityPricing.monthlyPrice')}</span>
+          <span>
+            {isFootball
+              ? t('activityPricing.monthlyPrice')
+              : t('activityPricing.unitPrice')}
+          </span>
           <input
             type="number"
             min={0.01}
@@ -327,7 +324,7 @@ export function ActivityPricingPage() {
               : ''}
           </p>
 
-          {editingRow.activityType === 'FOOTBALL' ? (
+          {editingRow.activityType === 'FOOTBALL' && (
             <label className="admin-form__field">
               <span>{t('activityPricing.weeklySessions')}</span>
               <select
@@ -344,23 +341,14 @@ export function ActivityPricingPage() {
                 ))}
               </select>
             </label>
-          ) : (
-            <label className="admin-form__field">
-              <span>{t('activityPricing.weeklySessions')}</span>
-              <input
-                type="number"
-                min={1}
-                value={editForm.weeklySessions}
-                onChange={(event) =>
-                  setEditForm({ ...editForm, weeklySessions: event.target.value })
-                }
-                required
-              />
-            </label>
           )}
 
           <label className="admin-form__field">
-            <span>{t('activityPricing.monthlyPrice')}</span>
+            <span>
+              {editingRow.activityType === 'SWIMMING'
+                ? t('activityPricing.unitPrice')
+                : t('activityPricing.monthlyPrice')}
+            </span>
             <input
               type="number"
               min={0.01}
@@ -401,7 +389,7 @@ export function ActivityPricingPage() {
                 <th>{t('activityPricing.ageGroup')}</th>
                 <th>{t('activityPricing.lessonType')}</th>
                 <th>{t('activityPricing.weeklySessions')}</th>
-                <th>{t('activityPricing.monthlyPrice')}</th>
+                <th>{t('activityPricing.unitPrice')}</th>
                 <th>{t('common.actions')}</th>
               </tr>
             </thead>

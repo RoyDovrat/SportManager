@@ -10,6 +10,7 @@ import { ClothingOrderDetailPage } from '../pages/admin/ClothingOrderDetailPage'
 import { ClothingOrdersPage } from '../pages/admin/ClothingOrdersPage'
 import { ClothingPricingPage } from '../pages/admin/ClothingPricingPage'
 import { DashboardPage } from '../pages/admin/DashboardPage'
+import { SwimmingRegistrationSettingsPage } from '../pages/admin/SwimmingRegistrationSettingsPage'
 import { KibbutzExportPage } from '../pages/admin/KibbutzExportPage'
 import { PaymentDetailPage } from '../pages/admin/PaymentDetailPage'
 import { PaymentsPage } from '../pages/admin/PaymentsPage'
@@ -50,6 +51,10 @@ export function AppRouter() {
             <Route path="activities" element={<ActivitiesPage />} />
             <Route path="activity-pricing" element={<ActivityPricingPage />} />
             <Route path="clothing-pricing" element={<ClothingPricingPage />} />
+            <Route
+              path="swimming-registration"
+              element={<SwimmingRegistrationSettingsPage />}
+            />
             <Route path="registrations" element={<RegistrationsPage />} />
             <Route path="registrations/:id" element={<RegistrationDetailPage />} />
             <Route path="clothing-orders" element={<ClothingOrdersPage />} />

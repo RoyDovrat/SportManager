@@ -17,7 +17,10 @@ import {
 import { WizardShell } from '../wizard/WizardShell'
 import { activityTypeLabel, registrationStatusLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
-import type { ActivityType } from '../../types/enums'
+import {
+  SWIMMING_AGE_GROUPS,
+  type ActivityType,
+} from '../../types/enums'
 import {
   emptyRegistrationCommonForm,
   emptySwimmingFormExtras,
@@ -26,6 +29,8 @@ import {
   type SwimmingFormExtras,
 } from './registrationForm'
 import { FootballCatalogPanel } from './FootballCatalogPanel'
+import { SwimmingIntroPanel } from './SwimmingIntroPanel'
+import { SwimmingPricesPanel } from './SwimmingPricesPanel'
 import { useRegistrationCatalog } from './useRegistrationCatalog'
 import { ActivityStep } from './steps/ActivityStep'
 import { HealthStep } from './steps/HealthStep'
@@ -35,6 +40,8 @@ import { StudentStep } from './steps/StudentStep'
 type StepDef = { id: string; labelKey: string }
 
 const SWIMMING_STEPS: StepDef[] = [
+  { id: 'intro', labelKey: 'wizard.steps.intro' },
+  { id: 'prices', labelKey: 'wizard.steps.prices' },
   { id: 'parent', labelKey: 'wizard.steps.parent' },
   { id: 'student', labelKey: 'wizard.steps.student' },
   { id: 'activity', labelKey: 'wizard.steps.activity' },
@@ -99,9 +106,11 @@ export function RegistrationWizard({
 }: RegistrationWizardProps) {
   const catalog = useRegistrationCatalog(activityType)
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState<RegistrationCommonForm>(
-    emptyRegistrationCommonForm,
-  )
+  const [form, setForm] = useState<RegistrationCommonForm>(() => ({
+    ...emptyRegistrationCommonForm,
+    ageGroup:
+      activityType === 'SWIMMING' ? SWIMMING_AGE_GROUPS[0] : 'GRADE_1',
+  }))
   const [swimming, setSwimming] = useState<SwimmingFormExtras>(
     emptySwimmingFormExtras,
   )
@@ -167,7 +176,11 @@ export function RegistrationWizard({
       )
       setSuccess(response)
       setStep(doneIndex)
-      setForm(emptyRegistrationCommonForm)
+      setForm({
+        ...emptyRegistrationCommonForm,
+        ageGroup:
+          activityType === 'SWIMMING' ? SWIMMING_AGE_GROUPS[0] : 'GRADE_1',
+      })
       setSwimming(emptySwimmingFormExtras)
     } catch (err) {
       setError(formatPublicApiError(err))
@@ -372,11 +385,28 @@ export function RegistrationWizard({
           ) : (
             <p>{t('footballCatalog.empty')}</p>
           ))}
+        {currentStepId === 'intro' &&
+          (catalog.swimmingCatalog ? (
+            <SwimmingIntroPanel catalog={catalog.swimmingCatalog} />
+          ) : (
+            <p>{t('swimmingCatalog.introEmpty')}</p>
+          ))}
+        {currentStepId === 'prices' &&
+          (catalog.swimmingCatalog ? (
+            <SwimmingPricesPanel catalog={catalog.swimmingCatalog} />
+          ) : (
+            <p>{t('swimmingCatalog.pricesEmpty')}</p>
+          ))}
         {currentStepId === 'parent' && (
           <ParentStep form={form} onChange={setForm} disabled={formDisabled} />
         )}
         {currentStepId === 'student' && (
-          <StudentStep form={form} onChange={setForm} disabled={formDisabled} />
+          <StudentStep
+            form={form}
+            onChange={setForm}
+            disabled={formDisabled}
+            ageGroups={isSwimming ? SWIMMING_AGE_GROUPS : undefined}
+          />
         )}
         {currentStepId === 'activity' && (
           <ActivityStep
@@ -386,6 +416,9 @@ export function RegistrationWizard({
             onChange={setForm}
             swimming={isSwimming ? swimming : undefined}
             onSwimmingChange={isSwimming ? setSwimming : undefined}
+            swimmingGroupWeeklySessions={
+              catalog.swimmingCatalog?.groupWeeklySessions ?? 2
+            }
             footballMatchedGroup={isFootball ? matchedFootballGroup : undefined}
             disabled={formDisabled}
           />

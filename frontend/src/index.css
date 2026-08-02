@@ -1955,6 +1955,51 @@ body:has(.wizard-page) {
   background: var(--accent-green-soft);
 }
 
+.clothing-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.clothing-catalog__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.clothing-catalog__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.clothing-catalog__list li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font-size: 1.05rem;
+}
+
+.clothing-catalog__list strong {
+  color: var(--accent-green);
+  font-weight: 800;
+}
+
+.wizard-kit__price {
+  font-weight: 700;
+  color: var(--accent-green);
+  font-size: 0.92em;
+}
+
 .football-registration {
   height: 100%;
   min-height: 0;
@@ -2167,5 +2212,101 @@ body:has(.wizard-page) {
   .football-catalog__band {
     padding: 0.8rem 0.9rem;
   }
+}
+
+.swimming-catalog__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: var(--muted, #5a6b7b);
+  line-height: 1.5;
+}
+
+.swimming-intro {
+  display: grid;
+  gap: 1rem;
+}
+
+.swimming-intro__band {
+  padding: 0.9rem 1.1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e8f4fc 0%, #f3faf4 100%);
+  border: 1px solid rgba(20, 70, 110, 0.12);
+}
+
+.swimming-intro__title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--navy-700);
+}
+
+.swimming-intro__subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.92rem;
+  color: var(--muted, #5a6b7b);
+}
+
+.swimming-intro__empty {
+  margin: 0;
+  color: var(--muted, #5a6b7b);
+}
+
+.markdown-view,
+.swimming-intro__body {
+  display: grid;
+  gap: 0.65rem;
+  line-height: 1.65;
+  text-align: start;
+}
+
+.markdown-view h1,
+.markdown-view h2,
+.markdown-view h3,
+.swimming-intro__body h1,
+.swimming-intro__body h2,
+.swimming-intro__body h3 {
+  margin: 0.4rem 0 0;
+  color: var(--navy-700);
+  line-height: 1.35;
+}
+
+.markdown-view h1,
+.swimming-intro__body h1 {
+  font-size: 1.35rem;
+}
+
+.markdown-view h2,
+.swimming-intro__body h2 {
+  font-size: 1.15rem;
+}
+
+.markdown-view h3,
+.swimming-intro__body h3 {
+  font-size: 1.05rem;
+}
+
+.markdown-view p,
+.markdown-view__p,
+.swimming-intro__body p {
+  margin: 0;
+}
+
+.markdown-view ul,
+.swimming-intro__body ul {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+
+.admin-form__hint {
+  margin: -0.35rem 0 0.75rem;
+  font-size: 0.88rem;
+  color: var(--muted, #5a6b7b);
+}
+
+.admin-page__preview {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(20, 70, 110, 0.12);
+  border-radius: 12px;
+  background: #fff;
 }
 

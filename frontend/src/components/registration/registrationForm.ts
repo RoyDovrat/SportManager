@@ -56,7 +56,7 @@ export type SwimmingFormExtras = {
 export const emptySwimmingFormExtras: SwimmingFormExtras = {
   swimmingLessonType: 'GROUP',
   waterAdaptationLevel: 'NOT_INDEPENDENT',
-  weeklySessions: '1',
+  weeklySessions: '2',
 }
 
 export function toRegistrationRequest(

@@ -15,6 +15,7 @@ export const he = {
     activities: 'חוגים',
     activityPricing: 'מחירי חוגים',
     clothingPricing: 'מחירי ביגוד',
+    swimmingRegistration: 'הודעת שחייה',
     registrations: 'הרשמות',
     clothingOrders: 'הזמנות ביגוד',
     payments: 'תשלומים',
@@ -61,18 +62,26 @@ export const he = {
     title: 'הזמנת ביגוד',
     intro: 'הזמנת ביגוד לכדורגל בעונה הפעילה.',
     approvedHint:
-      'ניתן להזמין רק לאחר שאישור הרשמת הכדורגל אושר על ידי המנהל/ת.',
+      'לאחר הזנת מספר הזהות נבדוק שהרשמת הכדורגל אושרה — רק אז ניתן להמשיך להזמנה.',
     season: 'עונה',
     identity: 'מספר זהות של התלמיד/ה',
     alreadyHas: 'יש כבר ציוד (ללא הזמנה)',
     submit: 'שליחת הזמנה',
     submitting: 'שולח…',
+    checking: 'בודק הרשמה…',
     noActiveSeason: 'אין עונה פעילה להזמנת ביגוד.',
+    noPricing: 'מחירון הביגוד לעונה זו עדיין לא הוגדר. פנו למנהל/ת.',
+    pricesTitle: 'מחירון ביגוד לעונה',
+    priceAmount: '₪{amount}',
+    eligibleFor: 'ניתן להמשיך להזמנה עבור {name}',
     successOrder: 'הזמנת הביגוד נקלטה.',
     successSkip: 'נרשם דילוג — יש כבר ציוד.',
     successHint: 'המשך טיפול בתשלום יבוצע על ידי המנהל/ת במידת הצורך.',
     orderId: 'מספר הזמנה',
     orderAnother: 'הזמנה נוספת',
+    printedNumber: 'המספר שיופיע על הביגוד',
+    printedNumberRequired: 'חובה לבחור את המספר שיופיע על הביגוד (0–99).',
+    printedNumberInvalid: 'המספר על הביגוד חייב להיות בין 0 ל־99.',
   },
 
   wizard: {
@@ -81,6 +90,8 @@ export const he = {
     successTitle: 'הפעולה הושלמה בהצלחה!',
     steps: {
       catalog: 'פרטי אימונים',
+      intro: 'מידע כללי',
+      prices: 'מחירון',
       parent: 'פרטי הורה',
       student: 'פרטי ילד',
       activity: 'פרטי פעילות',
@@ -88,6 +99,7 @@ export const he = {
       done: 'סיום',
     },
     clothing: {
+      prices: 'מחירון',
       identity: 'זיהוי',
       items: 'פריטים',
       itemsRequired: 'יש לבחור לפחות פריט אחד להזמנה, או לסמן שיש כבר ציוד.',
@@ -128,6 +140,15 @@ export const he = {
         'מספר הזהות כבר משויך להורה אחר במערכת. בדקו את הפרטים או פנו למנהל/ת.',
       inactiveActivity: 'לא ניתן להירשם לחוג שאינו פעיל.',
       inactiveSeason: 'לא ניתן להירשם לעונה שאינה פעילה.',
+      clothingNotApproved:
+        'ההרשמה לכדורגל עדיין לא אושרה. ניתן להזמין ביגוד רק לאחר אישור המנהל/ת.',
+      clothingNotRegistered:
+        'לא נמצאה הרשמה לכדורגל בעונה זו עבור מספר הזהות שהוזן.',
+      clothingStudentNotFound:
+        'לא נמצא תלמיד/ה עם מספר הזהות שהוזן. יש להשלים הרשמה לכדורגל תחילה.',
+      clothingOrderExists: 'כבר קיימת הזמנת ביגוד להרשמה זו.',
+      clothingSkipDisabled:
+        'לא ניתן לסמן ״יש כבר ציוד״ בעונה זו — יש להזמין פריטים.',
     },
   },
 
@@ -416,7 +437,7 @@ export const he = {
     quantity: 'כמות',
     size: 'מידה',
     selectSize: 'בחרו מידה',
-    shirtNumber: 'מספר חולצה (אופציונלי)',
+    shirtNumber: 'המספר שיופיע על הביגוד',
   },
 
   registrations: {
@@ -518,7 +539,7 @@ export const he = {
   activityPricing: {
     title: 'מחירי חוגים',
     intro:
-      'המחירים לפי עונה. בכדורגל לפי מספר אימונים בשבוע (1 או 2); בשחייה לפי סוג שיעור ומספר מפגשים בשבוע.',
+      'המחירים לפי עונה. בכדורגל לפי מספר אימונים בשבוע (1 או 2); בשחייה — מחיר יחידה לשיעור אחד בשבוע לכל סוג שיעור (החיוב החודשי = מחיר × מספר מפגשים).',
     season: 'עונה',
     noSeasons: 'אין עונות זמינות',
     activeSuffix: '(פעילה)',
@@ -527,6 +548,10 @@ export const he = {
     ageGroup: 'קבוצת גיל',
     lessonType: 'סוג שיעור שחייה',
     weeklySessions: 'מפגשים בשבוע',
+    monthlyPrice: 'מחיר חודשי',
+    unitPrice: 'מחיר לשיעור אחד בשבוע (חודשי)',
+    swimmingUnitHint:
+      'בשחייה מגדירים מחיר אחד לכל סוג שיעור. מספר המפגשים נבחר בטופס ההרשמה (בקבוצתי — קבוע בהגדרות).',
     forSeason: 'מחירים לעונה שנבחרה',
     selectSeason: 'בחרו עונה כדי להציג מחירים.',
     empty: 'אין עדיין מחירי חוג לעונה זו.',
@@ -534,6 +559,46 @@ export const he = {
     created: 'מחירון החוג נוצר.',
     updated: 'מחירון החוג עודכן.',
     selectSeasonFirst: 'יש לבחור עונה תחילה.',
+  },
+
+  swimmingSettings: {
+    title: 'הודעת פתיחה לשחייה',
+    intro:
+      'טקסט חופשי (Markdown) שמוצג בעמוד הראשון של טופס ההרשמה לשחייה — לכל עונה בנפרד. כאן גם נקבע כמה מפגשים בשבוע לשיעור קבוצתי.',
+    season: 'עונה',
+    noSeasons: 'אין עונות זמינות',
+    activeSuffix: '(פעילה)',
+    createTitle: 'יצירת הודעת פתיחה',
+    editTitle: 'עריכת הודעת פתיחה',
+    introMarkdown: 'טקסט פתיחה (Markdown)',
+    groupWeeklySessions: 'מפגשים בשבוע לשיעור קבוצתי',
+    groupWeeklySessionsHint:
+      'ברירת מחדל: 2. שיעורי פרטי וזוגי — ההורה בוחר את מספר המפגשים בטופס.',
+    placeholder:
+      '# שיעורי שחייה קיץ 2026\n\nשלום לכולם,\n\nשיעורים יחלו…',
+    markdownHint:
+      'ניתן להשתמש בכותרות (# ## ###), הדגשה (**טקסט**), ורשימות עם מקף (- פריט).',
+    preview: 'תצוגה מקדימה',
+    all: 'כל ההודעות לפי עונה',
+    empty: 'עדיין לא הוגדרה הודעת פתיחה.',
+    loading: 'טוען…',
+    created: 'ההגדרות נשמרו.',
+    updated: 'ההגדרות עודכנו.',
+    selectSeasonFirst: 'יש לבחור עונה תחילה.',
+  },
+
+  swimmingCatalog: {
+    introTitle: 'מידע על שיעורי השחייה',
+    pricesTitle: 'מחירון שיעורי שחייה',
+    seasonLine: 'עונה: {season}',
+    introEmpty: 'הודעת הפתיחה לעונה זו עדיין לא פורסמה. ניתן להמשיך להרשמה.',
+    pricesEmpty: 'מחירון השחייה לעונה זו עדיין לא הוגדר. פנו למנהל/ת.',
+    unitPriceHint:
+      'המחירים המוצגים הם לשיעור אחד בשבוע. החיוב החודשי = מחיר × מספר המפגשים בשבוע.',
+    groupSessionsHint:
+      'שיעור קבוצתי מתקיים {count} פעמים בשבוע (קבוע).',
+    unitPriceLine: '{lesson} — מחיר לשיעור בודד',
+    priceAmount: '₪{amount}',
   },
 
   clothingPricing: {
@@ -547,6 +612,8 @@ export const he = {
     shortKit: 'מחיר חליפה קצרה',
     longKit: 'מחיר חליפה ארוכה',
     hoodie: 'מחיר קפוצ׳ון',
+    allowAlreadyHasSkip:
+      'להציג בטופס הציבורי את האפשרות ״יש כבר ציוד (ללא הזמנה)״',
     all: 'כל מחירוני הביגוד',
     empty: 'אין עדיין מחירי ביגוד.',
     loading: 'טוען…',
@@ -564,6 +631,8 @@ export const he = {
     lessonType: 'סוג שיעור',
     waterAdaptationLevel: 'רמת הסתגלות למים',
     weeklySessions: 'כמה מפגשים בשבוע? (1–6)',
+    groupWeeklySessionsFixed:
+      'שיעור קבוצתי מתקיים {count} פעמים בשבוע (נקבע על ידי המנהל/ת).',
     loadingCatalog: 'טוען עונה וחוג פעילים…',
     seasonLabel: 'עונה',
     activityLabel: 'חוג',
@@ -682,10 +751,10 @@ export const he = {
       SUNDAY: 'יום ראשון',
     },
     waterAdaptationLevel: {
-      NOT_INDEPENDENT: 'לא עצמאי במים',
-      INDEPENDENT_NO_HEAD: 'עצמאי בלי ראש במים',
-      INDEPENDENT_WITH_HEAD: 'עצמאי עם ראש במים',
-      BASIC_SWIMMING: 'שחייה בסיסית',
+      NOT_INDEPENDENT: 'לא עצמאי/ת במים ולא מכניס/ה את הראש למים',
+      INDEPENDENT_NO_HEAD: 'עצמאי/ת במים ולא מכניס/ה ראש למים',
+      INDEPENDENT_WITH_HEAD: 'עצמאי/ת במים ומכניס/ה ראש למים',
+      BASIC_SWIMMING: 'עצמאי/ת במים, מכניס/ה ראש למים ויודע/ת תנועות שחייה בסיסיות',
     },
     registrationStatus: {
       PENDING: 'ממתין לאישור',
@@ -693,12 +762,12 @@ export const he = {
       CANCELLED: 'מבוטל',
     },
     clothingSize: {
-      YOUTH_4: 'נוער 4',
-      YOUTH_6: 'נוער 6',
-      YOUTH_8: 'נוער 8',
-      YOUTH_10: 'נוער 10',
-      YOUTH_12: 'נוער 12',
-      YOUTH_14: 'נוער 14',
+      YOUTH_4: '4',
+      YOUTH_6: '6',
+      YOUTH_8: '8',
+      YOUTH_10: '10',
+      YOUTH_12: '12',
+      YOUTH_14: '14',
       XS: 'XS',
       S: 'S',
       M: 'M',

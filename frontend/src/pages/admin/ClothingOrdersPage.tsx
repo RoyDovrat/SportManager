@@ -193,6 +193,16 @@ export function ClothingOrdersPage() {
         setError(t('wizard.clothing.sizeRequired'))
         return
       }
+      const shirtRaw = createForm.shirtNumber.trim()
+      if (shirtRaw === '') {
+        setError(t('publicClothing.printedNumberRequired'))
+        return
+      }
+      const shirtNumber = Number(shirtRaw)
+      if (!Number.isInteger(shirtNumber) || shirtNumber < 0 || shirtNumber > 99) {
+        setError(t('publicClothing.printedNumberInvalid'))
+        return
+      }
     }
 
     setSaving(true)
@@ -316,11 +326,12 @@ export function ClothingOrdersPage() {
               }
             />
             <label className="admin-form__field">
-              <span>{t('clothingOrders.shirtNumber')}</span>
+              <span>{t('publicClothing.printedNumber')}</span>
               <input
                 type="number"
                 min={0}
                 max={99}
+                required
                 value={createForm.shirtNumber}
                 onChange={(event) =>
                   setCreateForm({

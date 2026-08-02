@@ -14,6 +14,13 @@ export const AGE_GROUPS = [
 ] as const
 export type AgeGroup = (typeof AGE_GROUPS)[number]
 
+/** Public swimming registration: kindergarten groups only. */
+export const SWIMMING_AGE_GROUPS = [
+  'OLD_GAN_HADAR',
+  'YOUNG_GAN_RIMON',
+  'OLD_GAN_RIMON',
+] as const satisfies readonly AgeGroup[]
+
 export const SWIMMING_LESSON_TYPES = ['PRIVATE', 'PAIR', 'GROUP'] as const
 export type SwimmingLessonType = (typeof SWIMMING_LESSON_TYPES)[number]
 

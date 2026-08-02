@@ -52,6 +52,20 @@ function translateBusinessMessage(message: string | undefined): string | null {
       t('wizard.errors.inactiveSeason'),
     'Swimming fields must not be provided for football registration':
       t('wizard.errors.validation'),
+    'Clothing can only be ordered for an approved registration':
+      t('wizard.errors.clothingNotApproved'),
+    'Student is not registered for football in this season':
+      t('wizard.errors.clothingNotRegistered'),
+    'Student was not found with this identity number':
+      t('wizard.errors.clothingStudentNotFound'),
+    'A clothing order already exists for this registration':
+      t('wizard.errors.clothingOrderExists'),
+    'Skipping clothing order is not allowed for this season':
+      t('wizard.errors.clothingSkipDisabled'),
+    'Printed clothing number is required':
+      t('publicClothing.printedNumberRequired'),
+    'At least one clothing item must be ordered':
+      t('wizard.clothing.itemsRequired'),
   }
 
   if (exact[message]) {
@@ -60,8 +74,17 @@ function translateBusinessMessage(message: string | undefined): string | null {
   if (message.startsWith('Football pricing was not found')) {
     return t('wizard.errors.footballPricingMissing')
   }
+  if (message.includes('Printed clothing number must be between')) {
+    return t('publicClothing.printedNumberInvalid')
+  }
+  if (message.includes('size is required when quantity')) {
+    return t('wizard.clothing.sizeRequired')
+  }
   if (message.includes('already registered to this activity')) {
     return t('wizard.errors.alreadyRegistered')
+  }
+  if (message.includes('clothing order already exists')) {
+    return t('wizard.errors.clothingOrderExists')
   }
   if (
     message.toLowerCase().includes('already') ||

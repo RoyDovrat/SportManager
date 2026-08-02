@@ -23,6 +23,8 @@ type ActivityStepProps = {
   onChange: (next: RegistrationCommonForm) => void
   swimming?: SwimmingFormExtras
   onSwimmingChange?: (next: SwimmingFormExtras) => void
+  /** Fixed weekly sessions for GROUP swimming (from admin settings). */
+  swimmingGroupWeeklySessions?: number
   footballMatchedGroup?: FootballCatalogResponse['groups'][number] | null
   disabled?: boolean
 }
@@ -38,9 +40,15 @@ export function ActivityStep({
   onChange,
   swimming,
   onSwimmingChange,
+  swimmingGroupWeeklySessions = 2,
   footballMatchedGroup,
   disabled = false,
 }: ActivityStepProps) {
+  const isGroupLesson = swimming?.swimmingLessonType === 'GROUP'
+  const swimmingWeeklyValue = isGroupLesson
+    ? String(swimmingGroupWeeklySessions)
+    : (swimming?.weeklySessions ?? '1')
+
   return (
     <div className="wizard-fields">
       <div className="wizard-fields__row">
@@ -102,13 +110,19 @@ export function ActivityStep({
             <select
               value={swimming.swimmingLessonType}
               disabled={disabled}
-              onChange={(event) =>
+              onChange={(event) => {
+                const nextType = event.target.value as SwimmingLessonType
                 onSwimmingChange({
                   ...swimming,
-                  swimmingLessonType: event.target
-                    .value as SwimmingLessonType,
+                  swimmingLessonType: nextType,
+                  weeklySessions:
+                    nextType === 'GROUP'
+                      ? String(swimmingGroupWeeklySessions)
+                      : swimming.weeklySessions === String(swimmingGroupWeeklySessions)
+                        ? '1'
+                        : swimming.weeklySessions,
                 })
-              }
+              }}
               required
             >
               {SWIMMING_LESSON_TYPES.map((type) => (
@@ -143,23 +157,38 @@ export function ActivityStep({
 
           <label className="admin-form__field">
             <span>{t('registration.weeklySessions')}</span>
-            <select
-              value={swimming.weeklySessions}
-              disabled={disabled}
-              onChange={(event) =>
-                onSwimmingChange({
-                  ...swimming,
-                  weeklySessions: event.target.value,
-                })
-              }
-              required
-            >
-              {[1, 2, 3, 4, 5, 6].map((value) => (
-                <option key={value} value={String(value)}>
-                  {value}
-                </option>
-              ))}
-            </select>
+            {isGroupLesson ? (
+              <>
+                <input
+                  value={swimmingWeeklyValue}
+                  disabled
+                  readOnly
+                />
+                <span className="admin-form__hint">
+                  {t('registration.groupWeeklySessionsFixed', {
+                    count: swimmingGroupWeeklySessions,
+                  })}
+                </span>
+              </>
+            ) : (
+              <select
+                value={swimmingWeeklyValue}
+                disabled={disabled}
+                onChange={(event) =>
+                  onSwimmingChange({
+                    ...swimming,
+                    weeklySessions: event.target.value,
+                  })
+                }
+                required
+              >
+                {[1, 2, 3, 4, 5, 6].map((value) => (
+                  <option key={value} value={String(value)}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            )}
           </label>
         </>
       )}

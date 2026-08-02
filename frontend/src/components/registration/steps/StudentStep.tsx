@@ -12,12 +12,14 @@ type StudentStepProps = {
   form: RegistrationCommonForm
   onChange: (next: RegistrationCommonForm) => void
   disabled?: boolean
+  ageGroups?: readonly AgeGroup[]
 }
 
 export function StudentStep({
   form,
   onChange,
   disabled = false,
+  ageGroups = AGE_GROUPS,
 }: StudentStepProps) {
   function update<K extends keyof RegistrationCommonForm>(
     key: K,
@@ -87,7 +89,7 @@ export function StudentStep({
             required
             disabled={disabled}
           >
-            {AGE_GROUPS.map((group) => (
+            {ageGroups.map((group) => (
               <option key={group} value={group}>
                 {ageGroupLabel(group)}
               </option>

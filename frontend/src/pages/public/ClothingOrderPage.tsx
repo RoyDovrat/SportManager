@@ -6,8 +6,12 @@ import {
   type ClothingOrderResponse,
 } from '../../api/clothingOrders'
 import { formatPublicApiError } from '../../api/formatPublicApiError'
-import { getActiveSeason } from '../../api/publicCatalog'
-import type { SeasonResponse } from '../../api/seasons'
+import {
+  checkClothingEligibility,
+  getClothingCatalog,
+  type ClothingCatalogResponse,
+  type ClothingEligibilityResponse,
+} from '../../api/publicCatalog'
 import { WizardShell } from '../../components/wizard/WizardShell'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
@@ -43,6 +47,7 @@ const emptyForm: FormState = {
 }
 
 const STEP_DEFS = [
+  { id: 'prices', labelKey: 'wizard.clothing.prices' },
   { id: 'identity', labelKey: 'wizard.clothing.identity' },
   { id: 'items', labelKey: 'wizard.clothing.items' },
   { id: 'done', labelKey: 'wizard.steps.done' },
@@ -115,38 +120,61 @@ function validateItems(form: FormState): string | null {
   if (hoodieQuantity > 0 && !form.hoodieSize) {
     return t('wizard.clothing.sizeRequired')
   }
+  const shirtRaw = form.shirtNumber.trim()
+  if (shirtRaw === '') {
+    return t('publicClothing.printedNumberRequired')
+  }
+  const shirtNumber = Number(shirtRaw)
+  if (!Number.isInteger(shirtNumber) || shirtNumber < 0 || shirtNumber > 99) {
+    return t('publicClothing.printedNumberInvalid')
+  }
   return null
 }
 
 export function ClothingOrderPage() {
-  const [season, setSeason] = useState<SeasonResponse | null>(null)
+  const [logoVisible, setLogoVisible] = useState(true)
+  const [catalog, setCatalog] = useState<ClothingCatalogResponse | null>(null)
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [checkingEligibility, setCheckingEligibility] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<ClothingOrderResponse | null>(null)
+  const [eligibleStudent, setEligibleStudent] =
+    useState<ClothingEligibilityResponse | null>(null)
 
   const steps = STEP_DEFS.map((item) => ({
     id: item.id,
     label: t(item.labelKey),
   }))
+  const doneIndex = steps.length - 1
+  const currentStepId = STEP_DEFS[step]?.id ?? 'prices'
+
+  const sideBrand = logoVisible ? (
+    <img
+      src="/images/football-club-logo.png"
+      alt={t('footballCatalog.logoAlt')}
+      className="football-registration__logo"
+      onError={() => setLogoVisible(false)}
+    />
+  ) : null
 
   useEffect(() => {
     let cancelled = false
 
-    async function loadSeason() {
+    async function loadCatalog() {
       setCatalogLoading(true)
       setCatalogError(null)
       try {
-        const active = await getActiveSeason()
+        const active = await getClothingCatalog()
         if (!cancelled) {
-          setSeason(active)
+          setCatalog(active)
         }
       } catch (err) {
         if (!cancelled) {
-          setSeason(null)
+          setCatalog(null)
           setCatalogError(formatPublicApiError(err))
         }
       } finally {
@@ -156,14 +184,14 @@ export function ClothingOrderPage() {
       }
     }
 
-    void loadSeason()
+    void loadCatalog()
     return () => {
       cancelled = true
     }
   }, [])
 
   async function submitOrder() {
-    if (!season) {
+    if (!catalog) {
       setError(catalogError ?? t('publicClothing.noActiveSeason'))
       return
     }
@@ -176,10 +204,13 @@ export function ClothingOrderPage() {
     setSubmitting(true)
     setError(null)
     try {
-      const response = await createClothingOrder(buildRequest(form, season.id))
+      const response = await createClothingOrder(
+        buildRequest(form, catalog.seasonId),
+      )
       setSuccess(response)
       setForm(emptyForm)
-      setStep(2)
+      setEligibleStudent(null)
+      setStep(doneIndex)
     } catch (err) {
       setError(formatPublicApiError(err))
     } finally {
@@ -187,35 +218,79 @@ export function ClothingOrderPage() {
     }
   }
 
-  function goNext() {
+  async function goNext() {
     setError(null)
-    if (step === 0) {
-      const identityError = validateIdentity(form)
-      if (identityError) {
-        setError(identityError)
-        return
-      }
-      if (form.alreadyHasClothing) {
-        void submitOrder()
+    if (currentStepId === 'prices') {
+      if (!catalog?.pricingConfigured) {
+        setError(t('publicClothing.noPricing'))
         return
       }
       setStep(1)
       return
     }
-    if (step === 1) {
+    if (currentStepId === 'identity') {
+      const identityError = validateIdentity(form)
+      if (identityError) {
+        setError(identityError)
+        return
+      }
+      if (!catalog) {
+        setError(t('publicClothing.noActiveSeason'))
+        return
+      }
+
+      setCheckingEligibility(true)
+      try {
+        const eligibility = await checkClothingEligibility(
+          catalog.seasonId,
+          normalizeIsraeliId(form.studentIdentityNumber),
+        )
+        setEligibleStudent(eligibility)
+
+        if (form.alreadyHasClothing) {
+          if (!catalog.allowAlreadyHasClothingSkip) {
+            setError(t('wizard.errors.clothingSkipDisabled'))
+            return
+          }
+          await submitOrder()
+          return
+        }
+        setStep(2)
+      } catch (err) {
+        setEligibleStudent(null)
+        setError(formatPublicApiError(err))
+      } finally {
+        setCheckingEligibility(false)
+      }
+      return
+    }
+    if (currentStepId === 'items') {
       void submitOrder()
     }
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    goNext()
+    void goNext()
   }
 
   function resetWizard() {
     setSuccess(null)
     setStep(0)
     setError(null)
+    setEligibleStudent(null)
+  }
+
+  function goBack() {
+    setError(null)
+    if (currentStepId === 'identity') {
+      setEligibleStudent(null)
+      setStep(0)
+      return
+    }
+    if (currentStepId === 'items') {
+      setStep(1)
+    }
   }
 
   if (catalogLoading) {
@@ -224,6 +299,7 @@ export function ClothingOrderPage() {
         title={t('publicClothing.title')}
         steps={steps}
         currentIndex={0}
+        sideBrand={sideBrand}
         footer={<Link to="/">{t('registration.cancel')}</Link>}
       >
         <p>{t('common.loading')}</p>
@@ -231,7 +307,7 @@ export function ClothingOrderPage() {
     )
   }
 
-  if (!season) {
+  if (!catalog) {
     return (
       <WizardShell
         title={t('publicClothing.title')}
@@ -239,6 +315,7 @@ export function ClothingOrderPage() {
         currentIndex={0}
         showStepper={false}
         error={catalogError}
+        sideBrand={sideBrand}
         footer={<Link to="/" className="btn">{t('common.backHome')}</Link>}
       >
         <p>{catalogError ?? t('publicClothing.noActiveSeason')}</p>
@@ -246,12 +323,13 @@ export function ClothingOrderPage() {
     )
   }
 
-  if (success && step === 2) {
+  if (success && currentStepId === 'done') {
     return (
       <WizardShell
         title={t('publicClothing.title')}
         steps={steps}
-        currentIndex={2}
+        currentIndex={doneIndex}
+        sideBrand={sideBrand}
         footer={
           <Link to="/" className="btn">
             {t('common.backHome')}
@@ -272,7 +350,11 @@ export function ClothingOrderPage() {
             {t('publicClothing.orderId')}: <strong>{success.id}</strong>
           </p>
           <p className="wizard-success__hint">{t('publicClothing.successHint')}</p>
-          <button type="button" className="btn btn--secondary" onClick={resetWizard}>
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={resetWizard}
+          >
             {t('publicClothing.orderAnother')}
           </button>
         </div>
@@ -280,26 +362,28 @@ export function ClothingOrderPage() {
     )
   }
 
-  const formDisabled = submitting
+  const formDisabled = submitting || checkingEligibility
+  const showSubmit =
+    (currentStepId === 'identity' && form.alreadyHasClothing) ||
+    currentStepId === 'items'
 
   return (
     <WizardShell
       title={t('publicClothing.title')}
-      subtitle={`${t('publicClothing.season')}: ${season.name}`}
+      subtitle={`${t('publicClothing.season')}: ${catalog.seasonName}`}
       steps={steps}
       currentIndex={step}
       error={error}
+      sideBrand={sideBrand}
+      bodyClassName="wizard-card__body--scroll"
       footer={
         <>
           {step > 0 ? (
             <button
               type="button"
               className="btn btn--secondary"
-              onClick={() => {
-                setError(null)
-                setStep(0)
-              }}
-              disabled={submitting}
+              onClick={goBack}
+              disabled={formDisabled}
             >
               {t('wizard.back')}
             </button>
@@ -314,11 +398,9 @@ export function ClothingOrderPage() {
             className="btn"
             disabled={formDisabled}
           >
-            {step === 0 && form.alreadyHasClothing
-              ? submitting
-                ? t('publicClothing.submitting')
-                : t('publicClothing.submit')
-              : step === 1
+            {checkingEligibility
+              ? t('publicClothing.checking')
+              : showSubmit
                 ? submitting
                   ? t('publicClothing.submitting')
                   : t('publicClothing.submit')
@@ -328,7 +410,48 @@ export function ClothingOrderPage() {
       }
     >
       <form id="clothing-wizard-form" onSubmit={handleSubmit} noValidate>
-        {step === 0 && (
+        {currentStepId === 'prices' && (
+          <section
+            className="clothing-catalog"
+            aria-label={t('publicClothing.pricesTitle')}
+          >
+            <h2 className="clothing-catalog__title">
+              {t('publicClothing.pricesTitle')}
+            </h2>
+            {!catalog.pricingConfigured ? (
+              <p>{t('publicClothing.noPricing')}</p>
+            ) : (
+              <ul className="clothing-catalog__list">
+                <li>
+                  <span>{t('clothingOrders.shortKit')}</span>
+                  <strong>
+                    {t('publicClothing.priceAmount', {
+                      amount: catalog.shortKitPrice ?? '—',
+                    })}
+                  </strong>
+                </li>
+                <li>
+                  <span>{t('clothingOrders.longKit')}</span>
+                  <strong>
+                    {t('publicClothing.priceAmount', {
+                      amount: catalog.longKitPrice ?? '—',
+                    })}
+                  </strong>
+                </li>
+                <li>
+                  <span>{t('clothingOrders.hoodie')}</span>
+                  <strong>
+                    {t('publicClothing.priceAmount', {
+                      amount: catalog.hoodiePrice ?? '—',
+                    })}
+                  </strong>
+                </li>
+              </ul>
+            )}
+          </section>
+        )}
+
+        {currentStepId === 'identity' && (
           <div className="wizard-fields">
             <p className="wizard-hint">{t('publicClothing.approvedHint')}</p>
             <label className="admin-form__field">
@@ -345,32 +468,48 @@ export function ClothingOrderPage() {
                 disabled={formDisabled}
                 autoFocus
                 inputMode="numeric"
-                placeholder=""
                 maxLength={12}
               />
             </label>
-            <label className="admin-form__checkbox">
-              <input
-                type="checkbox"
-                checked={form.alreadyHasClothing}
-                disabled={formDisabled}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    alreadyHasClothing: event.target.checked,
-                  })
-                }
-              />
-              <span>{t('publicClothing.alreadyHas')}</span>
-            </label>
+            {eligibleStudent && (
+              <p className="wizard-hint">
+                {t('publicClothing.eligibleFor', {
+                  name: `${eligibleStudent.studentFirstName} ${eligibleStudent.studentLastName}`,
+                })}
+              </p>
+            )}
+            {catalog.allowAlreadyHasClothingSkip && (
+              <label className="admin-form__checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.alreadyHasClothing}
+                  disabled={formDisabled}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      alreadyHasClothing: event.target.checked,
+                    })
+                  }
+                />
+                <span>{t('publicClothing.alreadyHas')}</span>
+              </label>
+            )}
           </div>
         )}
 
-        {step === 1 && (
+        {currentStepId === 'items' && (
           <div className="wizard-fields wizard-fields--compact">
+            {eligibleStudent && (
+              <p className="wizard-hint">
+                {t('publicClothing.eligibleFor', {
+                  name: `${eligibleStudent.studentFirstName} ${eligibleStudent.studentLastName}`,
+                })}
+              </p>
+            )}
             <div className="wizard-kit-grid">
               <KitFields
                 title={t('clothingOrders.shortKit')}
+                price={catalog.shortKitPrice}
                 quantity={form.shortKitQuantity}
                 size={form.shortKitSize}
                 disabled={formDisabled}
@@ -383,6 +522,7 @@ export function ClothingOrderPage() {
               />
               <KitFields
                 title={t('clothingOrders.longKit')}
+                price={catalog.longKitPrice}
                 quantity={form.longKitQuantity}
                 size={form.longKitSize}
                 disabled={formDisabled}
@@ -395,6 +535,7 @@ export function ClothingOrderPage() {
               />
               <KitFields
                 title={t('clothingOrders.hoodie')}
+                price={catalog.hoodiePrice}
                 quantity={form.hoodieQuantity}
                 size={form.hoodieSize}
                 disabled={formDisabled}
@@ -407,11 +548,12 @@ export function ClothingOrderPage() {
               />
             </div>
             <label className="admin-form__field">
-              <span>{t('clothingOrders.shirtNumber')}</span>
+              <span>{t('publicClothing.printedNumber')}</span>
               <input
                 type="number"
                 min={0}
                 max={99}
+                required
                 value={form.shirtNumber}
                 onChange={(event) =>
                   setForm({ ...form, shirtNumber: event.target.value })
@@ -428,6 +570,7 @@ export function ClothingOrderPage() {
 
 function KitFields({
   title,
+  price,
   quantity,
   size,
   disabled,
@@ -435,6 +578,7 @@ function KitFields({
   onSizeChange,
 }: {
   title: string
+  price: number | null
   quantity: string
   size: string
   disabled: boolean
@@ -445,7 +589,15 @@ function KitFields({
 
   return (
     <fieldset className="wizard-kit">
-      <legend>{title}</legend>
+      <legend>
+        {title}
+        {price != null && (
+          <span className="wizard-kit__price">
+            {' '}
+            · {t('publicClothing.priceAmount', { amount: price })}
+          </span>
+        )}
+      </legend>
       <div className="wizard-fields__row">
         <label className="admin-form__field">
           <span>{t('clothingOrders.quantity')}</span>

@@ -3,8 +3,10 @@ import { formatPublicApiError } from '../../api/formatPublicApiError'
 import {
   getActiveSeason,
   getFootballCatalog,
+  getSwimmingCatalog,
   listActiveActivities,
   type FootballCatalogResponse,
+  type SwimmingCatalogResponse,
 } from '../../api/publicCatalog'
 import type { ActivityResponse } from '../../api/activities'
 import type { SeasonResponse } from '../../api/seasons'
@@ -18,6 +20,7 @@ type CatalogState = {
   season: SeasonResponse | null
   activity: ActivityResponse | null
   footballCatalog: FootballCatalogResponse | null
+  swimmingCatalog: SwimmingCatalogResponse | null
 }
 
 export function useRegistrationCatalog(activityType: ActivityType): CatalogState {
@@ -27,6 +30,8 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
   const [activity, setActivity] = useState<ActivityResponse | null>(null)
   const [footballCatalog, setFootballCatalog] =
     useState<FootballCatalogResponse | null>(null)
+  const [swimmingCatalog, setSwimmingCatalog] =
+    useState<SwimmingCatalogResponse | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -53,6 +58,7 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
           setSeason(activeSeason)
           setActivity(null)
           setFootballCatalog(null)
+          setSwimmingCatalog(null)
           setError(
             t('registration.noActiveActivity', {
               type: activityTypeLabel(activityType),
@@ -62,8 +68,14 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
         }
 
         let nextFootballCatalog: FootballCatalogResponse | null = null
+        let nextSwimmingCatalog: SwimmingCatalogResponse | null = null
         if (activityType === 'FOOTBALL') {
           nextFootballCatalog = await getFootballCatalog()
+          if (cancelled) {
+            return
+          }
+        } else if (activityType === 'SWIMMING') {
+          nextSwimmingCatalog = await getSwimmingCatalog()
           if (cancelled) {
             return
           }
@@ -72,11 +84,13 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
         setSeason(activeSeason)
         setActivity(matched)
         setFootballCatalog(nextFootballCatalog)
+        setSwimmingCatalog(nextSwimmingCatalog)
       } catch (err) {
         if (!cancelled) {
           setSeason(null)
           setActivity(null)
           setFootballCatalog(null)
+          setSwimmingCatalog(null)
           setError(formatPublicApiError(err))
         }
       } finally {
@@ -93,5 +107,12 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
     }
   }, [activityType])
 
-  return { loading, error, season, activity, footballCatalog }
+  return {
+    loading,
+    error,
+    season,
+    activity,
+    footballCatalog,
+    swimmingCatalog,
+  }
 }

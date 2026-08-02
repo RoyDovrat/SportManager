@@ -15,12 +15,14 @@ type PriceForm = {
   shortKitPrice: string
   longKitPrice: string
   hoodiePrice: string
+  allowAlreadyHasClothingSkip: boolean
 }
 
 const emptyForm: PriceForm = {
   shortKitPrice: '',
   longKitPrice: '',
   hoodiePrice: '',
+  allowAlreadyHasClothingSkip: true,
 }
 
 export function ClothingPricingPage() {
@@ -71,6 +73,8 @@ export function ClothingPricingPage() {
         shortKitPrice: String(pricing.shortKitPrice),
         longKitPrice: String(pricing.longKitPrice),
         hoodiePrice: String(pricing.hoodiePrice),
+        allowAlreadyHasClothingSkip:
+          pricing.allowAlreadyHasClothingSkip !== false,
       })
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
@@ -114,6 +118,7 @@ export function ClothingPricingPage() {
       shortKitPrice: Number(form.shortKitPrice),
       longKitPrice: Number(form.longKitPrice),
       hoodiePrice: Number(form.hoodiePrice),
+      allowAlreadyHasClothingSkip: form.allowAlreadyHasClothingSkip,
     }
 
     try {
@@ -215,6 +220,21 @@ export function ClothingPricingPage() {
             required
             disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
           />
+        </label>
+
+        <label className="admin-form__checkbox">
+          <input
+            type="checkbox"
+            checked={form.allowAlreadyHasClothingSkip}
+            disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
+            onChange={(event) =>
+              setForm({
+                ...form,
+                allowAlreadyHasClothingSkip: event.target.checked,
+              })
+            }
+          />
+          <span>{t('clothingPricing.allowAlreadyHasSkip')}</span>
         </label>
 
         <div className="admin-form__actions">
