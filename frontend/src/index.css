@@ -1205,6 +1205,67 @@ body:has(.wizard-page) {
   border: 1px solid rgb(26 111 154 / 20%);
 }
 
+.health-declaration-approval {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.health-declaration-approval__link-row {
+  margin: 0;
+}
+
+.health-declaration-approval__link {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--navy-800);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.health-declaration-approval__link:hover {
+  color: var(--accent-blue);
+}
+
+.health-declaration-page {
+  width: min(42rem, 100%);
+  margin: 1.25rem auto 2rem;
+  padding: 1.25rem 1.35rem 1.5rem;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.health-declaration-page__header h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+  color: var(--navy-900);
+}
+
+.health-declaration-page__intro,
+.health-declaration-page__closing {
+  margin: 0.75rem 0 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.health-declaration-page__list {
+  margin: 1.1rem 0 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  line-height: 1.5;
+}
+
+.health-declaration-page__actions {
+  margin: 1.35rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
 .wizard-success {
   display: flex;
   flex-direction: column;

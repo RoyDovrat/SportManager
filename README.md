@@ -106,6 +106,8 @@ React 19 + Vite + TypeScript. Lives in `frontend/`.
 
 UI language is **Hebrew (RTL)**. Copy lives in `frontend/src/i18n/he.ts` and is accessed with `t('…')`. API enum values stay English; displayed labels are Hebrew via `i18n/labels.ts`.
 
+Visual design: navy SaaS admin shell (RTL sidebar) + warmer public landing with sport green/blue accents. Shared tokens and components live in `frontend/src/index.css` and `frontend/src/components/ui/`.
+
 ### Prerequisites
 
 - Node.js 20+ (npm)

@@ -38,7 +38,7 @@ export function ActivityStep({
   onChange,
   swimming,
   onSwimmingChange,
-  footballMatchedGroup = null,
+  footballMatchedGroup,
   disabled = false,
 }: ActivityStepProps) {
   return (
@@ -54,7 +54,13 @@ export function ActivityStep({
         </label>
       </div>
 
-      {footballMatchedGroup && (
+      {footballMatchedGroup === null && (
+        <p className="wizard-card__error" role="alert">
+          {t('wizard.errors.footballNoGroup')}
+        </p>
+      )}
+
+      {footballMatchedGroup != null && (
         <div className="football-catalog__group football-catalog__group--match football-activity-summary">
           <div className="football-catalog__group-head">
             <h3 className="football-catalog__group-name">
@@ -86,16 +92,6 @@ export function ActivityStep({
                 ))}
             </ul>
           </div>
-          <p className="football-catalog__price">
-            <span className="football-catalog__label">
-              {t('footballCatalog.monthlyPrice')}
-            </span>
-            {footballMatchedGroup.monthlyPrice != null
-              ? t('footballCatalog.priceAmount', {
-                  amount: footballMatchedGroup.monthlyPrice,
-                })
-              : t('footballCatalog.priceUnavailable')}
-          </p>
         </div>
       )}
 

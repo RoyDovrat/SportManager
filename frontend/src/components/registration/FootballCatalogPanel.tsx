@@ -128,17 +128,6 @@ export function FootballCatalogPanel({
                     </ul>
                   )}
                 </div>
-
-                <p className="football-catalog__price">
-                  <span className="football-catalog__label">
-                    {t('footballCatalog.monthlyPrice')}
-                  </span>
-                  {group.monthlyPrice != null
-                    ? t('footballCatalog.priceAmount', {
-                        amount: group.monthlyPrice,
-                      })
-                    : t('footballCatalog.priceUnavailable')}
-                </p>
               </li>
             )
           })}

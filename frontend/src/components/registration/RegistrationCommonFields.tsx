@@ -6,6 +6,7 @@ import {
 } from '../../types/enums'
 import { ageGroupLabel, genderLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
+import { HealthDeclarationApproval } from './HealthDeclarationApproval'
 import type { RegistrationCommonForm } from './registrationForm'
 
 type RegistrationCommonFieldsProps = {
@@ -170,15 +171,10 @@ export function RegistrationCommonFields({
           <span>{t('registration.hasMedicalLimitation')}</span>
         </label>
 
-        <label className="admin-form__checkbox">
-          <input
-            type="checkbox"
-            checked={form.healthDeclarationApproved}
-            onChange={(event) => update('healthDeclarationApproved', event.target.checked)}
-            required
-          />
-          <span>{t('registration.healthDeclaration')}</span>
-        </label>
+        <HealthDeclarationApproval
+          checked={form.healthDeclarationApproved}
+          onChange={(checked) => update('healthDeclarationApproved', checked)}
+        />
 
         <label className="admin-form__field">
           <span>{t('registration.medicalNotes')}</span>

@@ -1,5 +1,6 @@
 import { t } from '../../../i18n/t'
 import type { RegistrationCommonForm } from '../registrationForm'
+import { HealthDeclarationApproval } from '../HealthDeclarationApproval'
 
 type HealthStepProps = {
   form: RegistrationCommonForm
@@ -56,21 +57,13 @@ export function HealthStep({ form, onChange, disabled = false }: HealthStepProps
         </label>
       )}
 
-      <label className="admin-form__checkbox admin-form__checkbox--emphasis">
-        <input
-          type="checkbox"
-          checked={form.healthDeclarationApproved}
-          disabled={disabled}
-          onChange={(event) =>
-            onChange({
-              ...form,
-              healthDeclarationApproved: event.target.checked,
-            })
-          }
-          required
-        />
-        <span>{t('registration.healthDeclaration')}</span>
-      </label>
+      <HealthDeclarationApproval
+        checked={form.healthDeclarationApproved}
+        disabled={disabled}
+        onChange={(healthDeclarationApproved) =>
+          onChange({ ...form, healthDeclarationApproved })
+        }
+      />
     </div>
   )
 }

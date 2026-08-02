@@ -191,6 +191,25 @@ export function RegistrationWizard({
         setError(message)
         return
       }
+      if (isFootball && catalog.footballCatalog) {
+        const hasMatch = catalog.footballCatalog.groups.some((group) =>
+          group.ageGroups.includes(form.ageGroup),
+        )
+        if (!hasMatch) {
+          setError(t('wizard.errors.footballNoGroup'))
+          return
+        }
+      }
+    }
+    if (currentStepId === 'activity' && isFootball) {
+      if (!matchedFootballGroup) {
+        setError(t('wizard.errors.footballNoGroup'))
+        return
+      }
+      if (matchedFootballGroup.monthlyPrice == null) {
+        setError(t('wizard.errors.footballPricingMissing'))
+        return
+      }
     }
     if (currentStepId === 'health') {
       void submitRegistration()
@@ -367,7 +386,7 @@ export function RegistrationWizard({
             onChange={setForm}
             swimming={isSwimming ? swimming : undefined}
             onSwimmingChange={isSwimming ? setSwimming : undefined}
-            footballMatchedGroup={matchedFootballGroup}
+            footballMatchedGroup={isFootball ? matchedFootballGroup : undefined}
             disabled={formDisabled}
           />
         )}

@@ -22,6 +22,7 @@ import { NotFoundPage } from '../pages/NotFoundPage'
 import { PublicHomePage } from '../pages/PublicHomePage'
 import { ClothingOrderPage } from '../pages/public/ClothingOrderPage'
 import { FootballRegistrationPage } from '../pages/public/FootballRegistrationPage'
+import { HealthDeclarationPage } from '../pages/public/HealthDeclarationPage'
 import { SwimmingRegistrationPage } from '../pages/public/SwimmingRegistrationPage'
 
 export function AppRouter() {
@@ -33,6 +34,10 @@ export function AppRouter() {
           <Route path="register/football" element={<FootballRegistrationPage />} />
           <Route path="register/swimming" element={<SwimmingRegistrationPage />} />
           <Route path="register/clothing" element={<ClothingOrderPage />} />
+          <Route
+            path="register/health-declaration"
+            element={<HealthDeclarationPage />}
+          />
         </Route>
 
         <Route path="/admin/login" element={<LoginPage />} />
