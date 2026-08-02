@@ -22,4 +22,7 @@ public class ClothingPricingUpdateRequest {
     @NotNull(message = "Hoodie price is required")
     @DecimalMin(value = "0.01", message = "Hoodie price must be greater than zero")
     private BigDecimal hoodiePrice;
+
+    @NotNull(message = "allowAlreadyHasClothingSkip is required")
+    private Boolean allowAlreadyHasClothingSkip = true;
 }

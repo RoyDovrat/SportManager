@@ -39,4 +39,10 @@ public class ClothingPricing {
     @Column(name = "hoodie_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal hoodiePrice;
 
+    /**
+     * When true (or null), public clothing form may offer "already has clothing" skip.
+     */
+    @Column(name = "allow_already_has_clothing_skip")
+    private Boolean allowAlreadyHasClothingSkip = true;
+
 }

@@ -39,6 +39,9 @@ public class ClothingPricingService {
         clothingPricing.setShortKitPrice(request.getShortKitPrice());
         clothingPricing.setLongKitPrice(request.getLongKitPrice());
         clothingPricing.setHoodiePrice(request.getHoodiePrice());
+        clothingPricing.setAllowAlreadyHasClothingSkip(
+                Boolean.TRUE.equals(request.getAllowAlreadyHasClothingSkip())
+        );
 
         return toResponse(clothingPricingRepository.save(clothingPricing));
     }
@@ -80,6 +83,9 @@ public class ClothingPricingService {
         pricing.setShortKitPrice(request.getShortKitPrice());
         pricing.setLongKitPrice(request.getLongKitPrice());
         pricing.setHoodiePrice(request.getHoodiePrice());
+        pricing.setAllowAlreadyHasClothingSkip(
+                Boolean.TRUE.equals(request.getAllowAlreadyHasClothingSkip())
+        );
 
         return toResponse(clothingPricingRepository.save(pricing));
     }
@@ -128,6 +134,10 @@ public class ClothingPricingService {
                 .shortKitPrice(pricing.getShortKitPrice())
                 .longKitPrice(pricing.getLongKitPrice())
                 .hoodiePrice(pricing.getHoodiePrice())
+                .allowAlreadyHasClothingSkip(
+                        pricing.getAllowAlreadyHasClothingSkip() == null
+                                || Boolean.TRUE.equals(pricing.getAllowAlreadyHasClothingSkip())
+                )
                 .build();
     }
 }

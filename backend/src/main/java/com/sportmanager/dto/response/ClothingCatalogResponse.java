@@ -7,13 +7,13 @@ import java.math.BigDecimal;
 
 @Getter
 @Builder
-public class ClothingPricingResponse {
+public class ClothingCatalogResponse {
 
-    private Long id;
     private Long seasonId;
     private String seasonName;
+    private boolean pricingConfigured;
     private BigDecimal shortKitPrice;
     private BigDecimal longKitPrice;
     private BigDecimal hoodiePrice;
-    private Boolean allowAlreadyHasClothingSkip;
+    private boolean allowAlreadyHasClothingSkip;
 }

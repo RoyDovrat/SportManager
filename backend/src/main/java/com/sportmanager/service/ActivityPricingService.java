@@ -79,15 +79,8 @@ public class ActivityPricingService {
                 pricing.setWeeklySessions(request.getWeeklySessions());
             }
         } else if (activityType == ActivityType.SWIMMING) {
-            if (request.getWeeklySessions() != null) {
-                if (request.getWeeklySessions() <= 0) {
-                    throw new BusinessRuleException(
-                            "Weekly sessions must be greater than zero"
-                    );
-                }
-                validateSwimmingSessionsAvailable(pricing, request.getWeeklySessions());
-                pricing.setWeeklySessions(request.getWeeklySessions());
-            }
+            // Swimming rows are always unit prices (weeklySessions = 1).
+            pricing.setWeeklySessions(1);
         }
 
         pricing.setMonthlyPrice(request.getMonthlyPrice());
@@ -189,11 +182,7 @@ public class ActivityPricingService {
                         "Age group must not be provided for swimming pricing"
                 );
             }
-            if (request.getWeeklySessions() == null || request.getWeeklySessions() <= 0) {
-                throw new BusinessRuleException(
-                        "Weekly sessions must be greater than zero for swimming pricing"
-                );
-            }
+            // weeklySessions on the request is ignored; unit price always uses 1.
             return;
         }
 
@@ -219,7 +208,7 @@ public class ActivityPricingService {
                             season,
                             activity,
                             request.getSwimmingLessonType(),
-                            request.getWeeklySessions()
+                            1
                     );
         }
 
@@ -245,7 +234,7 @@ public class ActivityPricingService {
         } else {
             pricing.setAgeGroup(null);
             pricing.setSwimmingLessonType(request.getSwimmingLessonType());
-            pricing.setWeeklySessions(request.getWeeklySessions());
+            pricing.setWeeklySessions(1);
         }
 
         return pricing;

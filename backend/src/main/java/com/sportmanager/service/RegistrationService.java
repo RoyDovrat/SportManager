@@ -12,6 +12,7 @@ import com.sportmanager.entity.Student;
 import com.sportmanager.enums.ActivityType;
 import com.sportmanager.enums.AgeGroup;
 import com.sportmanager.enums.RegistrationStatus;
+import com.sportmanager.enums.SwimmingLessonType;
 import com.sportmanager.exception.BusinessRuleException;
 import com.sportmanager.exception.ConflictException;
 import com.sportmanager.exception.ResourceNotFoundException;
@@ -40,6 +41,7 @@ public class RegistrationService {
     private final SeasonRepository seasonRepository;
     private final ActivityPricingRepository activityPricingRepository;
     private final ActivityGroupRepository activityGroupRepository;
+    private final SwimmingRegistrationSettingsService swimmingRegistrationSettingsService;
 
     @Transactional
     public RegistrationResponse createRegistration(RegistrationRequest request) {
@@ -175,6 +177,10 @@ public class RegistrationService {
                 throw new BusinessRuleException(
                         "Water adaptation level is required for swimming registration"
                 );
+            }
+            if (request.getSwimmingLessonType() == SwimmingLessonType.GROUP) {
+                // GROUP frequency is fixed by admin settings; request value is ignored later.
+                return;
             }
             if (request.getWeeklySessions() == null
                     || request.getWeeklySessions() < 1
@@ -333,16 +339,24 @@ public class RegistrationService {
             Activity activity,
             Season season
     ) {
+        // Swimming prices are unit prices (one weekly lesson); charge = unit × sessions.
         return activityPricingRepository
                 .findBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
                         season,
                         activity,
                         request.getSwimmingLessonType(),
-                        request.getWeeklySessions()
+                        1
                 )
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Swimming pricing was not found for this lesson type and weekly sessions"
+                        "Swimming unit pricing was not found for this lesson type"
                 ));
+    }
+
+    private int resolveSwimmingWeeklySessions(RegistrationRequest request, Season season) {
+        if (request.getSwimmingLessonType() == SwimmingLessonType.GROUP) {
+            return swimmingRegistrationSettingsService.resolveGroupWeeklySessions(season.getId());
+        }
+        return request.getWeeklySessions();
     }
 
     private void validateRegistrationDoesNotExist(
@@ -385,10 +399,14 @@ public class RegistrationService {
         if (activity.getActivityType() == ActivityType.SWIMMING) {
             registration.setSwimmingLessonType(request.getSwimmingLessonType());
             registration.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
+            registration.setWeeklySessions(resolveSwimmingWeeklySessions(request, season));
             registration.setActivityGroup(null);
         } else {
             registration.setSwimmingLessonType(null);
             registration.setWaterAdaptationLevel(null);
+            registration.setWeeklySessions(
+                    footballGroup != null ? resolveFootballWeeklySessions(footballGroup) : null
+            );
             registration.setActivityGroup(footballGroup);
         }
 
@@ -428,9 +446,11 @@ public class RegistrationService {
                 .activityGroupName(activityGroup != null ? activityGroup.getName() : null)
                 .swimmingLessonType(registration.getSwimmingLessonType())
                 .waterAdaptationLevel(registration.getWaterAdaptationLevel())
-                .weeklySessions(registration.getActivityPricing() != null
-                        ? registration.getActivityPricing().getWeeklySessions()
-                        : null)
+                .weeklySessions(registration.getWeeklySessions() != null
+                        ? registration.getWeeklySessions()
+                        : (registration.getActivityPricing() != null
+                                ? registration.getActivityPricing().getWeeklySessions()
+                                : null))
                 .healthDeclarationApproved(registration.getHealthDeclarationApproved())
                 .hasMedicalLimitation(registration.getHasMedicalLimitation())
                 .medicalNotes(registration.getMedicalNotes())

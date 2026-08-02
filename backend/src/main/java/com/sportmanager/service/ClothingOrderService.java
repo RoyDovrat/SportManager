@@ -4,6 +4,7 @@ import com.sportmanager.dto.request.ClothingOrderRequest;
 import com.sportmanager.dto.response.ClothingOrderResponse;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ClothingOrder;
+import com.sportmanager.entity.ClothingPricing;
 import com.sportmanager.entity.Registration;
 import com.sportmanager.entity.Season;
 import com.sportmanager.entity.Student;
@@ -15,6 +16,7 @@ import com.sportmanager.exception.ConflictException;
 import com.sportmanager.exception.ResourceNotFoundException;
 import com.sportmanager.repository.ActivityRepository;
 import com.sportmanager.repository.ClothingOrderRepository;
+import com.sportmanager.repository.ClothingPricingRepository;
 import com.sportmanager.repository.RegistrationRepository;
 import com.sportmanager.repository.SeasonRepository;
 import com.sportmanager.repository.StudentRepository;
@@ -33,6 +35,7 @@ public class ClothingOrderService {
     private final StudentRepository studentRepository;
     private final ActivityRepository activityRepository;
     private final SeasonRepository seasonRepository;
+    private final ClothingPricingRepository clothingPricingRepository;
 
     @Transactional
     public ClothingOrderResponse createClothingOrder(ClothingOrderRequest request) {
@@ -46,6 +49,7 @@ public class ClothingOrderService {
 
         boolean alreadyHasClothing = Boolean.TRUE.equals(request.getAlreadyHasClothing());
         if (alreadyHasClothing) {
+            validateSkipAllowed(season);
             validateSkipOrderHasNoItems(request);
         } else {
             validateOrderDetails(request);
@@ -142,6 +146,19 @@ public class ClothingOrderService {
         }
     }
 
+    private void validateSkipAllowed(Season season) {
+        ClothingPricing pricing = clothingPricingRepository.findBySeasonId(season.getId())
+                .orElse(null);
+        boolean allowSkip = pricing == null
+                || pricing.getAllowAlreadyHasClothingSkip() == null
+                || Boolean.TRUE.equals(pricing.getAllowAlreadyHasClothingSkip());
+        if (!allowSkip) {
+            throw new BusinessRuleException(
+                    "Skipping clothing order is not allowed for this season"
+            );
+        }
+    }
+
     private void validateSkipOrderHasNoItems(ClothingOrderRequest request) {
         if (safeQuantity(request.getShortKitQuantity()) > 0
                 || safeQuantity(request.getLongKitQuantity()) > 0
@@ -196,8 +213,11 @@ public class ClothingOrderService {
     }
 
     private void validateShirtNumber(Integer shirtNumber) {
-        if (shirtNumber != null && (shirtNumber < 0 || shirtNumber > 99)) {
-            throw new BusinessRuleException("Shirt number must be between 0 and 99");
+        if (shirtNumber == null) {
+            throw new BusinessRuleException("Printed clothing number is required");
+        }
+        if (shirtNumber < 0 || shirtNumber > 99) {
+            throw new BusinessRuleException("Printed clothing number must be between 0 and 99");
         }
     }
 

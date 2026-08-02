@@ -55,6 +55,13 @@ public class Registration {
     @Column(name = "water_adaptation_level")
     private WaterAdaptationLevel waterAdaptationLevel;
 
+    /**
+     * Chosen weekly session count for swimming (unit price × this = monthly charge).
+     * Null for football (amount comes from the pricing package).
+     */
+    @Column(name = "weekly_sessions")
+    private Integer weeklySessions;
+
     @Column(name = "health_declaration_approved", nullable = false)
     private Boolean healthDeclarationApproved;
 

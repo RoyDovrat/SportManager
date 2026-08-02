@@ -14,6 +14,7 @@ import com.sportmanager.entity.Payment;
 import com.sportmanager.entity.Registration;
 import com.sportmanager.entity.Season;
 import com.sportmanager.entity.Student;
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.enums.PaymentMethod;
 import com.sportmanager.enums.PaymentStatus;
 import com.sportmanager.enums.PaymentType;
@@ -60,7 +61,7 @@ public class PaymentService {
         Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
                 .orElseGet(Payment::new);
 
-        BigDecimal amount = registration.getActivityPricing().getMonthlyPrice();
+        BigDecimal amount = resolveMonthlyAmount(registration);
         populateMonthlyPayment(payment, registration, chargeMonth, amount);
 
         return toResponse(paymentRepository.save(payment));
@@ -143,7 +144,7 @@ public class PaymentService {
             Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
                     .orElseGet(Payment::new);
 
-            BigDecimal amount = registration.getActivityPricing().getMonthlyPrice();
+            BigDecimal amount = resolveMonthlyAmount(registration);
             populateMonthlyPayment(payment, registration, chargeMonth, amount);
             created.add(toResponse(paymentRepository.save(payment)));
         }
@@ -231,6 +232,21 @@ public class PaymentService {
                         && payment.getChargeMonth().equals(chargeMonth.withDayOfMonth(1))))
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Football: package monthly price.
+     * Swimming: unit price (one weekly lesson) × chosen weekly sessions.
+     */
+    private BigDecimal resolveMonthlyAmount(Registration registration) {
+        BigDecimal unitPrice = registration.getActivityPricing().getMonthlyPrice();
+        if (registration.getActivity().getActivityType() != ActivityType.SWIMMING) {
+            return unitPrice;
+        }
+        int sessions = registration.getWeeklySessions() != null
+                ? registration.getWeeklySessions()
+                : 1;
+        return unitPrice.multiply(BigDecimal.valueOf(sessions));
     }
 
     private void populateMonthlyPayment(
