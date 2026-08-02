@@ -5,7 +5,7 @@ import { t } from '../../i18n/t'
 export function FootballRegistrationPage() {
   const [logoVisible, setLogoVisible] = useState(true)
 
-  const headerBrand = logoVisible ? (
+  const sideBrand = logoVisible ? (
     <img
       src="/images/football-club-logo.png"
       alt={t('footballCatalog.logoAlt')}
@@ -20,7 +20,7 @@ export function FootballRegistrationPage() {
         activityType="FOOTBALL"
         title={t('registration.footballTitle')}
         intro={t('registration.footballIntro')}
-        headerBrand={headerBrand}
+        sideBrand={sideBrand}
       />
     </div>
   )

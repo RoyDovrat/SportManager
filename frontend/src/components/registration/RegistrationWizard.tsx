@@ -55,7 +55,7 @@ type RegistrationWizardProps = {
   activityType: ActivityType
   title: string
   intro: string
-  headerBrand?: ReactNode
+  sideBrand?: ReactNode
 }
 
 function validateParent(form: RegistrationCommonForm): string | null {
@@ -95,7 +95,7 @@ export function RegistrationWizard({
   activityType,
   title,
   intro,
-  headerBrand,
+  sideBrand,
 }: RegistrationWizardProps) {
   const catalog = useRegistrationCatalog(activityType)
   const [step, setStep] = useState(0)
@@ -222,7 +222,7 @@ export function RegistrationWizard({
         subtitle={intro}
         steps={steps}
         currentIndex={0}
-        headerBrand={headerBrand}
+        sideBrand={sideBrand}
         footer={<Link to="/">{t('registration.cancel')}</Link>}
       >
         <p>{t('registration.loadingCatalog')}</p>
@@ -238,7 +238,7 @@ export function RegistrationWizard({
         currentIndex={0}
         error={catalog.error}
         showStepper={false}
-        headerBrand={headerBrand}
+        sideBrand={sideBrand}
         footer={<Link to="/" className="btn">{t('common.backHome')}</Link>}
       >
         <p>{catalog.error ?? t('common.errorGeneric')}</p>
@@ -253,7 +253,7 @@ export function RegistrationWizard({
         steps={steps}
         currentIndex={doneIndex}
         showStepper
-        headerBrand={headerBrand}
+        sideBrand={sideBrand}
         footer={
           <>
             <Link to="/" className="btn">
@@ -304,7 +304,7 @@ export function RegistrationWizard({
       steps={steps}
       currentIndex={step}
       error={error}
-      headerBrand={headerBrand}
+      sideBrand={sideBrand}
       bodyClassName="wizard-card__body--scroll"
       footer={
         <>

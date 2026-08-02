@@ -9,7 +9,8 @@ type WizardShellProps = {
   showStepper?: boolean
   error?: string | null
   bodyClassName?: string
-  headerBrand?: ReactNode
+  /** Brand mark placed at the outside top-left corner of the card */
+  sideBrand?: ReactNode
   children: ReactNode
   footer: ReactNode
 }
@@ -22,39 +23,44 @@ export function WizardShell({
   showStepper = true,
   error,
   bodyClassName,
-  headerBrand,
+  sideBrand,
   children,
   footer,
 }: WizardShellProps) {
   const bodyClass = ['wizard-card__body', bodyClassName]
     .filter(Boolean)
     .join(' ')
+  const stageClass = sideBrand
+    ? 'wizard-stage wizard-stage--with-side-brand'
+    : 'wizard-stage'
 
   return (
     <section className="wizard-page">
-      <div className="wizard-card">
-        <header className="wizard-card__header">
-          <div className="wizard-card__title-row">
+      <div className={stageClass}>
+        {sideBrand && (
+          <div className="wizard-stage__side-brand">{sideBrand}</div>
+        )}
+        <div className="wizard-card">
+          <header className="wizard-card__header">
             <div className="wizard-card__titles">
               <h1>{title}</h1>
               {subtitle && <p className="wizard-card__subtitle">{subtitle}</p>}
             </div>
-            {headerBrand}
-          </div>
-          {showStepper && (
-            <WizardStepper steps={steps} currentIndex={currentIndex} />
+            {showStepper && (
+              <WizardStepper steps={steps} currentIndex={currentIndex} />
+            )}
+          </header>
+
+          {error && (
+            <p className="wizard-card__error" role="alert" aria-live="assertive">
+              {error}
+            </p>
           )}
-        </header>
 
-        {error && (
-          <p className="wizard-card__error" role="alert" aria-live="assertive">
-            {error}
-          </p>
-        )}
+          <div className={bodyClass}>{children}</div>
 
-        <div className={bodyClass}>{children}</div>
-
-        <footer className="wizard-card__footer">{footer}</footer>
+          <footer className="wizard-card__footer">{footer}</footer>
+        </div>
       </div>
     </section>
   )

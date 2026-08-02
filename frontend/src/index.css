@@ -936,8 +936,33 @@ body:has(.wizard-page) {
   overflow: hidden;
 }
 
-.wizard-card {
+.wizard-stage {
+  position: relative;
   width: min(40rem, 100%);
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wizard-page:has(.wizard-stage--with-side-brand) {
+  /* Keep the left crest outside the card from being clipped */
+  overflow: visible;
+  padding-left: clamp(6.75rem, 13vw, 9.75rem);
+}
+
+.wizard-stage__side-brand {
+  position: absolute;
+  /* Physical top-left corner — slightly overlapping so it touches the card */
+  left: 0;
+  top: -0.9rem;
+  z-index: 4;
+  transform: translateX(calc(-100% + 4.5rem));
+  pointer-events: none;
+}
+
+.wizard-card {
+  width: 100%;
   max-height: 100%;
   display: flex;
   flex-direction: column;
@@ -955,16 +980,8 @@ body:has(.wizard-page) {
   border-bottom: 1px solid var(--border);
 }
 
-.wizard-card__title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem 1rem;
-}
-
 .wizard-card__titles {
   min-width: 0;
-  flex: 1;
 }
 
 .wizard-card__header h1 {
@@ -1884,16 +1901,25 @@ body:has(.wizard-page) {
 
 .football-registration__logo {
   display: block;
-  flex-shrink: 0;
-  width: clamp(3.75rem, 9vw, 5.25rem);
+  width: clamp(6.75rem, 12.5vw, 9.5rem);
   height: auto;
   object-fit: contain;
   /* Keep original crest colors — no tint/filters */
 }
 
 @media (max-width: 720px) {
+  .wizard-page:has(.wizard-stage--with-side-brand) {
+    padding-left: 0.85rem;
+  }
+
+  .wizard-stage__side-brand {
+    left: 0.15rem;
+    top: 0.15rem;
+    transform: none;
+  }
+
   .football-registration__logo {
-    width: clamp(3.25rem, 16vw, 4.25rem);
+    width: clamp(3.75rem, 16vw, 5rem);
   }
 }
 
