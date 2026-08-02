@@ -25,7 +25,7 @@ public class ActivityPricingRequest {
 
     private SwimmingLessonType swimmingLessonType;
 
-    /** Required for swimming. Optional for football (not used in lookup). */
+    /** Required for swimming and football (1 or 2 for football). */
     @Positive(message = "Weekly sessions must be greater than zero")
     private Integer weeklySessions;
 

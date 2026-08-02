@@ -7,6 +7,7 @@ import com.sportmanager.enums.WaterAdaptationLevel;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -27,4 +28,5 @@ public class ActivityGroupResponse {
     private int memberCount;
     /** Max seats for swimming lesson type; null for football. */
     private Integer maxCapacity;
+    private List<GroupTrainingSessionResponse> trainingSessions;
 }

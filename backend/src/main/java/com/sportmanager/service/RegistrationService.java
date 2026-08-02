@@ -10,10 +10,12 @@ import com.sportmanager.entity.Registration;
 import com.sportmanager.entity.Season;
 import com.sportmanager.entity.Student;
 import com.sportmanager.enums.ActivityType;
+import com.sportmanager.enums.AgeGroup;
 import com.sportmanager.enums.RegistrationStatus;
 import com.sportmanager.exception.BusinessRuleException;
 import com.sportmanager.exception.ConflictException;
 import com.sportmanager.exception.ResourceNotFoundException;
+import com.sportmanager.repository.ActivityGroupRepository;
 import com.sportmanager.repository.ActivityPricingRepository;
 import com.sportmanager.repository.ActivityRepository;
 import com.sportmanager.repository.ParentRepository;
@@ -37,6 +39,7 @@ public class RegistrationService {
     private final ActivityRepository activityRepository;
     private final SeasonRepository seasonRepository;
     private final ActivityPricingRepository activityPricingRepository;
+    private final ActivityGroupRepository activityGroupRepository;
 
     @Transactional
     public RegistrationResponse createRegistration(RegistrationRequest request) {
@@ -50,13 +53,22 @@ public class RegistrationService {
         validateActivitySpecificFields(request, activity);
         validateRegistrationDoesNotExist(student, activity, season);
 
-        ActivityPricing activityPricing = getActivityPricing(request, activity, season);
+        ActivityGroup footballGroup = null;
+        ActivityPricing activityPricing;
+        if (activity.getActivityType() == ActivityType.FOOTBALL) {
+            footballGroup = resolveFootballGroup(season, activity, request.getAgeGroup());
+            activityPricing = resolveFootballPricing(season, activity, footballGroup);
+        } else {
+            activityPricing = getSwimmingPricing(request, activity, season);
+        }
+
         Registration registration = buildRegistration(
                 request,
                 student,
                 activity,
                 season,
-                activityPricing
+                activityPricing,
+                footballGroup
         );
 
         Registration saved = registrationRepository.save(registration);
@@ -248,23 +260,79 @@ public class RegistrationService {
         return season;
     }
 
-    private ActivityPricing getActivityPricing(
+    private ActivityGroup resolveFootballGroup(
+            Season season,
+            Activity activity,
+            AgeGroup ageGroup
+    ) {
+        List<ActivityGroup> matches = activityGroupRepository
+                .findBySeasonIdAndActivityId(season.getId(), activity.getId())
+                .stream()
+                .filter(group -> Boolean.TRUE.equals(group.getIsActive()))
+                .filter(group -> group.getAgeGroups() != null
+                        && group.getAgeGroups().contains(ageGroup))
+                .toList();
+
+        if (matches.isEmpty()) {
+            throw new BusinessRuleException(
+                    "No active football group matches this age group for the selected season"
+            );
+        }
+        if (matches.size() > 1) {
+            throw new BusinessRuleException(
+                    "Multiple active football groups match this age group; fix admin configuration"
+            );
+        }
+
+        ActivityGroup group = matches.getFirst();
+        Integer weeklySessions = resolveFootballWeeklySessions(group);
+        if (weeklySessions == null) {
+            throw new BusinessRuleException(
+                    "Matched football group does not have enough active training sessions configured"
+            );
+        }
+        return group;
+    }
+
+    private ActivityPricing resolveFootballPricing(
+            Season season,
+            Activity activity,
+            ActivityGroup group
+    ) {
+        Integer weeklySessions = resolveFootballWeeklySessions(group);
+        return activityPricingRepository
+                .findBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+                        season,
+                        activity,
+                        weeklySessions
+                )
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Football pricing was not found for "
+                                + weeklySessions
+                                + " weekly sessions in the selected season"
+                ));
+    }
+
+    /**
+     * Football price tier follows the number of active weekly training slots (1 or 2).
+     */
+    private Integer resolveFootballWeeklySessions(ActivityGroup group) {
+        long activeSessions = group.getTrainingSessions() == null
+                ? 0
+                : group.getTrainingSessions().stream()
+                        .filter(session -> Boolean.TRUE.equals(session.getIsActive()))
+                        .count();
+        if (activeSessions == 1 || activeSessions == 2) {
+            return (int) activeSessions;
+        }
+        return null;
+    }
+
+    private ActivityPricing getSwimmingPricing(
             RegistrationRequest request,
             Activity activity,
             Season season
     ) {
-        if (activity.getActivityType() == ActivityType.FOOTBALL) {
-            return activityPricingRepository
-                    .findBySeasonAndActivityAndAgeGroup(
-                            season,
-                            activity,
-                            request.getAgeGroup()
-                    )
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Football pricing was not found for this age group in the selected season"
-                    ));
-        }
-
         return activityPricingRepository
                 .findBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
                         season,
@@ -298,7 +366,8 @@ public class RegistrationService {
             Student student,
             Activity activity,
             Season season,
-            ActivityPricing activityPricing
+            ActivityPricing activityPricing,
+            ActivityGroup footballGroup
     ) {
         Registration registration = new Registration();
 
@@ -316,9 +385,11 @@ public class RegistrationService {
         if (activity.getActivityType() == ActivityType.SWIMMING) {
             registration.setSwimmingLessonType(request.getSwimmingLessonType());
             registration.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
+            registration.setActivityGroup(null);
         } else {
             registration.setSwimmingLessonType(null);
             registration.setWaterAdaptationLevel(null);
+            registration.setActivityGroup(footballGroup);
         }
 
         return registration;

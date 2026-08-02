@@ -8,6 +8,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -24,6 +26,8 @@ public class ActivityGroupUpdateRequest {
     private WaterAdaptationLevel waterAdaptationLevel;
 
     private Integer weeklySessions;
+
+    private List<GroupTrainingSessionRequest> trainingSessions = new ArrayList<>();
 
     @NotNull(message = "Is active is required")
     private Boolean isActive;

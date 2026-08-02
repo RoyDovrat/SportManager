@@ -39,4 +39,16 @@ public interface ActivityPricingRepository extends JpaRepository<ActivityPricing
             SwimmingLessonType swimmingLessonType,
             Integer weeklySessions
     );
+
+    Optional<ActivityPricing> findBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+            Season season,
+            Activity activity,
+            Integer weeklySessions
+    );
+
+    boolean existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+            Season season,
+            Activity activity,
+            Integer weeklySessions
+    );
 }

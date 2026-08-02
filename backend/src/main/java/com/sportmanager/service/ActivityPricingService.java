@@ -63,11 +63,20 @@ public class ActivityPricingService {
         ActivityPricing pricing = getPricingEntity(pricingId);
         ActivityType activityType = pricing.getActivity().getActivityType();
 
+        if (request.getMonthlyPrice() == null
+                || request.getMonthlyPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Monthly price must be greater than zero");
+        }
+
         if (activityType == ActivityType.FOOTBALL) {
             if (request.getWeeklySessions() != null) {
-                throw new BusinessRuleException(
-                        "Weekly sessions cannot be updated for football pricing"
-                );
+                if (request.getWeeklySessions() != 1 && request.getWeeklySessions() != 2) {
+                    throw new BusinessRuleException(
+                            "Football pricing requires weeklySessions of 1 or 2"
+                    );
+                }
+                validateFootballSessionsAvailable(pricing, request.getWeeklySessions());
+                pricing.setWeeklySessions(request.getWeeklySessions());
             }
         } else if (activityType == ActivityType.SWIMMING) {
             if (request.getWeeklySessions() != null) {
@@ -83,6 +92,24 @@ public class ActivityPricingService {
 
         pricing.setMonthlyPrice(request.getMonthlyPrice());
         return toResponse(activityPricingRepository.save(pricing));
+    }
+
+    private void validateFootballSessionsAvailable(
+            ActivityPricing pricing,
+            Integer weeklySessions
+    ) {
+        boolean exists = activityPricingRepository
+                .existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+                        pricing.getSeason(),
+                        pricing.getActivity(),
+                        weeklySessions
+                );
+
+        if (exists && !weeklySessions.equals(pricing.getWeeklySessions())) {
+            throw new ConflictException(
+                    "Football pricing already exists for this weekly sessions value"
+            );
+        }
     }
 
     private void validateSwimmingSessionsAvailable(
@@ -132,12 +159,20 @@ public class ActivityPricingService {
         }
 
         if (request.getActivityType() == ActivityType.FOOTBALL) {
-            if (request.getAgeGroup() == null) {
-                throw new BusinessRuleException("Age group is required for football pricing");
+            if (request.getAgeGroup() != null) {
+                throw new BusinessRuleException(
+                        "Age group must not be provided for football pricing"
+                );
             }
             if (request.getSwimmingLessonType() != null) {
                 throw new BusinessRuleException(
                         "Swimming lesson type must not be provided for football"
+                );
+            }
+            if (request.getWeeklySessions() == null
+                    || (request.getWeeklySessions() != 1 && request.getWeeklySessions() != 2)) {
+                throw new BusinessRuleException(
+                        "Football pricing requires weeklySessions of 1 or 2"
                 );
             }
             return;
@@ -172,11 +207,12 @@ public class ActivityPricingService {
     ) {
         boolean exists;
         if (request.getActivityType() == ActivityType.FOOTBALL) {
-            exists = activityPricingRepository.existsBySeasonAndActivityAndAgeGroup(
-                    season,
-                    activity,
-                    request.getAgeGroup()
-            );
+            exists = activityPricingRepository
+                    .existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+                            season,
+                            activity,
+                            request.getWeeklySessions()
+                    );
         } else {
             exists = activityPricingRepository
                     .existsBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
@@ -203,9 +239,9 @@ public class ActivityPricingService {
         pricing.setMonthlyPrice(request.getMonthlyPrice());
 
         if (request.getActivityType() == ActivityType.FOOTBALL) {
-            pricing.setAgeGroup(request.getAgeGroup());
+            pricing.setAgeGroup(null);
             pricing.setSwimmingLessonType(null);
-            pricing.setWeeklySessions(null);
+            pricing.setWeeklySessions(request.getWeeklySessions());
         } else {
             pricing.setAgeGroup(null);
             pricing.setSwimmingLessonType(request.getSwimmingLessonType());

@@ -65,4 +65,7 @@ public class ActivityGroup {
 
     @OneToMany(mappedBy = "activityGroup")
     private List<Registration> registrations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "activityGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GroupTrainingSession> trainingSessions = new ArrayList<>();
 }

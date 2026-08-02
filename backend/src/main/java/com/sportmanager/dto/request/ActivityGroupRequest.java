@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -31,6 +33,9 @@ public class ActivityGroupRequest {
     private WaterAdaptationLevel waterAdaptationLevel;
 
     private Integer weeklySessions;
+
+    /** Football training slots (day + start time). Ignored for swimming until needed. */
+    private List<GroupTrainingSessionRequest> trainingSessions = new ArrayList<>();
 
     @NotNull(message = "Is active is required")
     private Boolean isActive;
