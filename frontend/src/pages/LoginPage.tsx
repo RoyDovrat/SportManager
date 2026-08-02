@@ -73,13 +73,13 @@ export function LoginPage() {
           </p>
         )}
 
-        <button type="submit" disabled={submitting}>
+        <button type="submit" className="login-form__submit" disabled={submitting}>
           {submitting ? t('login.submitting') : t('login.submit')}
         </button>
 
-        <p className="login-form__footer">
-          <Link to="/">{t('login.backPublic')}</Link>
-        </p>
+        <Link to="/" className="login-form__back">
+          {t('login.backPublic')}
+        </Link>
       </form>
     </div>
   )
