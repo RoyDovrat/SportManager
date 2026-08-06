@@ -3,7 +3,6 @@ package com.sportmanager.repository;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ActivityPricing;
 import com.sportmanager.entity.Season;
-import com.sportmanager.enums.AgeGroup;
 import com.sportmanager.enums.SwimmingLessonType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -18,20 +17,12 @@ public interface ActivityPricingRepository extends JpaRepository<ActivityPricing
 
     List<ActivityPricing> findByActivity(Activity activity);
 
-    Optional<ActivityPricing> findBySeasonAndActivityAndAgeGroup(
-            Season season,
-            Activity activity,
-            AgeGroup ageGroup
-    );
-
     Optional<ActivityPricing> findBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
             Season season,
             Activity activity,
             SwimmingLessonType swimmingLessonType,
             Integer weeklySessions
     );
-
-    boolean existsBySeasonAndActivityAndAgeGroup(Season season, Activity activity, AgeGroup ageGroup);
 
     boolean existsBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
             Season season,
@@ -40,13 +31,13 @@ public interface ActivityPricingRepository extends JpaRepository<ActivityPricing
             Integer weeklySessions
     );
 
-    Optional<ActivityPricing> findBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+    Optional<ActivityPricing> findBySeasonAndActivityAndWeeklySessions(
             Season season,
             Activity activity,
             Integer weeklySessions
     );
 
-    boolean existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+    boolean existsBySeasonAndActivityAndWeeklySessions(
             Season season,
             Activity activity,
             Integer weeklySessions

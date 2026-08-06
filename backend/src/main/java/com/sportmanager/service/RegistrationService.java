@@ -1,5 +1,6 @@
 package com.sportmanager.service;
 
+import com.sportmanager.dto.request.RegistrationAdminUpdateRequest;
 import com.sportmanager.dto.request.RegistrationRequest;
 import com.sportmanager.dto.response.RegistrationResponse;
 import com.sportmanager.entity.Activity;
@@ -24,6 +25,7 @@ import com.sportmanager.repository.RegistrationRepository;
 import com.sportmanager.repository.SeasonRepository;
 import com.sportmanager.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,7 @@ public class RegistrationService {
     private final ActivityPricingRepository activityPricingRepository;
     private final ActivityGroupRepository activityGroupRepository;
     private final SwimmingRegistrationSettingsService swimmingRegistrationSettingsService;
+    private final ObjectProvider<PaymentService> paymentServiceProvider;
 
     @Transactional
     public RegistrationResponse createRegistration(RegistrationRequest request) {
@@ -50,7 +53,7 @@ public class RegistrationService {
         Parent parent = getOrCreateParent(request);
         Student student = getOrCreateStudent(parent, request);
         Activity activity = getActiveActivity(request.getActivityId());
-        Season season = getActiveSeason(request.getSeasonId());
+        Season season = getActiveSeason(request.getSeasonId(), activity);
 
         validateActivitySpecificFields(request, activity);
         validateRegistrationDoesNotExist(student, activity, season);
@@ -116,12 +119,11 @@ public class RegistrationService {
         if (registration.getStatus() == RegistrationStatus.APPROVED) {
             throw new ConflictException("Registration is already approved");
         }
-        if (registration.getStatus() == RegistrationStatus.CANCELLED) {
-            throw new BusinessRuleException("Cancelled registrations cannot be approved");
-        }
 
         registration.setStatus(RegistrationStatus.APPROVED);
-        return toResponse(registrationRepository.save(registration));
+        Registration saved = registrationRepository.save(registration);
+        paymentServiceProvider.getObject().ensureSeasonMonthlyPayments(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -134,7 +136,112 @@ public class RegistrationService {
 
         registration.setStatus(RegistrationStatus.CANCELLED);
         registration.setActivityGroup(null);
+        Registration saved = registrationRepository.save(registration);
+        paymentServiceProvider.getObject().cancelPendingMonthlyPayments(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public RegistrationResponse updateRegistrationAdmin(
+            Long registrationId,
+            RegistrationAdminUpdateRequest request
+    ) {
+        Registration registration = getRegistrationEntity(registrationId);
+        Parent parent = registration.getStudent().getParent();
+        Student student = registration.getStudent();
+        Activity activity = registration.getActivity();
+        Season season = registration.getSeason();
+
+        if (Boolean.TRUE.equals(request.getIsKibbutzMember())
+                && isBlank(request.getBudgetNumber())) {
+            throw new BusinessRuleException(
+                    "Budget number is required for a kibbutz member"
+            );
+        }
+
+        parent.setFirstName(request.getParentFirstName().trim());
+        parent.setLastName(request.getParentLastName().trim());
+        parent.setPhoneNumber(request.getPhoneNumber().trim());
+        parent.setIsKibbutzMember(request.getIsKibbutzMember());
+        parent.setBudgetNumber(
+                Boolean.TRUE.equals(request.getIsKibbutzMember())
+                        ? request.getBudgetNumber().trim()
+                        : null
+        );
+        parentRepository.save(parent);
+
+        student.setFirstName(request.getStudentFirstName().trim());
+        student.setLastName(request.getStudentLastName().trim());
+        student.setAge(request.getAge());
+        student.setAgeGroup(request.getAgeGroup());
+        student.setGender(request.getGender());
+        studentRepository.save(student);
+
+        registration.setHasMedicalLimitation(request.getHasMedicalLimitation());
+        registration.setMedicalNotes(blankToNull(request.getMedicalNotes()));
+        registration.setSpecialRequests(blankToNull(request.getSpecialRequests()));
+
+        if (activity.getActivityType() == ActivityType.FOOTBALL) {
+            ActivityGroup footballGroup = resolveFootballGroup(
+                    season,
+                    activity,
+                    request.getAgeGroup()
+            );
+            registration.setActivityGroup(
+                    registration.getStatus() == RegistrationStatus.CANCELLED
+                            ? null
+                            : footballGroup
+            );
+            registration.setActivityPricing(
+                    resolveFootballPricing(season, activity, footballGroup)
+            );
+            registration.setSwimmingLessonType(null);
+            registration.setWaterAdaptationLevel(null);
+            registration.setWeeklySessions(null);
+        } else {
+            if (request.getSwimmingLessonType() == null
+                    || request.getWaterAdaptationLevel() == null) {
+                throw new BusinessRuleException(
+                        "Swimming lesson type and water adaptation level are required"
+                );
+            }
+            int weeklySessions = request.getSwimmingLessonType() == SwimmingLessonType.GROUP
+                    ? swimmingRegistrationSettingsService.resolveGroupWeeklySessions(season.getId())
+                    : (request.getWeeklySessions() == null
+                            ? 1
+                            : request.getWeeklySessions());
+            if (weeklySessions < 1 || weeklySessions > 6) {
+                throw new BusinessRuleException(
+                        "Weekly sessions must be between 1 and 6 for swimming registration"
+                );
+            }
+
+            registration.setSwimmingLessonType(request.getSwimmingLessonType());
+            registration.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
+            registration.setWeeklySessions(weeklySessions);
+            registration.setActivityGroup(null);
+            registration.setActivityPricing(
+                    activityPricingRepository
+                            .findBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
+                                    season,
+                                    activity,
+                                    request.getSwimmingLessonType(),
+                                    1
+                            )
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "Swimming unit pricing was not found for this lesson type"
+                            ))
+            );
+        }
+
         return toResponse(registrationRepository.save(registration));
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private void validateRegistrationRequest(RegistrationRequest request) {
@@ -251,7 +358,7 @@ public class RegistrationService {
         return activity;
     }
 
-    private Season getActiveSeason(Long seasonId) {
+    private Season getActiveSeason(Long seasonId, Activity activity) {
         Season season = seasonRepository.findById(seasonId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Season was not found with id: " + seasonId
@@ -260,6 +367,13 @@ public class RegistrationService {
         if (!Boolean.TRUE.equals(season.getIsActive())) {
             throw new BusinessRuleException(
                     "Registrations can only be created for an active season"
+            );
+        }
+
+        if (season.getActivityType() != null
+                && season.getActivityType() != activity.getActivityType()) {
+            throw new BusinessRuleException(
+                    "Season activity type does not match the selected activity"
             );
         }
 
@@ -307,7 +421,7 @@ public class RegistrationService {
     ) {
         Integer weeklySessions = resolveFootballWeeklySessions(group);
         return activityPricingRepository
-                .findBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+                .findBySeasonAndActivityAndWeeklySessions(
                         season,
                         activity,
                         weeklySessions

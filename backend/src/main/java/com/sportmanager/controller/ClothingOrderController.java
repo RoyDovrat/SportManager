@@ -1,6 +1,7 @@
 package com.sportmanager.controller;
 
 import com.sportmanager.dto.request.ClothingOrderRequest;
+import com.sportmanager.dto.request.ClothingOrderUpdateRequest;
 import com.sportmanager.dto.response.ClothingOrderResponse;
 import com.sportmanager.service.ClothingOrderService;
 import jakarta.validation.Valid;
@@ -24,6 +25,14 @@ public class ClothingOrderController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(clothingOrderService.createClothingOrder(request));
+    }
+
+    @PutMapping("/{orderId}")
+    public ResponseEntity<ClothingOrderResponse> updateClothingOrder(
+            @PathVariable Long orderId,
+            @Valid @RequestBody ClothingOrderUpdateRequest request
+    ) {
+        return ResponseEntity.ok(clothingOrderService.updateClothingOrder(orderId, request));
     }
 
     @GetMapping("/{orderId}")

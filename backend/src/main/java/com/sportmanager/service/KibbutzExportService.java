@@ -3,6 +3,7 @@ package com.sportmanager.service;
 import com.sportmanager.entity.Parent;
 import com.sportmanager.entity.Payment;
 import com.sportmanager.entity.Student;
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.enums.PaymentMethod;
 import com.sportmanager.enums.PaymentStatus;
 import com.sportmanager.exception.BusinessRuleException;
@@ -32,20 +33,24 @@ public class KibbutzExportService {
     private final PaymentRepository paymentRepository;
 
     @Transactional(readOnly = true)
-    public byte[] exportMonthlyKibbutzBilling(int year, int month) {
+    public byte[] exportMonthlyKibbutzBilling(int year, int month, ActivityType activityType) {
         validateYearMonth(year, month);
+        if (activityType == null) {
+            throw new BusinessRuleException("activityType is required");
+        }
 
         LocalDate chargeMonth = LocalDate.of(year, month, 1);
         List<Payment> payments = paymentRepository.findKibbutzExportPayments(
                 PaymentStatus.PENDING,
                 PaymentMethod.KIBBUTZ_BUDGET,
-                chargeMonth
+                chargeMonth,
+                activityType
         );
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            Sheet sheet = workbook.createSheet("חיוב קיבוץ");
+            Sheet sheet = workbook.createSheet(sheetName(activityType));
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle totalStyle = createTotalStyle(workbook);
 
@@ -89,8 +94,13 @@ public class KibbutzExportService {
         }
     }
 
-    public String buildFileName(int year, int month) {
-        return "חיוב-קיבוץ-%04d-%02d.xlsx".formatted(year, month);
+    public String buildFileName(int year, int month, ActivityType activityType) {
+        String sport = activityType == ActivityType.SWIMMING ? "שחייה" : "כדורגל";
+        return "חיוב-קיבוץ-%s-%04d-%02d.xlsx".formatted(sport, year, month);
+    }
+
+    private String sheetName(ActivityType activityType) {
+        return activityType == ActivityType.SWIMMING ? "חיוב קיבוץ שחייה" : "חיוב קיבוץ כדורגל";
     }
 
     private void validateYearMonth(int year, int month) {

@@ -1,5 +1,7 @@
 package com.sportmanager.controller;
 
+import com.sportmanager.dto.request.SyncSeasonPaymentsRequest;
+import com.sportmanager.dto.request.PaymentUpdateRequest;
 import com.sportmanager.dto.request.ClothingPaymentRequest;
 import com.sportmanager.dto.request.ConfirmPaymentRequest;
 import com.sportmanager.dto.request.GenerateMonthlyPaymentsRequest;
@@ -42,6 +44,15 @@ public class PaymentController {
                 .body(paymentService.generateMonthlyPayments(request));
     }
 
+    @PostMapping("/monthly/sync-season")
+    public ResponseEntity<GenerateMonthlyPaymentsResponse> syncSeasonMonthlyPayments(
+            @RequestBody(required = false) SyncSeasonPaymentsRequest request
+    ) {
+        Long seasonId = request != null ? request.getSeasonId() : null;
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(paymentService.syncSeasonMonthlyPayments(seasonId));
+    }
+
     @PostMapping("/clothing")
     public ResponseEntity<PaymentResponse> createClothingPayment(
             @Valid @RequestBody ClothingPaymentRequest request
@@ -75,6 +86,14 @@ public class PaymentController {
             @PathVariable Long paymentId
     ) {
         return ResponseEntity.ok(paymentService.getPaymentById(paymentId));
+    }
+
+    @PatchMapping("/{paymentId}")
+    public ResponseEntity<PaymentResponse> updatePayment(
+            @PathVariable Long paymentId,
+            @Valid @RequestBody PaymentUpdateRequest request
+    ) {
+        return ResponseEntity.ok(paymentService.updatePayment(paymentId, request));
     }
 
     @PatchMapping("/{paymentId}/confirm")

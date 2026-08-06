@@ -34,9 +34,11 @@ public class ClothingCatalogService {
 
     @Transactional(readOnly = true)
     public ClothingCatalogResponse getActiveSeasonCatalog() {
-        Season season = seasonRepository.findByIsActive(true).stream()
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("No active season was found"));
+        Season season = seasonRepository
+                .findFirstByIsActiveAndActivityType(true, ActivityType.FOOTBALL)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No active football season was found"
+                ));
 
         ClothingPricing pricing = clothingPricingRepository.findBySeasonId(season.getId())
                 .orElse(null);
@@ -44,6 +46,12 @@ public class ClothingCatalogService {
         boolean allowSkip = pricing == null
                 || pricing.getAllowAlreadyHasClothingSkip() == null
                 || Boolean.TRUE.equals(pricing.getAllowAlreadyHasClothingSkip());
+        boolean longKitEnabled = pricing == null
+                || pricing.getLongKitPublicEnabled() == null
+                || Boolean.TRUE.equals(pricing.getLongKitPublicEnabled());
+        boolean hoodieEnabled = pricing == null
+                || pricing.getHoodiePublicEnabled() == null
+                || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled());
 
         return ClothingCatalogResponse.builder()
                 .seasonId(season.getId())
@@ -53,6 +61,8 @@ public class ClothingCatalogService {
                 .longKitPrice(pricing != null ? pricing.getLongKitPrice() : null)
                 .hoodiePrice(pricing != null ? pricing.getHoodiePrice() : null)
                 .allowAlreadyHasClothingSkip(allowSkip)
+                .longKitPublicEnabled(longKitEnabled)
+                .hoodiePublicEnabled(hoodieEnabled)
                 .build();
     }
 

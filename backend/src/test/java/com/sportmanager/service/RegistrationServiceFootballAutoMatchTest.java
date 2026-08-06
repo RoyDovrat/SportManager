@@ -27,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
@@ -38,6 +39,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -58,6 +60,12 @@ class RegistrationServiceFootballAutoMatchTest {
     private ActivityPricingRepository activityPricingRepository;
     @Mock
     private ActivityGroupRepository activityGroupRepository;
+    @Mock
+    private SwimmingRegistrationSettingsService swimmingRegistrationSettingsService;
+    @Mock
+    private ObjectProvider<PaymentService> paymentServiceProvider;
+    @Mock
+    private PaymentService paymentService;
 
     @InjectMocks
     private RegistrationService registrationService;
@@ -72,6 +80,7 @@ class RegistrationServiceFootballAutoMatchTest {
         season.setId(1L);
         season.setName("2026-2027");
         season.setIsActive(true);
+        season.setActivityType(ActivityType.FOOTBALL);
 
         football = new Activity();
         football.setId(2L);
@@ -84,7 +93,8 @@ class RegistrationServiceFootballAutoMatchTest {
         pricing.setActivity(football);
         pricing.setWeeklySessions(2);
         pricing.setMonthlyPrice(new BigDecimal("250"));
-        pricing.setAgeGroup(null);
+
+        lenient().when(paymentServiceProvider.getObject()).thenReturn(paymentService);
     }
 
     @Test
@@ -114,7 +124,7 @@ class RegistrationServiceFootballAutoMatchTest {
         ActivityGroup matched = group("כיתות א'-ב'", Set.of(AgeGroup.GRADE_1, AgeGroup.GRADE_2));
         when(activityGroupRepository.findBySeasonIdAndActivityId(1L, 2L)).thenReturn(List.of(matched));
         when(activityPricingRepository
-                .findBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(season, football, 2))
+                .findBySeasonAndActivityAndWeeklySessions(season, football, 2))
                 .thenReturn(Optional.of(pricing));
         when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> {
             Registration registration = inv.getArgument(0);
@@ -137,7 +147,7 @@ class RegistrationServiceFootballAutoMatchTest {
         matched.setWeeklySessions(1); // stale field; two active slots remain
         when(activityGroupRepository.findBySeasonIdAndActivityId(1L, 2L)).thenReturn(List.of(matched));
         when(activityPricingRepository
-                .findBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(season, football, 2))
+                .findBySeasonAndActivityAndWeeklySessions(season, football, 2))
                 .thenReturn(Optional.of(pricing));
         when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> {
             Registration registration = inv.getArgument(0);

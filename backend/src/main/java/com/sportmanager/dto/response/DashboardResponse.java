@@ -26,4 +26,5 @@ public class DashboardResponse {
 
     private PaymentStatusSummary paymentStatusSummary;
     private List<RegistrationResponse> recentRegistrations;
+    private List<SeasonNearingEndResponse> seasonsNearingEnd;
 }

@@ -5,8 +5,6 @@ import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ActivityPricing;
 import com.sportmanager.entity.Season;
 import com.sportmanager.enums.ActivityType;
-import com.sportmanager.enums.AgeGroup;
-import com.sportmanager.exception.BusinessRuleException;
 import com.sportmanager.exception.ConflictException;
 import com.sportmanager.repository.ActivityPricingRepository;
 import com.sportmanager.repository.ActivityRepository;
@@ -52,22 +50,10 @@ class ActivityPricingServiceFootballWeeklySessionsTest {
     }
 
     @Test
-    void createFootballPricing_rejectsAgeGroup() {
-        stubLookups();
-        ActivityPricingRequest request = baseRequest(2);
-        request.setAgeGroup(AgeGroup.GRADE_1);
-
-        assertThatThrownBy(() -> activityPricingService.createActivityPricing(request))
-                .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Age group");
-    }
-
-    @Test
     void createFootballPricing_rejectsDuplicateWeeklySessions() {
         stubLookups();
         when(activityPricingRepository
-                .existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
-                        season, football, 2))
+                .existsBySeasonAndActivityAndWeeklySessions(season, football, 2))
                 .thenReturn(true);
 
         assertThatThrownBy(() -> activityPricingService.createActivityPricing(baseRequest(2)))
@@ -75,11 +61,10 @@ class ActivityPricingServiceFootballWeeklySessionsTest {
     }
 
     @Test
-    void createFootballPricing_persistsWeeklySessionsWithoutAgeGroup() {
+    void createFootballPricing_persistsWeeklySessions() {
         stubLookups();
         when(activityPricingRepository
-                .existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
-                        season, football, 1))
+                .existsBySeasonAndActivityAndWeeklySessions(season, football, 1))
                 .thenReturn(false);
         when(activityPricingRepository.save(any(ActivityPricing.class))).thenAnswer(inv -> {
             ActivityPricing pricing = inv.getArgument(0);

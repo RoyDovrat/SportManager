@@ -3,6 +3,7 @@ package com.sportmanager.repository;
 import com.sportmanager.entity.ClothingOrder;
 import com.sportmanager.entity.Payment;
 import com.sportmanager.entity.Registration;
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.enums.PaymentMethod;
 import com.sportmanager.enums.PaymentStatus;
 import com.sportmanager.enums.PaymentType;
@@ -64,16 +65,19 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             JOIN FETCH p.registration r
             JOIN FETCH r.student s
             JOIN FETCH s.parent parent
+            JOIN FETCH r.activity activity
             WHERE p.status = :status
               AND p.paymentMethod = :paymentMethod
               AND p.chargeMonth = :chargeMonth
               AND parent.isKibbutzMember = true
+              AND activity.activityType = :activityType
             ORDER BY parent.lastName, parent.firstName, s.lastName, s.firstName
             """)
     List<Payment> findKibbutzExportPayments(
             @Param("status") PaymentStatus status,
             @Param("paymentMethod") PaymentMethod paymentMethod,
-            @Param("chargeMonth") LocalDate chargeMonth
+            @Param("chargeMonth") LocalDate chargeMonth,
+            @Param("activityType") ActivityType activityType
     );
 
     long countByStatus(PaymentStatus status);

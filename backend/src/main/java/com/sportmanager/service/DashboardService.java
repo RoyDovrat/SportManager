@@ -3,6 +3,7 @@ package com.sportmanager.service;
 import com.sportmanager.dto.response.DashboardResponse;
 import com.sportmanager.dto.response.PaymentStatusSummary;
 import com.sportmanager.dto.response.RegistrationResponse;
+import com.sportmanager.dto.response.SeasonNearingEndResponse;
 import com.sportmanager.entity.Season;
 import com.sportmanager.enums.PaymentStatus;
 import com.sportmanager.enums.RegistrationStatus;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
@@ -67,13 +69,16 @@ public class DashboardService {
                     resolvedSeasonId, RegistrationStatus.APPROVED
             );
             recentRegistrations = registrationRepository
-                    .findTop10BySeasonIdOrderByRegistrationDateDescIdDesc(resolvedSeasonId)
+                    .findBySeasonIdAndRegistrationDateOrderByIdDesc(
+                            resolvedSeasonId,
+                            LocalDate.now()
+                    )
                     .stream()
                     .map(registrationService::toResponse)
                     .toList();
         } else {
             recentRegistrations = registrationRepository
-                    .findTop10ByOrderByRegistrationDateDescIdDesc()
+                    .findByRegistrationDateOrderByIdDesc(LocalDate.now())
                     .stream()
                     .map(registrationService::toResponse)
                     .toList();
@@ -113,7 +118,23 @@ public class DashboardService {
                 .monthlyIncome(zeroIfNull(monthlyIncome))
                 .paymentStatusSummary(paymentSummary)
                 .recentRegistrations(recentRegistrations)
+                .seasonsNearingEnd(findSeasonsNearingEnd())
                 .build();
+    }
+
+    private List<SeasonNearingEndResponse> findSeasonsNearingEnd() {
+        LocalDate today = LocalDate.now();
+        LocalDate threshold = today.plusDays(14);
+        return seasonRepository.findByIsActive(true).stream()
+                .filter(season -> season.getEndDate() != null)
+                .filter(season -> !season.getEndDate().isAfter(threshold))
+                .map(season -> SeasonNearingEndResponse.builder()
+                        .id(season.getId())
+                        .name(season.getName())
+                        .activityType(season.getActivityType())
+                        .endDate(season.getEndDate())
+                        .build())
+                .toList();
     }
 
     private PaymentStatusSummary buildPaymentSummary(Long seasonId) {

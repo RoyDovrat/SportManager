@@ -68,6 +68,12 @@ public class ActivityGroupController {
         return ResponseEntity.ok(activityGroupService.deactivateGroup(groupId));
     }
 
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId) {
+        activityGroupService.deleteGroup(groupId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{groupId}/registrations")
     public ResponseEntity<List<RegistrationResponse>> getGroupRegistrations(
             @PathVariable Long groupId

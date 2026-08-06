@@ -34,9 +34,11 @@ public class SwimmingCatalogService {
 
     @Transactional(readOnly = true)
     public SwimmingCatalogResponse getActiveSeasonCatalog() {
-        Season season = seasonRepository.findByIsActive(true).stream()
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("No active season was found"));
+        Season season = seasonRepository
+                .findFirstByIsActiveAndActivityType(true, ActivityType.SWIMMING)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No active swimming season was found"
+                ));
 
         Activity activity = activityRepository.findByActivityType(ActivityType.SWIMMING)
                 .orElseThrow(() -> new ResourceNotFoundException(

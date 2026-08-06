@@ -1,7 +1,6 @@
 package com.sportmanager.dto.request;
 
 import com.sportmanager.enums.ActivityType;
-import com.sportmanager.enums.AgeGroup;
 import com.sportmanager.enums.SwimmingLessonType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
@@ -21,15 +20,13 @@ public class ActivityPricingRequest {
     @NotNull(message = "Activity type is required")
     private ActivityType activityType;
 
-    private AgeGroup ageGroup;
-
     private SwimmingLessonType swimmingLessonType;
 
-    /** Required for swimming and football (1 or 2 for football). */
+    /** Required for football (1 or 2). Ignored for swimming (always stored as 1). */
     @Positive(message = "Weekly sessions must be greater than zero")
     private Integer weeklySessions;
 
-    @NotNull(message = "Monthly price is required")
-    @DecimalMin(value = "0.01", message = "Monthly price must be greater than zero")
+    @NotNull(message = "Weekly price is required")
+    @DecimalMin(value = "0.01", message = "Weekly price must be greater than zero")
     private BigDecimal monthlyPrice;
 }

@@ -1,6 +1,7 @@
 package com.sportmanager.service;
 
 import com.sportmanager.dto.request.ClothingOrderRequest;
+import com.sportmanager.dto.request.ClothingOrderUpdateRequest;
 import com.sportmanager.dto.response.ClothingOrderResponse;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ClothingOrder;
@@ -21,6 +22,9 @@ import com.sportmanager.repository.RegistrationRepository;
 import com.sportmanager.repository.SeasonRepository;
 import com.sportmanager.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,15 +54,89 @@ public class ClothingOrderService {
         boolean alreadyHasClothing = Boolean.TRUE.equals(request.getAlreadyHasClothing());
         if (alreadyHasClothing) {
             validateSkipAllowed(season);
-            validateSkipOrderHasNoItems(request);
+            validateSkipOrderHasNoItems(
+                    request.getShortKitQuantity(),
+                    request.getShortKitSize(),
+                    request.getLongKitQuantity(),
+                    request.getLongKitSize(),
+                    request.getHoodieQuantity(),
+                    request.getHoodieSize(),
+                    request.getShirtNumber()
+            );
         } else {
-            validateOrderDetails(request);
+            validateOrderDetails(
+                    request.getShortKitQuantity(),
+                    request.getShortKitSize(),
+                    request.getLongKitQuantity(),
+                    request.getLongKitSize(),
+                    request.getHoodieQuantity(),
+                    request.getHoodieSize(),
+                    request.getShirtNumber()
+            );
+            if (!isAuthenticatedAdmin()) {
+                validatePublicItemAvailability(
+                        season,
+                        request.getLongKitQuantity(),
+                        request.getHoodieQuantity()
+                );
+            }
         }
 
         ClothingOrder saved = clothingOrderRepository.save(
                 buildClothingOrder(request, registration, alreadyHasClothing)
         );
         return toResponse(saved);
+    }
+
+    @Transactional
+    public ClothingOrderResponse updateClothingOrder(
+            Long orderId,
+            ClothingOrderUpdateRequest request
+    ) {
+        ClothingOrder order = getOrderEntity(orderId);
+        Season season = order.getRegistration().getSeason();
+
+        boolean alreadyHasClothing = Boolean.TRUE.equals(request.getAlreadyHasClothing());
+        if (alreadyHasClothing) {
+            validateSkipAllowed(season);
+            validateSkipOrderHasNoItems(
+                    request.getShortKitQuantity(),
+                    request.getShortKitSize(),
+                    request.getLongKitQuantity(),
+                    request.getLongKitSize(),
+                    request.getHoodieQuantity(),
+                    request.getHoodieSize(),
+                    request.getShirtNumber()
+            );
+            order.setAlreadyHasClothing(true);
+            order.setShortKitQuantity(0);
+            order.setLongKitQuantity(0);
+            order.setHoodieQuantity(0);
+            order.setShortKitSize(null);
+            order.setLongKitSize(null);
+            order.setHoodieSize(null);
+            order.setShirtNumber(null);
+        } else {
+            validateOrderDetails(
+                    request.getShortKitQuantity(),
+                    request.getShortKitSize(),
+                    request.getLongKitQuantity(),
+                    request.getLongKitSize(),
+                    request.getHoodieQuantity(),
+                    request.getHoodieSize(),
+                    request.getShirtNumber()
+            );
+            order.setAlreadyHasClothing(false);
+            order.setShortKitQuantity(request.getShortKitQuantity());
+            order.setShortKitSize(request.getShortKitSize());
+            order.setLongKitQuantity(request.getLongKitQuantity());
+            order.setLongKitSize(request.getLongKitSize());
+            order.setHoodieQuantity(request.getHoodieQuantity());
+            order.setHoodieSize(request.getHoodieSize());
+            order.setShirtNumber(request.getShirtNumber());
+        }
+
+        return toResponse(clothingOrderRepository.save(order));
     }
 
     @Transactional(readOnly = true)
@@ -159,34 +237,76 @@ public class ClothingOrderService {
         }
     }
 
-    private void validateSkipOrderHasNoItems(ClothingOrderRequest request) {
-        if (safeQuantity(request.getShortKitQuantity()) > 0
-                || safeQuantity(request.getLongKitQuantity()) > 0
-                || safeQuantity(request.getHoodieQuantity()) > 0
-                || request.getShortKitSize() != null
-                || request.getLongKitSize() != null
-                || request.getHoodieSize() != null
-                || request.getShirtNumber() != null) {
+    private void validatePublicItemAvailability(
+            Season season,
+            Integer longKitQuantity,
+            Integer hoodieQuantity
+    ) {
+        ClothingPricing pricing = clothingPricingRepository.findBySeasonId(season.getId())
+                .orElse(null);
+        boolean longKitEnabled = pricing == null
+                || pricing.getLongKitPublicEnabled() == null
+                || Boolean.TRUE.equals(pricing.getLongKitPublicEnabled());
+        boolean hoodieEnabled = pricing == null
+                || pricing.getHoodiePublicEnabled() == null
+                || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled());
+
+        if (!longKitEnabled && safeQuantity(longKitQuantity) > 0) {
+            throw new BusinessRuleException(
+                    "Long kit is not available for public order in this season"
+            );
+        }
+        if (!hoodieEnabled && safeQuantity(hoodieQuantity) > 0) {
+            throw new BusinessRuleException(
+                    "Hoodie is not available for public order in this season"
+            );
+        }
+    }
+
+    private void validateSkipOrderHasNoItems(
+            Integer shortKitQuantity,
+            ClothingSize shortKitSize,
+            Integer longKitQuantity,
+            ClothingSize longKitSize,
+            Integer hoodieQuantity,
+            ClothingSize hoodieSize,
+            Integer shirtNumber
+    ) {
+        if (safeQuantity(shortKitQuantity) > 0
+                || safeQuantity(longKitQuantity) > 0
+                || safeQuantity(hoodieQuantity) > 0
+                || shortKitSize != null
+                || longKitSize != null
+                || hoodieSize != null
+                || shirtNumber != null) {
             throw new BusinessRuleException(
                     "When alreadyHasClothing is true, no clothing items or shirt number may be provided"
             );
         }
     }
 
-    private void validateOrderDetails(ClothingOrderRequest request) {
-        int shortQty = requireNonNullQuantity(request.getShortKitQuantity(), "Short kit");
-        int longQty = requireNonNullQuantity(request.getLongKitQuantity(), "Long kit");
-        int hoodieQty = requireNonNullQuantity(request.getHoodieQuantity(), "Hoodie");
+    private void validateOrderDetails(
+            Integer shortKitQuantity,
+            ClothingSize shortKitSize,
+            Integer longKitQuantity,
+            ClothingSize longKitSize,
+            Integer hoodieQuantity,
+            ClothingSize hoodieSize,
+            Integer shirtNumber
+    ) {
+        int shortQty = requireNonNullQuantity(shortKitQuantity, "Short kit");
+        int longQty = requireNonNullQuantity(longKitQuantity, "Long kit");
+        int hoodieQty = requireNonNullQuantity(hoodieQuantity, "Hoodie");
 
-        validateQuantityAndSize(shortQty, request.getShortKitSize(), "Short kit");
-        validateQuantityAndSize(longQty, request.getLongKitSize(), "Long kit");
-        validateQuantityAndSize(hoodieQty, request.getHoodieSize(), "Hoodie");
+        validateQuantityAndSize(shortQty, shortKitSize, "Short kit");
+        validateQuantityAndSize(longQty, longKitSize, "Long kit");
+        validateQuantityAndSize(hoodieQty, hoodieSize, "Hoodie");
 
         if (shortQty + longQty + hoodieQty == 0) {
             throw new BusinessRuleException("At least one clothing item must be ordered");
         }
 
-        validateShirtNumber(request.getShirtNumber());
+        validateShirtNumber(shirtNumber);
     }
 
     private int requireNonNullQuantity(Integer quantity, String itemName) {
@@ -276,6 +396,13 @@ public class ClothingOrderService {
                 .shirtNumber(order.getShirtNumber())
                 .clothingPaymentRequired(!alreadyHas)
                 .build();
+    }
+
+    private boolean isAuthenticatedAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null
+                && auth.isAuthenticated()
+                && !(auth instanceof AnonymousAuthenticationToken);
     }
 
     private int safeQuantity(Integer quantity) {

@@ -3,6 +3,7 @@ package com.sportmanager.service;
 import com.sportmanager.dto.request.SeasonRequest;
 import com.sportmanager.dto.response.SeasonResponse;
 import com.sportmanager.entity.Season;
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.exception.BusinessRuleException;
 import com.sportmanager.exception.ConflictException;
 import com.sportmanager.exception.ResourceNotFoundException;
@@ -25,13 +26,14 @@ public class SeasonService {
         validateSeasonNameDoesNotExist(request.getName());
 
         if (Boolean.TRUE.equals(request.getIsActive())) {
-            deactivateAllSeasons();
+            deactivateActiveSeasonsOfType(request.getActivityType(), null);
         }
 
         Season season = new Season();
         season.setName(request.getName());
         season.setStartDate(request.getStartDate());
         season.setEndDate(request.getEndDate());
+        season.setActivityType(request.getActivityType());
         season.setIsActive(request.getIsActive());
 
         return toResponse(seasonRepository.save(season));
@@ -50,14 +52,23 @@ public class SeasonService {
     }
 
     @Transactional(readOnly = true)
-    public SeasonResponse getActiveSeason() {
-        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
+    public List<SeasonResponse> getActiveSeasons() {
+        return seasonRepository.findByIsActive(true).stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
-        if (activeSeasons.isEmpty()) {
-            throw new BusinessRuleException("No active season was found");
-        }
+    @Transactional(readOnly = true)
+    public SeasonResponse getActiveSeason(ActivityType activityType) {
+        return toResponse(requireActiveSeasonEntity(activityType));
+    }
 
-        return toResponse(activeSeasons.getFirst());
+    @Transactional(readOnly = true)
+    public Season requireActiveSeasonEntity(ActivityType activityType) {
+        return seasonRepository.findFirstByIsActiveAndActivityType(true, activityType)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "No active season was found for activity type: " + activityType
+                ));
     }
 
     @Transactional
@@ -68,12 +79,13 @@ public class SeasonService {
         validateSeasonNameIsAvailable(request.getName(), seasonId);
 
         if (Boolean.TRUE.equals(request.getIsActive())) {
-            deactivateAllSeasonsExcept(seasonId);
+            deactivateActiveSeasonsOfType(request.getActivityType(), seasonId);
         }
 
         season.setName(request.getName());
         season.setStartDate(request.getStartDate());
         season.setEndDate(request.getEndDate());
+        season.setActivityType(request.getActivityType());
         season.setIsActive(request.getIsActive());
 
         return toResponse(seasonRepository.save(season));
@@ -82,7 +94,7 @@ public class SeasonService {
     @Transactional
     public SeasonResponse activateSeason(Long seasonId) {
         Season season = getSeasonEntity(seasonId);
-        deactivateAllSeasonsExcept(seasonId);
+        deactivateActiveSeasonsOfType(season.getActivityType(), seasonId);
         season.setIsActive(true);
         return toResponse(seasonRepository.save(season));
     }
@@ -132,18 +144,11 @@ public class SeasonService {
         }
     }
 
-    private void deactivateAllSeasons() {
-        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
+    private void deactivateActiveSeasonsOfType(ActivityType activityType, Long exceptId) {
+        List<Season> activeSeasons =
+                seasonRepository.findByIsActiveAndActivityType(true, activityType);
         for (Season activeSeason : activeSeasons) {
-            activeSeason.setIsActive(false);
-        }
-        seasonRepository.saveAll(activeSeasons);
-    }
-
-    private void deactivateAllSeasonsExcept(Long seasonId) {
-        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
-        for (Season activeSeason : activeSeasons) {
-            if (!activeSeason.getId().equals(seasonId)) {
+            if (exceptId == null || !activeSeason.getId().equals(exceptId)) {
                 activeSeason.setIsActive(false);
             }
         }
@@ -156,6 +161,7 @@ public class SeasonService {
                 .name(season.getName())
                 .startDate(season.getStartDate())
                 .endDate(season.getEndDate())
+                .activityType(season.getActivityType())
                 .isActive(season.getIsActive())
                 .build();
     }

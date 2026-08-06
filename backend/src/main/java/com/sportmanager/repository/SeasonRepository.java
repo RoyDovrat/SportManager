@@ -1,6 +1,7 @@
 package com.sportmanager.repository;
 
 import com.sportmanager.entity.Season;
+import com.sportmanager.enums.ActivityType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,4 +16,8 @@ public interface SeasonRepository extends JpaRepository<Season, Long> {
     boolean existsByNameAndIdNot(String name, Long id);
 
     List<Season> findByIsActive(Boolean isActive);
+
+    List<Season> findByIsActiveAndActivityType(Boolean isActive, ActivityType activityType);
+
+    Optional<Season> findFirstByIsActiveAndActivityType(Boolean isActive, ActivityType activityType);
 }

@@ -1,5 +1,6 @@
 package com.sportmanager.dto.request;
 
+import com.sportmanager.enums.ActivityType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,6 +20,9 @@ public class SeasonRequest {
 
     @NotNull(message = "End date is required")
     private LocalDate endDate;
+
+    @NotNull(message = "Activity type is required")
+    private ActivityType activityType;
 
     @NotNull(message = "Is active is required")
     private Boolean isActive;

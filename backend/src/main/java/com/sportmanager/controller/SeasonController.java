@@ -2,6 +2,7 @@ package com.sportmanager.controller;
 
 import com.sportmanager.dto.request.SeasonRequest;
 import com.sportmanager.dto.response.SeasonResponse;
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.service.SeasonService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,16 +33,23 @@ public class SeasonController {
         return ResponseEntity.ok(seasonService.getAllSeasons());
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<SeasonResponse>> getActiveSeasons() {
+        return ResponseEntity.ok(seasonService.getActiveSeasons());
+    }
+
+    @GetMapping("/active/{activityType}")
+    public ResponseEntity<SeasonResponse> getActiveSeasonByType(
+            @PathVariable ActivityType activityType
+    ) {
+        return ResponseEntity.ok(seasonService.getActiveSeason(activityType));
+    }
+
     @GetMapping("/{seasonId}")
     public ResponseEntity<SeasonResponse> getSeasonById(
             @PathVariable Long seasonId
     ) {
         return ResponseEntity.ok(seasonService.getSeasonById(seasonId));
-    }
-
-    @GetMapping("/active")
-    public ResponseEntity<SeasonResponse> getActiveSeason() {
-        return ResponseEntity.ok(seasonService.getActiveSeason());
     }
 
     @PutMapping("/{seasonId}")

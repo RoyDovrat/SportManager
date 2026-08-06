@@ -1,5 +1,6 @@
 package com.sportmanager.controller;
 
+import com.sportmanager.dto.request.RegistrationAdminUpdateRequest;
 import com.sportmanager.dto.request.RegistrationRequest;
 import com.sportmanager.dto.response.RegistrationResponse;
 import com.sportmanager.enums.RegistrationStatus;
@@ -54,5 +55,15 @@ public class RegistrationController {
             @PathVariable Long registrationId
     ) {
         return ResponseEntity.ok(registrationService.cancelRegistration(registrationId));
+    }
+
+    @PutMapping("/{registrationId}")
+    public ResponseEntity<RegistrationResponse> updateRegistrationAdmin(
+            @PathVariable Long registrationId,
+            @Valid @RequestBody RegistrationAdminUpdateRequest request
+    ) {
+        return ResponseEntity.ok(
+                registrationService.updateRegistrationAdmin(registrationId, request)
+        );
     }
 }

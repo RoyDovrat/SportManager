@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -48,6 +49,10 @@ class ActivityGroupServiceFootballSessionsTest {
     private RegistrationRepository registrationRepository;
     @Mock
     private RegistrationService registrationService;
+    @Mock
+    private ObjectProvider<PaymentService> paymentServiceProvider;
+    @Mock
+    private PaymentService paymentService;
 
     @InjectMocks
     private ActivityGroupService activityGroupService;
@@ -65,6 +70,8 @@ class ActivityGroupServiceFootballSessionsTest {
         football.setId(10L);
         football.setActivityType(ActivityType.FOOTBALL);
         football.setIsActive(true);
+
+        lenient().when(paymentServiceProvider.getObject()).thenReturn(paymentService);
     }
 
     @Test

@@ -36,9 +36,11 @@ public class FootballCatalogService {
 
     @Transactional(readOnly = true)
     public FootballCatalogResponse getActiveSeasonCatalog() {
-        Season season = seasonRepository.findByIsActive(true).stream()
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("No active season was found"));
+        Season season = seasonRepository
+                .findFirstByIsActiveAndActivityType(true, ActivityType.FOOTBALL)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No active football season was found"
+                ));
 
         Activity activity = activityRepository.findByActivityType(ActivityType.FOOTBALL)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -52,7 +54,6 @@ public class FootballCatalogService {
         List<ActivityPricing> pricingRows = activityPricingRepository.findBySeasonId(season.getId())
                 .stream()
                 .filter(row -> row.getActivity().getActivityType() == ActivityType.FOOTBALL)
-                .filter(row -> row.getAgeGroup() == null)
                 .filter(row -> row.getWeeklySessions() != null)
                 .toList();
 

@@ -24,6 +24,7 @@ import com.sportmanager.repository.ActivityRepository;
 import com.sportmanager.repository.RegistrationRepository;
 import com.sportmanager.repository.SeasonRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +43,7 @@ public class ActivityGroupService {
     private final ActivityRepository activityRepository;
     private final RegistrationRepository registrationRepository;
     private final RegistrationService registrationService;
+    private final ObjectProvider<PaymentService> paymentServiceProvider;
 
     @Transactional
     public ActivityGroupResponse createGroup(ActivityGroupRequest request) {
@@ -74,6 +76,12 @@ public class ActivityGroupService {
                     request.getAgeGroups(),
                     request.getIsActive(),
                     null
+            );
+        } else if (request.getActivityType() == ActivityType.SWIMMING) {
+            validateSwimmingTrainingSessions(
+                    request.getIsActive(),
+                    weeklySessions,
+                    request.getTrainingSessions()
             );
         }
 
@@ -133,6 +141,12 @@ public class ActivityGroupService {
                     request.getIsActive(),
                     groupId
             );
+        } else if (activityType == ActivityType.SWIMMING) {
+            validateSwimmingTrainingSessions(
+                    request.getIsActive(),
+                    weeklySessions,
+                    request.getTrainingSessions()
+            );
         }
 
         group.setName(request.getName().trim());
@@ -147,7 +161,12 @@ public class ActivityGroupService {
         );
         replaceTrainingSessions(group, activityType, request.getTrainingSessions());
 
-        return toResponse(activityGroupRepository.save(group));
+        ActivityGroupResponse response = toResponse(activityGroupRepository.save(group));
+        if (activityType == ActivityType.SWIMMING) {
+            paymentServiceProvider.getObject()
+                    .recalculatePendingMonthlyPaymentsForGroup(group);
+        }
+        return response;
     }
 
     @Transactional
@@ -222,7 +241,12 @@ public class ActivityGroupService {
         validateCanAssign(registration, group);
         validateHasCapacity(group);
         registration.setActivityGroup(group);
-        return registrationService.toResponse(registrationRepository.save(registration));
+        Registration saved = registrationRepository.save(registration);
+        if (group.getActivity().getActivityType() == ActivityType.SWIMMING
+                && saved.getStatus() == RegistrationStatus.APPROVED) {
+            paymentServiceProvider.getObject().ensureOrUpdatePendingMonthlyPayment(saved);
+        }
+        return registrationService.toResponse(saved);
     }
 
     @Transactional
@@ -254,6 +278,11 @@ public class ActivityGroupService {
                     true,
                     group.getId()
             );
+        } else if (group.getActivity().getActivityType() == ActivityType.SWIMMING) {
+            List<GroupTrainingSessionRequest> sessionRequests = group.getTrainingSessions().stream()
+                    .map(this::toSessionRequest)
+                    .toList();
+            validateSwimmingTrainingSessions(true, group.getWeeklySessions(), sessionRequests);
         }
         group.setIsActive(true);
         return toResponse(activityGroupRepository.save(group));
@@ -264,6 +293,21 @@ public class ActivityGroupService {
         ActivityGroup group = getGroupEntity(groupId);
         group.setIsActive(false);
         return toResponse(activityGroupRepository.save(group));
+    }
+
+    /**
+     * Permanently deletes a group. Assigned registrations are unassigned first
+     * (activity_group_id set to null); training sessions are removed via cascade.
+     */
+    @Transactional
+    public void deleteGroup(Long groupId) {
+        ActivityGroup group = getGroupEntity(groupId);
+        List<Registration> members = registrationRepository.findByActivityGroupId(groupId);
+        for (Registration registration : members) {
+            registration.setActivityGroup(null);
+        }
+        registrationRepository.saveAll(members);
+        activityGroupRepository.delete(group);
     }
 
     public ActivityGroup getGroupEntity(Long groupId) {
@@ -311,22 +355,10 @@ public class ActivityGroupService {
         }
 
         if (activityType == ActivityType.SWIMMING) {
-            Set<AgeGroup> allowed = group.getAgeGroups();
-            Integer registrationWeeklySessions = registration.getActivityPricing() != null
-                    ? registration.getActivityPricing().getWeeklySessions()
-                    : null;
-            if (group.getSwimmingLessonType() == null
-                    || group.getWaterAdaptationLevel() == null
-                    || group.getWeeklySessions() == null
-                    || allowed == null
-                    || allowed.isEmpty()
-                    || registrationWeeklySessions == null) {
-                return false;
-            }
-            return group.getSwimmingLessonType() == registration.getSwimmingLessonType()
-                    && group.getWaterAdaptationLevel() == registration.getWaterAdaptationLevel()
-                    && Objects.equals(group.getWeeklySessions(), registrationWeeklySessions)
-                    && allowed.contains(registration.getStudent().getAgeGroup());
+            // Show every approved, unassigned swimming registration for this season/activity.
+            // Admin chooses the group; capacity is still enforced on assign.
+            // (Do not match on pricing.weeklySessions — that field is the unit-price key = 1.)
+            return true;
         }
 
         return false;
@@ -562,6 +594,61 @@ public class ActivityGroupService {
         }
     }
 
+    private void validateSwimmingTrainingSessions(
+            Boolean isActive,
+            Integer weeklySessions,
+            List<GroupTrainingSessionRequest> trainingSessions
+    ) {
+        List<GroupTrainingSessionRequest> sessions =
+                trainingSessions == null ? List.of() : trainingSessions;
+
+        for (GroupTrainingSessionRequest session : sessions) {
+            if (session.getDayOfWeek() == null || session.getStartTime() == null) {
+                throw new BusinessRuleException(
+                        "Each training session requires a day of week and start time"
+                );
+            }
+            if (session.getIsActive() == null) {
+                throw new BusinessRuleException("Each training session requires isActive");
+            }
+        }
+
+        Set<String> seen = new HashSet<>();
+        for (GroupTrainingSessionRequest session : sessions) {
+            String key = session.getDayOfWeek() + "|" + session.getStartTime();
+            if (!seen.add(key)) {
+                throw new BusinessRuleException(
+                        "duplicate training day and start time are not allowed in the same group"
+                );
+            }
+        }
+
+        long activeCount = sessions.stream()
+                .filter(session -> Boolean.TRUE.equals(session.getIsActive()))
+                .count();
+
+        if (Boolean.TRUE.equals(isActive)) {
+            if (weeklySessions == null || weeklySessions < 1 || weeklySessions > 6) {
+                throw new BusinessRuleException(
+                        "Swimming weeklySessions must be between 1 and 6"
+                );
+            }
+            if (activeCount != weeklySessions.longValue()) {
+                throw new BusinessRuleException(
+                        "An active swimming group requires exactly "
+                                + weeklySessions
+                                + " active training session(s) matching weeklySessions"
+                );
+            }
+        } else if (weeklySessions != null
+                && activeCount > 0
+                && activeCount != weeklySessions.longValue()) {
+            throw new BusinessRuleException(
+                    "Swimming group weeklySessions must match the number of active training sessions"
+            );
+        }
+    }
+
     private void replaceTrainingSessions(
             ActivityGroup group,
             ActivityType activityType,
@@ -572,7 +659,7 @@ public class ActivityGroupService {
         }
         group.getTrainingSessions().clear();
 
-        if (activityType != ActivityType.FOOTBALL
+        if ((activityType != ActivityType.FOOTBALL && activityType != ActivityType.SWIMMING)
                 || trainingSessions == null
                 || trainingSessions.isEmpty()) {
             return;

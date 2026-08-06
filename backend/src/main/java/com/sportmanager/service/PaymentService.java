@@ -5,9 +5,12 @@ import com.sportmanager.dto.request.ConfirmPaymentRequest;
 import com.sportmanager.dto.request.GenerateMonthlyPaymentsRequest;
 import com.sportmanager.dto.request.ManualPaymentRequest;
 import com.sportmanager.dto.request.MonthlyPaymentRequest;
+import com.sportmanager.dto.request.PaymentUpdateRequest;
 import com.sportmanager.dto.response.GenerateMonthlyPaymentsResponse;
 import com.sportmanager.dto.response.PaymentResponse;
+import com.sportmanager.entity.ActivityGroup;
 import com.sportmanager.entity.ClothingOrder;
+import com.sportmanager.entity.GroupTrainingSession;
 import com.sportmanager.entity.ClothingPricing;
 import com.sportmanager.entity.Parent;
 import com.sportmanager.entity.Payment;
@@ -32,7 +35,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -57,11 +62,16 @@ public class PaymentService {
                     "Monthly payment already exists for this registration and month"
             );
         }
+        if (!canCreateMonthlyPayment(registration)) {
+            throw new BusinessRuleException(
+                    "Swimming monthly payment requires an assigned group with training days and hours"
+            );
+        }
 
         Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
                 .orElseGet(Payment::new);
 
-        BigDecimal amount = resolveMonthlyAmount(registration);
+        BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
         populateMonthlyPayment(payment, registration, chargeMonth, amount);
 
         return toResponse(paymentRepository.save(payment));
@@ -136,6 +146,10 @@ public class PaymentService {
         int skipped = 0;
 
         for (Registration registration : approvedRegistrations) {
+            if (!canCreateMonthlyPayment(registration)) {
+                skipped++;
+                continue;
+            }
             if (hasActiveMonthlyPayment(registration, chargeMonth)) {
                 skipped++;
                 continue;
@@ -144,7 +158,7 @@ public class PaymentService {
             Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
                     .orElseGet(Payment::new);
 
-            BigDecimal amount = resolveMonthlyAmount(registration);
+            BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
             populateMonthlyPayment(payment, registration, chargeMonth, amount);
             created.add(toResponse(paymentRepository.save(payment)));
         }
@@ -154,6 +168,253 @@ public class PaymentService {
                 .skippedCount(skipped)
                 .createdPayments(created)
                 .build();
+    }
+
+    /**
+     * Creates PENDING monthly payments for the current calendar month only.
+     * When seasonId is null, syncs every currently active season.
+     */
+    @Transactional
+    public GenerateMonthlyPaymentsResponse syncSeasonMonthlyPayments(Long seasonId) {
+        LocalDate chargeMonth = LocalDate.now().withDayOfMonth(1);
+
+        if (seasonId != null) {
+            Season season = resolveSeason(seasonId);
+            return generateMonthlyPaymentsForSeasonMonth(season, chargeMonth);
+        }
+
+        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
+        if (activeSeasons.isEmpty()) {
+            throw new ResourceNotFoundException("No active season was found");
+        }
+
+        List<PaymentResponse> created = new ArrayList<>();
+        int skipped = 0;
+        for (Season season : activeSeasons) {
+            GenerateMonthlyPaymentsResponse partial =
+                    generateMonthlyPaymentsForSeasonMonth(season, chargeMonth);
+            created.addAll(partial.getCreatedPayments());
+            skipped += partial.getSkippedCount();
+        }
+
+        return GenerateMonthlyPaymentsResponse.builder()
+                .createdCount(created.size())
+                .skippedCount(skipped)
+                .createdPayments(created)
+                .build();
+    }
+
+    /**
+     * Scheduler entry: for every season that covers the current month, create
+     * current-month payments for all approved registrations.
+     */
+    @Transactional
+    public GenerateMonthlyPaymentsResponse generateCurrentMonthPaymentsForCoveringSeasons() {
+        LocalDate chargeMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate monthEnd = YearMonth.from(chargeMonth).atEndOfMonth();
+
+        List<Season> seasons = seasonRepository.findAll().stream()
+                .filter(season -> season.getStartDate() != null && season.getEndDate() != null)
+                .filter(season -> !season.getStartDate().isAfter(monthEnd)
+                        && !season.getEndDate().isBefore(chargeMonth))
+                .toList();
+
+        List<PaymentResponse> created = new ArrayList<>();
+        int skipped = 0;
+
+        for (Season season : seasons) {
+            GenerateMonthlyPaymentsResponse partial =
+                    generateMonthlyPaymentsForSeasonMonth(season, chargeMonth);
+            created.addAll(partial.getCreatedPayments());
+            skipped += partial.getSkippedCount();
+        }
+
+        return GenerateMonthlyPaymentsResponse.builder()
+                .createdCount(created.size())
+                .skippedCount(skipped)
+                .createdPayments(created)
+                .build();
+    }
+
+    /**
+     * On registration approval: create a payment for the current month only,
+     * if that month falls inside the registration's season.
+     */
+    @Transactional
+    public int ensureSeasonMonthlyPayments(Registration registration) {
+        validateRegistrationApproved(registration);
+
+        LocalDate chargeMonth = LocalDate.now().withDayOfMonth(1);
+        if (!seasonCoversMonth(registration.getSeason(), chargeMonth)) {
+            return 0;
+        }
+        if (!canCreateMonthlyPayment(registration)) {
+            return 0;
+        }
+        if (hasActiveMonthlyPayment(registration, chargeMonth)) {
+            return 0;
+        }
+
+        Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
+                .orElseGet(Payment::new);
+
+        BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+        populateMonthlyPayment(payment, registration, chargeMonth, amount);
+        paymentRepository.save(payment);
+        return 1;
+    }
+
+    /**
+     * After swimming group assignment or schedule change: create current-month
+     * PENDING payment if missing, or refresh amount on an existing PENDING row.
+     * Never changes PAID amounts.
+     */
+    @Transactional
+    public int ensureOrUpdatePendingMonthlyPayment(Registration registration) {
+        validateRegistrationApproved(registration);
+
+        LocalDate chargeMonth = LocalDate.now().withDayOfMonth(1);
+        if (!seasonCoversMonth(registration.getSeason(), chargeMonth)) {
+            return 0;
+        }
+        if (!canCreateMonthlyPayment(registration)) {
+            return 0;
+        }
+
+        BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+
+        java.util.Optional<Payment> existing = paymentRepository
+                .findByRegistrationAndChargeMonthAndPaymentType(
+                        registration,
+                        chargeMonth,
+                        PaymentType.MONTHLY_ACTIVITY
+                );
+
+        if (existing.isPresent()) {
+            Payment payment = existing.get();
+            if (payment.getStatus() == PaymentStatus.PAID) {
+                return 0;
+            }
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setAmount(amount);
+                paymentRepository.save(payment);
+                return 1;
+            }
+            // CANCELLED — reuse
+            populateMonthlyPayment(payment, registration, chargeMonth, amount);
+            paymentRepository.save(payment);
+            return 1;
+        }
+
+        Payment payment = new Payment();
+        populateMonthlyPayment(payment, registration, chargeMonth, amount);
+        paymentRepository.save(payment);
+        return 1;
+    }
+
+    @Transactional
+    public void recalculatePendingMonthlyPaymentsForGroup(ActivityGroup group) {
+        if (group == null || group.getId() == null) {
+            return;
+        }
+        List<Registration> members = registrationRepository.findByActivityGroupId(group.getId());
+        for (Registration registration : members) {
+            if (registration.getStatus() == RegistrationStatus.APPROVED) {
+                ensureOrUpdatePendingMonthlyPayment(registration);
+            }
+        }
+    }
+
+    private GenerateMonthlyPaymentsResponse generateMonthlyPaymentsForSeasonMonth(
+            Season season,
+            LocalDate chargeMonth
+    ) {
+        if (!seasonCoversMonth(season, chargeMonth)) {
+            return GenerateMonthlyPaymentsResponse.builder()
+                    .createdCount(0)
+                    .skippedCount(0)
+                    .createdPayments(List.of())
+                    .build();
+        }
+
+        List<Registration> approvedRegistrations =
+                registrationRepository.findBySeasonIdAndStatus(
+                        season.getId(),
+                        RegistrationStatus.APPROVED
+                );
+
+        List<PaymentResponse> created = new ArrayList<>();
+        int skipped = 0;
+
+        for (Registration registration : approvedRegistrations) {
+            if (!canCreateMonthlyPayment(registration)) {
+                skipped++;
+                continue;
+            }
+            if (hasActiveMonthlyPayment(registration, chargeMonth)) {
+                skipped++;
+                continue;
+            }
+
+            Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
+                    .orElseGet(Payment::new);
+
+            BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+            populateMonthlyPayment(payment, registration, chargeMonth, amount);
+            created.add(toResponse(paymentRepository.save(payment)));
+        }
+
+        return GenerateMonthlyPaymentsResponse.builder()
+                .createdCount(created.size())
+                .skippedCount(skipped)
+                .createdPayments(created)
+                .build();
+    }
+
+    private boolean seasonCoversMonth(Season season, LocalDate chargeMonth) {
+        if (season.getStartDate() == null || season.getEndDate() == null) {
+            return false;
+        }
+        LocalDate monthEnd = YearMonth.from(chargeMonth).atEndOfMonth();
+        return !season.getStartDate().isAfter(monthEnd)
+                && !season.getEndDate().isBefore(chargeMonth);
+    }
+
+    /**
+     * Cancels PENDING monthly activity payments for a registration (e.g. on registration cancel).
+     */
+    @Transactional
+    public int cancelPendingMonthlyPayments(Registration registration) {
+        List<Payment> payments = paymentRepository.findByRegistrationId(registration.getId());
+        int cancelled = 0;
+        for (Payment payment : payments) {
+            if (payment.getPaymentType() != PaymentType.MONTHLY_ACTIVITY) {
+                continue;
+            }
+            if (payment.getStatus() != PaymentStatus.PENDING) {
+                continue;
+            }
+            payment.setStatus(PaymentStatus.CANCELLED);
+            payment.setPaymentDate(null);
+            paymentRepository.save(payment);
+            cancelled++;
+        }
+        return cancelled;
+    }
+
+    @Transactional
+    public PaymentResponse updatePayment(Long paymentId, PaymentUpdateRequest request) {
+        Payment payment = getPaymentEntity(paymentId);
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BusinessRuleException("Only pending payments can be edited");
+        }
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Amount must be greater than zero");
+        }
+
+        payment.setAmount(request.getAmount());
+        return toResponse(paymentRepository.save(payment));
     }
 
     @Transactional
@@ -235,18 +496,105 @@ public class PaymentService {
     }
 
     /**
-     * Football: package monthly price.
-     * Swimming: unit price (one weekly lesson) × chosen weekly sessions.
+     * Football: the configured price for the group's session count (1 or 2) is the
+     * monthly fee as-is — no week multiplication.
+     * Swimming: lesson-type unit price × scheduled session occurrences in the
+     * charge month (clipped to the swimming season date range).
      */
-    private BigDecimal resolveMonthlyAmount(Registration registration) {
-        BigDecimal unitPrice = registration.getActivityPricing().getMonthlyPrice();
-        if (registration.getActivity().getActivityType() != ActivityType.SWIMMING) {
-            return unitPrice;
+    private BigDecimal resolveMonthlyAmount(Registration registration, LocalDate chargeMonth) {
+        BigDecimal configuredPrice = registration.getActivityPricing().getMonthlyPrice();
+
+        if (registration.getActivity().getActivityType() == ActivityType.FOOTBALL) {
+            return configuredPrice;
         }
-        int sessions = registration.getWeeklySessions() != null
-                ? registration.getWeeklySessions()
-                : 1;
-        return unitPrice.multiply(BigDecimal.valueOf(sessions));
+
+        ActivityGroup group = registration.getActivityGroup();
+        if (group == null) {
+            throw new BusinessRuleException(
+                    "Swimming monthly payment requires an assigned swimming group"
+            );
+        }
+
+        List<DayOfWeek> activeDays = activeTrainingDays(group);
+        if (activeDays.isEmpty()) {
+            throw new BusinessRuleException(
+                    "Swimming group must have active training days and hours before billing"
+            );
+        }
+
+        Season season = registration.getSeason();
+        int occurrences = countSessionOccurrences(
+                activeDays,
+                YearMonth.from(chargeMonth),
+                season.getStartDate(),
+                season.getEndDate()
+        );
+        return configuredPrice.multiply(BigDecimal.valueOf(occurrences));
+    }
+
+    private boolean canCreateMonthlyPayment(Registration registration) {
+        if (registration.getActivity().getActivityType() != ActivityType.SWIMMING) {
+            return true;
+        }
+        ActivityGroup group = registration.getActivityGroup();
+        return group != null && !activeTrainingDays(group).isEmpty();
+    }
+
+    private static List<DayOfWeek> activeTrainingDays(ActivityGroup group) {
+        if (group.getTrainingSessions() == null) {
+            return List.of();
+        }
+        return group.getTrainingSessions().stream()
+                .filter(session -> Boolean.TRUE.equals(session.getIsActive()))
+                .map(GroupTrainingSession::getDayOfWeek)
+                .filter(day -> day != null)
+                .toList();
+    }
+
+    /**
+     * Counts how many times the group's training weekdays occur in the month,
+     * clipped to the season date range.
+     */
+    static int countSessionOccurrences(
+            List<DayOfWeek> activeDays,
+            YearMonth yearMonth,
+            LocalDate seasonStart,
+            LocalDate seasonEnd
+    ) {
+        if (activeDays == null || activeDays.isEmpty()) {
+            return 0;
+        }
+        java.util.Set<DayOfWeek> days = java.util.EnumSet.copyOf(activeDays);
+        LocalDate day = yearMonth.atDay(1);
+        LocalDate end = yearMonth.atEndOfMonth();
+        int count = 0;
+        while (!day.isAfter(end)) {
+            boolean inSeason = (seasonStart == null || !day.isBefore(seasonStart))
+                    && (seasonEnd == null || !day.isAfter(seasonEnd));
+            if (inSeason && days.contains(day.getDayOfWeek())) {
+                count++;
+            }
+            day = day.plusDays(1);
+        }
+        return count;
+    }
+
+    static List<LocalDate> monthsInSeason(Season season) {
+        if (season.getStartDate() == null || season.getEndDate() == null) {
+            throw new BusinessRuleException("Season start and end dates are required");
+        }
+        if (season.getEndDate().isBefore(season.getStartDate())) {
+            throw new BusinessRuleException("Season end date must not be before start date");
+        }
+
+        List<LocalDate> months = new ArrayList<>();
+        YearMonth cursor = YearMonth.from(season.getStartDate());
+        YearMonth last = YearMonth.from(season.getEndDate());
+        while (!cursor.isAfter(last)) {
+            months.add(cursor.atDay(1));
+            cursor = cursor.plusMonths(1);
+        }
+        return months;
     }
 
     private void populateMonthlyPayment(
@@ -333,11 +681,9 @@ public class PaymentService {
                     ));
         }
 
-        List<Season> activeSeasons = seasonRepository.findByIsActive(true);
-        if (activeSeasons.isEmpty()) {
-            throw new ResourceNotFoundException("No active season was found");
-        }
-        return activeSeasons.get(0);
+        throw new BusinessRuleException(
+                "seasonId is required when multiple seasons can be active"
+        );
     }
 
     private Payment getPaymentEntity(Long paymentId) {

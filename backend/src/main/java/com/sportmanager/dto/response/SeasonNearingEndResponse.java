@@ -8,12 +8,10 @@ import java.time.LocalDate;
 
 @Getter
 @Builder
-public class SeasonResponse {
+public class SeasonNearingEndResponse {
 
     private Long id;
     private String name;
-    private LocalDate startDate;
-    private LocalDate endDate;
     private ActivityType activityType;
-    private Boolean isActive;
+    private LocalDate endDate;
 }

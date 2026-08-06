@@ -32,6 +32,7 @@ public class ActivityPricingService {
     public ActivityPricingResponse createActivityPricing(ActivityPricingRequest request) {
         Season season = getSeason(request.getSeasonId());
         Activity activity = getActivity(request.getActivityType());
+        validateSeasonMatchesActivity(season, request.getActivityType());
 
         validatePricingDetails(request);
         validatePricingDoesNotExist(request, season, activity);
@@ -65,7 +66,7 @@ public class ActivityPricingService {
 
         if (request.getMonthlyPrice() == null
                 || request.getMonthlyPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException("Monthly price must be greater than zero");
+            throw new BusinessRuleException("Weekly price must be greater than zero");
         }
 
         if (activityType == ActivityType.FOOTBALL) {
@@ -79,7 +80,6 @@ public class ActivityPricingService {
                 pricing.setWeeklySessions(request.getWeeklySessions());
             }
         } else if (activityType == ActivityType.SWIMMING) {
-            // Swimming rows are always unit prices (weeklySessions = 1).
             pricing.setWeeklySessions(1);
         }
 
@@ -92,7 +92,7 @@ public class ActivityPricingService {
             Integer weeklySessions
     ) {
         boolean exists = activityPricingRepository
-                .existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+                .existsBySeasonAndActivityAndWeeklySessions(
                         pricing.getSeason(),
                         pricing.getActivity(),
                         weeklySessions
@@ -101,25 +101,6 @@ public class ActivityPricingService {
         if (exists && !weeklySessions.equals(pricing.getWeeklySessions())) {
             throw new ConflictException(
                     "Football pricing already exists for this weekly sessions value"
-            );
-        }
-    }
-
-    private void validateSwimmingSessionsAvailable(
-            ActivityPricing pricing,
-            Integer weeklySessions
-    ) {
-        boolean exists = activityPricingRepository
-                .existsBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
-                        pricing.getSeason(),
-                        pricing.getActivity(),
-                        pricing.getSwimmingLessonType(),
-                        weeklySessions
-                );
-
-        if (exists && !weeklySessions.equals(pricing.getWeeklySessions())) {
-            throw new ConflictException(
-                    "Activity pricing already exists for this swimming lesson type and weekly sessions"
             );
         }
     }
@@ -138,6 +119,15 @@ public class ActivityPricingService {
                 ));
     }
 
+    private void validateSeasonMatchesActivity(Season season, ActivityType activityType) {
+        if (season.getActivityType() != null && season.getActivityType() != activityType) {
+            throw new BusinessRuleException(
+                    "Pricing activity type must match the season activity type ("
+                            + season.getActivityType() + ")"
+            );
+        }
+    }
+
     private Activity getActivity(ActivityType activityType) {
         return activityRepository.findByActivityType(activityType)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -146,17 +136,12 @@ public class ActivityPricingService {
     }
 
     private void validatePricingDetails(ActivityPricingRequest request) {
-        BigDecimal monthlyPrice = request.getMonthlyPrice();
-        if (monthlyPrice == null || monthlyPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException("Monthly price must be greater than zero");
+        BigDecimal weeklyPrice = request.getMonthlyPrice();
+        if (weeklyPrice == null || weeklyPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException("Weekly price must be greater than zero");
         }
 
         if (request.getActivityType() == ActivityType.FOOTBALL) {
-            if (request.getAgeGroup() != null) {
-                throw new BusinessRuleException(
-                        "Age group must not be provided for football pricing"
-                );
-            }
             if (request.getSwimmingLessonType() != null) {
                 throw new BusinessRuleException(
                         "Swimming lesson type must not be provided for football"
@@ -177,12 +162,6 @@ public class ActivityPricingService {
                         "Swimming lesson type is required for swimming pricing"
                 );
             }
-            if (request.getAgeGroup() != null) {
-                throw new BusinessRuleException(
-                        "Age group must not be provided for swimming pricing"
-                );
-            }
-            // weeklySessions on the request is ignored; unit price always uses 1.
             return;
         }
 
@@ -197,7 +176,7 @@ public class ActivityPricingService {
         boolean exists;
         if (request.getActivityType() == ActivityType.FOOTBALL) {
             exists = activityPricingRepository
-                    .existsBySeasonAndActivityAndWeeklySessionsAndAgeGroupIsNull(
+                    .existsBySeasonAndActivityAndWeeklySessions(
                             season,
                             activity,
                             request.getWeeklySessions()
@@ -228,11 +207,9 @@ public class ActivityPricingService {
         pricing.setMonthlyPrice(request.getMonthlyPrice());
 
         if (request.getActivityType() == ActivityType.FOOTBALL) {
-            pricing.setAgeGroup(null);
             pricing.setSwimmingLessonType(null);
             pricing.setWeeklySessions(request.getWeeklySessions());
         } else {
-            pricing.setAgeGroup(null);
             pricing.setSwimmingLessonType(request.getSwimmingLessonType());
             pricing.setWeeklySessions(1);
         }
@@ -247,7 +224,6 @@ public class ActivityPricingService {
                 .seasonName(pricing.getSeason().getName())
                 .activityId(pricing.getActivity().getId())
                 .activityType(pricing.getActivity().getActivityType())
-                .ageGroup(pricing.getAgeGroup())
                 .swimmingLessonType(pricing.getSwimmingLessonType())
                 .weeklySessions(pricing.getWeeklySessions())
                 .monthlyPrice(pricing.getMonthlyPrice())

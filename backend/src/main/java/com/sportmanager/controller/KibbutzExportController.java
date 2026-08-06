@@ -1,5 +1,6 @@
 package com.sportmanager.controller;
 
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.service.KibbutzExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -20,10 +21,15 @@ public class KibbutzExportController {
     @GetMapping("/kibbutz")
     public ResponseEntity<byte[]> exportKibbutzBilling(
             @RequestParam int year,
-            @RequestParam int month
+            @RequestParam int month,
+            @RequestParam ActivityType activityType
     ) {
-        byte[] fileContent = kibbutzExportService.exportMonthlyKibbutzBilling(year, month);
-        String fileName = kibbutzExportService.buildFileName(year, month);
+        byte[] fileContent = kibbutzExportService.exportMonthlyKibbutzBilling(
+                year,
+                month,
+                activityType
+        );
+        String fileName = kibbutzExportService.buildFileName(year, month, activityType);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")

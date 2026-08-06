@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,9 +46,12 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
             @Param("status") RegistrationStatus status
     );
 
-    List<Registration> findTop10ByOrderByRegistrationDateDescIdDesc();
+    List<Registration> findByRegistrationDateOrderByIdDesc(LocalDate registrationDate);
 
-    List<Registration> findTop10BySeasonIdOrderByRegistrationDateDescIdDesc(Long seasonId);
+    List<Registration> findBySeasonIdAndRegistrationDateOrderByIdDesc(
+            Long seasonId,
+            LocalDate registrationDate
+    );
 
     boolean existsByStudentAndActivityAndSeason(
             Student student,

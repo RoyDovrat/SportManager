@@ -1,6 +1,5 @@
 package com.sportmanager.entity;
 
-import com.sportmanager.enums.AgeGroup;
 import com.sportmanager.enums.SwimmingLessonType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,16 +29,22 @@ public class ActivityPricing {
     private Activity activity;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "age_group")
-    private AgeGroup ageGroup;
-
-    @Enumerated(EnumType.STRING)
     @Column(name = "swimming_lesson_type")
     private SwimmingLessonType swimmingLessonType;
 
+    /**
+     * Football: practice count key (1 or 2).
+     * Swimming: always 1 (unit weekly price row for the lesson type).
+     */
     @Column(name = "weekly_sessions")
     private Integer weeklySessions;
 
+    /**
+     * Weekly rate for this pricing key (DB column kept as monthly_price for compatibility).
+     * Football: weekly package for that practice count.
+     * Swimming: weekly unit for one lesson of this type.
+     * Parent monthly charge = weekly rate (× swimming sessions if needed) × weeks in month.
+     */
     @Column(name = "monthly_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal monthlyPrice;
 
