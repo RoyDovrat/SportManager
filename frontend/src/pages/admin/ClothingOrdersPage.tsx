@@ -8,6 +8,7 @@ import {
 } from '../../api/clothingOrders'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import { CLOTHING_SIZES, type ClothingSize } from '../../types/enums'
@@ -18,6 +19,11 @@ import {
 } from '../../validation/fields'
 
 const ALL = ''
+
+const FILTER_DEFAULTS = {
+  seasonId: ALL,
+  identity: ALL,
+}
 
 type CreateFormState = {
   seasonId: string
@@ -83,10 +89,11 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
 }
 
 export function ClothingOrdersPage() {
+  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { seasonId, identity: identityFilter } = filters
+
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
-  const [seasonId, setSeasonId] = useState<string>(ALL)
-  const [identityInput, setIdentityInput] = useState('')
-  const [identityFilter, setIdentityFilter] = useState('')
+  const [identityInput, setIdentityInput] = useState(identityFilter)
   const [rows, setRows] = useState<ClothingOrderResponse[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -102,9 +109,19 @@ export function ClothingOrdersPage() {
       try {
         const data = await listSeasons()
         setSeasons(data)
-        const active = data.find((season) => season.isActive)
-        if (active) {
-          setSeasonId(String(active.id))
+        const active =
+          data.find(
+            (season) => season.isActive && season.activityType === 'FOOTBALL',
+          ) ?? data.find((season) => season.isActive)
+        if (!hasParam('seasonId') && active) {
+          setFilter('seasonId', String(active.id))
+          setCreateForm((prev) => ({ ...prev, seasonId: String(active.id) }))
+        } else if (filters.seasonId) {
+          setCreateForm((prev) => ({
+            ...prev,
+            seasonId: filters.seasonId,
+          }))
+        } else if (active) {
           setCreateForm((prev) => ({ ...prev, seasonId: String(active.id) }))
         } else if (data.length > 0) {
           setCreateForm((prev) => ({ ...prev, seasonId: String(data[0].id) }))
@@ -117,6 +134,7 @@ export function ClothingOrdersPage() {
     }
 
     void loadSeasons()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load seasons once on mount
   }, [])
 
   async function loadRows() {
@@ -147,12 +165,12 @@ export function ClothingOrdersPage() {
 
   function handleApplyIdentity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setIdentityFilter(identityInput.trim())
+    setFilter('identity', identityInput.trim())
   }
 
   function handleClearIdentity() {
     setIdentityInput('')
-    setIdentityFilter('')
+    setFilter('identity', '')
   }
 
   function resetCreateForm() {
@@ -224,9 +242,18 @@ export function ClothingOrdersPage() {
   }
 
   return (
-    <section className="admin-page admin-page--wide">
-      <h1>{t('clothingOrders.title')}</h1>
-      <p>{t('clothingOrders.intro')}</p>
+    <section className="admin-page admin-page--wide clothing-orders-page">
+      <header className="clothing-hero">
+        <div>
+          <h1>{t('clothingOrders.title')}</h1>
+          <p className="admin-page__lede">{t('clothingOrders.intro')}</p>
+        </div>
+        {!loading && (
+          <p className="clothing-hero__count">
+            {t('clothingOrders.resultCount', { count: rows.length })}
+          </p>
+        )}
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
@@ -235,42 +262,45 @@ export function ClothingOrdersPage() {
         <h2>{t('clothingOrders.createTitle')}</h2>
         <p className="clothing-order-form__hint">{t('clothingOrders.createHint')}</p>
 
-        <label className="admin-form__field">
-          <span>{t('clothingOrders.season')}</span>
-          <select
-            value={createForm.seasonId}
-            onChange={(event) =>
-              setCreateForm({ ...createForm, seasonId: event.target.value })
-            }
-            required
-            disabled={!filtersReady || saving}
-          >
-            <option value="" disabled>
-              {t('clothingOrders.selectSeason')}
-            </option>
-            {seasons.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name}
-                {season.isActive ? ` (${t('common.active')})` : ''}
+        <div className="clothing-order-form__grid">
+          <label className="admin-form__field">
+            <span>{t('clothingOrders.season')}</span>
+            <select
+              value={createForm.seasonId}
+              onChange={(event) =>
+                setCreateForm({ ...createForm, seasonId: event.target.value })
+              }
+              required
+              disabled={!filtersReady || saving}
+            >
+              <option value="" disabled>
+                {t('clothingOrders.selectSeason')}
               </option>
-            ))}
-          </select>
-        </label>
+              {seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.name}
+                  {season.isActive ? ` (${t('common.active')})` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className="admin-form__field">
-          <span>{t('clothingOrders.identity')}</span>
-          <input
-            value={createForm.studentIdentityNumber}
-            onChange={(event) =>
-              setCreateForm({
-                ...createForm,
-                studentIdentityNumber: event.target.value,
-              })
-            }
-            required
-            disabled={saving}
-          />
-        </label>
+          <label className="admin-form__field">
+            <span>{t('clothingOrders.identity')}</span>
+            <input
+              value={createForm.studentIdentityNumber}
+              onChange={(event) =>
+                setCreateForm({
+                  ...createForm,
+                  studentIdentityNumber: event.target.value,
+                })
+              }
+              required
+              disabled={saving}
+              dir="ltr"
+            />
+          </label>
+        </div>
 
         <label className="admin-form__checkbox">
           <input
@@ -289,42 +319,44 @@ export function ClothingOrdersPage() {
 
         {!createForm.alreadyHasClothing && (
           <>
-            <KitFields
-              title={t('clothingOrders.shortKit')}
-              quantity={createForm.shortKitQuantity}
-              size={createForm.shortKitSize}
-              disabled={saving}
-              onQuantityChange={(value) =>
-                setCreateForm({ ...createForm, shortKitQuantity: value })
-              }
-              onSizeChange={(value) =>
-                setCreateForm({ ...createForm, shortKitSize: value })
-              }
-            />
-            <KitFields
-              title={t('clothingOrders.longKit')}
-              quantity={createForm.longKitQuantity}
-              size={createForm.longKitSize}
-              disabled={saving}
-              onQuantityChange={(value) =>
-                setCreateForm({ ...createForm, longKitQuantity: value })
-              }
-              onSizeChange={(value) =>
-                setCreateForm({ ...createForm, longKitSize: value })
-              }
-            />
-            <KitFields
-              title={t('clothingOrders.hoodie')}
-              quantity={createForm.hoodieQuantity}
-              size={createForm.hoodieSize}
-              disabled={saving}
-              onQuantityChange={(value) =>
-                setCreateForm({ ...createForm, hoodieQuantity: value })
-              }
-              onSizeChange={(value) =>
-                setCreateForm({ ...createForm, hoodieSize: value })
-              }
-            />
+            <div className="clothing-order-form__kits">
+              <KitFields
+                title={t('clothingOrders.shortKit')}
+                quantity={createForm.shortKitQuantity}
+                size={createForm.shortKitSize}
+                disabled={saving}
+                onQuantityChange={(value) =>
+                  setCreateForm({ ...createForm, shortKitQuantity: value })
+                }
+                onSizeChange={(value) =>
+                  setCreateForm({ ...createForm, shortKitSize: value })
+                }
+              />
+              <KitFields
+                title={t('clothingOrders.longKit')}
+                quantity={createForm.longKitQuantity}
+                size={createForm.longKitSize}
+                disabled={saving}
+                onQuantityChange={(value) =>
+                  setCreateForm({ ...createForm, longKitQuantity: value })
+                }
+                onSizeChange={(value) =>
+                  setCreateForm({ ...createForm, longKitSize: value })
+                }
+              />
+              <KitFields
+                title={t('clothingOrders.hoodie')}
+                quantity={createForm.hoodieQuantity}
+                size={createForm.hoodieSize}
+                disabled={saving}
+                onQuantityChange={(value) =>
+                  setCreateForm({ ...createForm, hoodieQuantity: value })
+                }
+                onSizeChange={(value) =>
+                  setCreateForm({ ...createForm, hoodieSize: value })
+                }
+              />
+            </div>
             <label className="admin-form__field">
               <span>{t('publicClothing.printedNumber')}</span>
               <input
@@ -352,12 +384,12 @@ export function ClothingOrdersPage() {
         </div>
       </form>
 
-      <div className="admin-filters">
+      <div className="admin-filters clothing-orders-filters">
         <label className="admin-form__field">
           <span>{t('clothingOrders.filterSeason')}</span>
           <select
             value={seasonId}
-            onChange={(event) => setSeasonId(event.target.value)}
+            onChange={(event) => setFilter('seasonId', event.target.value)}
             disabled={!filtersReady}
           >
             <option value={ALL}>{t('clothingOrders.allSeasons')}</option>
@@ -378,6 +410,7 @@ export function ClothingOrdersPage() {
               onChange={(event) => setIdentityInput(event.target.value)}
               placeholder={t('clothingOrders.identityPlaceholder')}
               disabled={!filtersReady}
+              dir="ltr"
             />
           </label>
           <div className="admin-form__actions">
@@ -387,6 +420,7 @@ export function ClothingOrdersPage() {
             {(identityInput || identityFilter) && (
               <button
                 type="button"
+                className="btn btn--secondary"
                 onClick={handleClearIdentity}
                 disabled={!filtersReady}
               >
@@ -397,12 +431,12 @@ export function ClothingOrdersPage() {
         </form>
       </div>
 
-      <div className="admin-table-wrap">
+      <div className="admin-table-wrap clothing-orders-table">
         <h2>{t('clothingOrders.listTitle')}</h2>
         {loading ? (
-          <p>{t('common.loading')}</p>
+          <p className="admin-page__loading">{t('common.loading')}</p>
         ) : rows.length === 0 ? (
-          <p>{t('clothingOrders.empty')}</p>
+          <p className="dashboard-empty">{t('clothingOrders.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -423,7 +457,7 @@ export function ClothingOrdersPage() {
                   <td>
                     {row.studentFirstName} {row.studentLastName}
                   </td>
-                  <td>{row.studentIdentityNumber}</td>
+                  <td dir="ltr">{row.studentIdentityNumber}</td>
                   <td>{row.seasonName}</td>
                   <td>
                     {row.alreadyHasClothing ? t('common.yes') : t('common.no')}
@@ -433,9 +467,18 @@ export function ClothingOrdersPage() {
                       ? t('common.yes')
                       : t('common.no')}
                   </td>
-                  <td className="admin-table__actions">
-                    <Link to={`/admin/clothing-orders/${row.id}`}>
-                      {t('clothingOrders.viewDetails')}
+                  <td className="admin-table__actions clothing-orders-actions">
+                    <Link
+                      to={`/admin/clothing-orders/${row.id}`}
+                      className="reg-action reg-action--view"
+                    >
+                      {t('clothingOrders.view')}
+                    </Link>
+                    <Link
+                      to={`/admin/clothing-orders/${row.id}?edit=1`}
+                      className="reg-action reg-action--edit"
+                    >
+                      {t('clothingOrders.edit')}
                     </Link>
                   </td>
                 </tr>

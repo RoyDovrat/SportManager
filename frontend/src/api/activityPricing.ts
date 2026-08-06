@@ -1,5 +1,5 @@
 import { apiRequest } from './client'
-import type { ActivityType, AgeGroup, SwimmingLessonType } from '../types/enums'
+import type { ActivityType, SwimmingLessonType } from '../types/enums'
 
 export type ActivityPricingResponse = {
   id: number
@@ -7,7 +7,6 @@ export type ActivityPricingResponse = {
   seasonName: string
   activityId: number
   activityType: ActivityType
-  ageGroup: AgeGroup | null
   swimmingLessonType: SwimmingLessonType | null
   weeklySessions: number | null
   monthlyPrice: number
@@ -16,7 +15,6 @@ export type ActivityPricingResponse = {
 export type ActivityPricingRequest = {
   seasonId: number
   activityType: ActivityType
-  ageGroup?: AgeGroup | null
   swimmingLessonType?: SwimmingLessonType | null
   weeklySessions?: number | null
   monthlyPrice: number

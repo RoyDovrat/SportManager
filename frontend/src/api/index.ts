@@ -39,6 +39,8 @@ export {
   activateSeason,
   createSeason,
   deactivateSeason,
+  getActiveSeasonByType,
+  listActiveSeasons,
   listSeasons,
   updateSeason,
 } from './seasons'

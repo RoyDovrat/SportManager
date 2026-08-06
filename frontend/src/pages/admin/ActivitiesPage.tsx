@@ -109,8 +109,12 @@ export function ActivitiesPage() {
 
   return (
     <section className="admin-page">
-      <h1>{t('activities.title')}</h1>
-      <p>{t('activities.intro')}</p>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('activities.title')}</h1>
+          <p className="admin-page__lede">{t('activities.intro')}</p>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
@@ -159,9 +163,9 @@ export function ActivitiesPage() {
       <div className="admin-table-wrap">
         <h2>{t('activities.existing')}</h2>
         {loading ? (
-          <p>{t('activities.loading')}</p>
+          <p className="admin-page__loading">{t('activities.loading')}</p>
         ) : activities.length === 0 ? (
-          <p>{t('activities.empty')}</p>
+          <p className="dashboard-empty">{t('activities.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -179,15 +183,27 @@ export function ActivitiesPage() {
                   <td>{activityTypeLabel(activity.activityType)}</td>
                   <td>{activity.isActive ? t('common.active') : t('common.inactive')}</td>
                   <td className="admin-table__actions">
-                    <button type="button" onClick={() => startEdit(activity)}>
+                    <button
+                      type="button"
+                      className="reg-action reg-action--edit"
+                      onClick={() => startEdit(activity)}
+                    >
                       {t('common.edit')}
                     </button>
                     {activity.isActive ? (
-                      <button type="button" onClick={() => void handleDeactivate(activity.id)}>
+                      <button
+                        type="button"
+                        className="reg-action reg-action--deactivate"
+                        onClick={() => void handleDeactivate(activity.id)}
+                      >
                         {t('common.deactivate')}
                       </button>
                     ) : (
-                      <button type="button" onClick={() => void handleActivate(activity.id)}>
+                      <button
+                        type="button"
+                        className="reg-action reg-action--activate"
+                        onClick={() => void handleActivate(activity.id)}
+                      >
                         {t('common.activate')}
                       </button>
                     )}

@@ -7,9 +7,9 @@ import {
 } from '../../api/activityPricing'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
-  ageGroupLabel,
   swimmingLessonTypeLabel,
 } from '../../i18n/labels'
 import { t } from '../../i18n/t'
@@ -21,6 +21,10 @@ import {
 } from '../../types/enums'
 
 const FOOTBALL_WEEKLY_OPTIONS = [1, 2] as const
+
+const FILTER_DEFAULTS = {
+  seasonId: '',
+}
 
 type CreateFormState = {
   activityType: ActivityType
@@ -42,8 +46,11 @@ const emptyCreateForm: CreateFormState = {
 }
 
 export function ActivityPricingPage() {
+  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const selectedSeasonId =
+    filters.seasonId === '' ? '' : Number(filters.seasonId)
+
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number | ''>('')
   const [rows, setRows] = useState<ActivityPricingResponse[]>([])
   const [createForm, setCreateForm] = useState<CreateFormState>(emptyCreateForm)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -63,11 +70,13 @@ export function ActivityPricingPage() {
     try {
       const data = await listSeasons()
       setSeasons(data)
-      const active = data.find((season) => season.isActive)
-      if (active) {
-        setSelectedSeasonId(active.id)
-      } else if (data.length > 0) {
-        setSelectedSeasonId(data[0].id)
+      if (!hasParam('seasonId')) {
+        const active = data.find((season) => season.isActive)
+        if (active) {
+          setFilter('seasonId', String(active.id))
+        } else if (data.length > 0) {
+          setFilter('seasonId', String(data[0].id))
+        }
       }
     } catch (err) {
       setError(formatApiError(err))
@@ -92,10 +101,11 @@ export function ActivityPricingPage() {
 
   useEffect(() => {
     void loadSeasons()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load seasons once on mount
   }, [])
 
   useEffect(() => {
-    if (typeof selectedSeasonId === 'number') {
+    if (typeof selectedSeasonId === 'number' && !Number.isNaN(selectedSeasonId)) {
       void loadPricing(selectedSeasonId)
     } else {
       setRows([])
@@ -124,6 +134,20 @@ export function ActivityPricingPage() {
       return
     }
 
+    const selectedSeason = seasons.find((season) => season.id === selectedSeasonId)
+    if (
+      selectedSeason?.activityType != null &&
+      selectedSeason.activityType !== createForm.activityType
+    ) {
+      setError(
+        t('activityPricing.seasonActivityMismatch', {
+          seasonSport: activityTypeLabel(selectedSeason.activityType),
+          pricingSport: activityTypeLabel(createForm.activityType),
+        }),
+      )
+      return
+    }
+
     setSaving(true)
     setError(null)
     setMessage(null)
@@ -136,7 +160,6 @@ export function ActivityPricingPage() {
       await createActivityPricing({
         seasonId: selectedSeasonId,
         activityType: createForm.activityType,
-        ageGroup: null,
         swimmingLessonType:
           createForm.activityType === 'SWIMMING' ? createForm.swimmingLessonType : null,
         weeklySessions,
@@ -190,8 +213,13 @@ export function ActivityPricingPage() {
 
   return (
     <section className="admin-page">
-      <h1>{t('activityPricing.title')}</h1>
-      <p>{t('activityPricing.intro')}</p>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('activityPricing.title')}</h1>
+          <p className="admin-page__lede">{t('activityPricing.intro')}</p>
+          <p className="admin-form__hint">{t('activityPricing.billingHint')}</p>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
@@ -199,10 +227,9 @@ export function ActivityPricingPage() {
       <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
         <span>{t('activityPricing.season')}</span>
         <select
-          value={selectedSeasonId === '' ? '' : String(selectedSeasonId)}
+          value={filters.seasonId}
           onChange={(event) => {
-            const value = event.target.value
-            setSelectedSeasonId(value === '' ? '' : Number(value))
+            setFilter('seasonId', event.target.value)
             cancelEdit()
           }}
           disabled={loadingSeasons || seasons.length === 0}
@@ -212,7 +239,7 @@ export function ActivityPricingPage() {
           ) : (
             seasons.map((season) => (
               <option key={season.id} value={season.id}>
-                {season.name}
+                {season.name} · {activityTypeLabel(season.activityType)}
                 {season.isActive ? ` ${t('activityPricing.activeSuffix')}` : ''}
               </option>
             ))
@@ -227,13 +254,22 @@ export function ActivityPricingPage() {
           <span>{t('activities.activityType')}</span>
           <select
             value={createForm.activityType}
-            onChange={(event) =>
+            onChange={(event) => {
+              const nextType = event.target.value as ActivityType
               setCreateForm({
                 ...createForm,
-                activityType: event.target.value as ActivityType,
+                activityType: nextType,
                 weeklySessions: '1',
               })
-            }
+              const matching =
+                seasons.find(
+                  (season) => season.isActive && season.activityType === nextType,
+                ) ?? seasons.find((season) => season.activityType === nextType)
+              if (matching) {
+                setFilter('seasonId', String(matching.id))
+                cancelEdit()
+              }
+            }}
           >
             {ACTIVITY_TYPES.map((type) => (
               <option key={type} value={type}>
@@ -285,6 +321,10 @@ export function ActivityPricingPage() {
           </>
         )}
 
+        {isFootball && (
+          <p className="admin-form__hint">{t('activityPricing.footballMonthlyHint')}</p>
+        )}
+
         <label className="admin-form__field">
           <span>
             {isFootball
@@ -315,11 +355,11 @@ export function ActivityPricingPage() {
           <h2>{t('activityPricing.editTitle')}</h2>
           <p>
             {activityTypeLabel(editingRow.activityType)}
-            {editingRow.ageGroup ? ` · ${ageGroupLabel(editingRow.ageGroup)}` : ''}
             {editingRow.swimmingLessonType
               ? ` · ${swimmingLessonTypeLabel(editingRow.swimmingLessonType)}`
               : ''}
-            {editingRow.weeklySessions != null
+            {editingRow.activityType === 'FOOTBALL' &&
+            editingRow.weeklySessions != null
               ? ` · ${t('activityPricing.weeklySessions')}: ${editingRow.weeklySessions}`
               : ''}
           </p>
@@ -375,21 +415,20 @@ export function ActivityPricingPage() {
       <div className="admin-table-wrap">
         <h2>{t('activityPricing.forSeason')}</h2>
         {loadingRows ? (
-          <p>{t('activityPricing.loading')}</p>
+          <p className="admin-page__loading">{t('activityPricing.loading')}</p>
         ) : typeof selectedSeasonId !== 'number' ? (
-          <p>{t('activityPricing.selectSeason')}</p>
+          <p className="dashboard-empty">{t('activityPricing.selectSeason')}</p>
         ) : rows.length === 0 ? (
-          <p>{t('activityPricing.empty')}</p>
+          <p className="dashboard-empty">{t('activityPricing.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
                 <th>{t('common.id')}</th>
                 <th>{t('activities.activityType')}</th>
-                <th>{t('activityPricing.ageGroup')}</th>
                 <th>{t('activityPricing.lessonType')}</th>
                 <th>{t('activityPricing.weeklySessions')}</th>
-                <th>{t('activityPricing.unitPrice')}</th>
+                <th>{t('activityPricing.priceColumn')}</th>
                 <th>{t('common.actions')}</th>
               </tr>
             </thead>
@@ -398,16 +437,23 @@ export function ActivityPricingPage() {
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{activityTypeLabel(row.activityType)}</td>
-                  <td>{row.ageGroup ? ageGroupLabel(row.ageGroup) : '—'}</td>
                   <td>
                     {row.swimmingLessonType
                       ? swimmingLessonTypeLabel(row.swimmingLessonType)
                       : '—'}
                   </td>
-                  <td>{row.weeklySessions ?? '—'}</td>
+                  <td>
+                    {row.activityType === 'FOOTBALL'
+                      ? (row.weeklySessions ?? '—')
+                      : '—'}
+                  </td>
                   <td>{row.monthlyPrice}</td>
                   <td className="admin-table__actions">
-                    <button type="button" onClick={() => startEdit(row)}>
+                    <button
+                      type="button"
+                      className="reg-action reg-action--edit"
+                      onClick={() => startEdit(row)}
+                    >
                       {t('common.edit')}
                     </button>
                   </td>

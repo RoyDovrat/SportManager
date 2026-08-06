@@ -42,7 +42,7 @@ export function useRegistrationCatalog(activityType: ActivityType): CatalogState
 
       try {
         const [activeSeason, activities] = await Promise.all([
-          getActiveSeason(),
+          getActiveSeason(activityType),
           listActiveActivities(),
         ])
 

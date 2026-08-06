@@ -127,6 +127,12 @@ export function deactivateActivityGroup(
   )
 }
 
+export function deleteActivityGroup(groupId: number): Promise<void> {
+  return apiRequest<void>(`/api/activity-groups/${groupId}`, {
+    method: 'DELETE',
+  })
+}
+
 export function listGroupRegistrations(
   groupId: number,
 ): Promise<RegistrationResponse[]> {

@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import {
   createClothingPayment,
   generateMonthlyPayments,
+  syncSeasonMonthlyPayments,
   listPayments,
   type PaymentResponse,
 } from '../../api/payments'
@@ -12,6 +13,7 @@ import {
   StatusBadge,
   paymentStatusTone,
 } from '../../components/ui/StatusBadge'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   paymentMethodLabel,
   paymentStatusLabel,
@@ -27,17 +29,10 @@ import {
 
 const ALL = ''
 
-function initialPaymentStatus(param: string | null): string {
-  if (param === ALL) {
-    return ALL
-  }
-  if (
-    param != null &&
-    (PAYMENT_STATUSES as readonly string[]).includes(param)
-  ) {
-    return param
-  }
-  return 'PENDING'
+const FILTER_DEFAULTS = {
+  status: 'PENDING',
+  paymentType: ALL,
+  chargeMonth: ALL,
 }
 
 /** Convert `<input type="month">` value `YYYY-MM` → `YYYY-MM-01`. */
@@ -62,13 +57,10 @@ function currentMonthValue(): string {
 }
 
 export function PaymentsPage() {
-  const [searchParams] = useSearchParams()
+  const { filters, setFilter } = useUrlFilters(FILTER_DEFAULTS)
+  const { status, paymentType, chargeMonth } = filters
+
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
-  const [status, setStatus] = useState(() =>
-    initialPaymentStatus(searchParams.get('status')),
-  )
-  const [paymentType, setPaymentType] = useState<string>(ALL)
-  const [chargeMonth, setChargeMonth] = useState('')
   const [rows, setRows] = useState<PaymentResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +69,7 @@ export function PaymentsPage() {
   const [generateMonth, setGenerateMonth] = useState(currentMonthValue)
   const [generateSeasonId, setGenerateSeasonId] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [syncingSeason, setSyncingSeason] = useState(false)
 
   const [clothingOrderId, setClothingOrderId] = useState('')
   const [creatingClothing, setCreatingClothing] = useState(false)
@@ -123,6 +116,29 @@ export function PaymentsPage() {
     void loadRows()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when filters change
   }, [status, paymentType, chargeMonth])
+
+  async function handleSyncSeason() {
+    setSyncingSeason(true)
+    setError(null)
+    setMessage(null)
+
+    try {
+      const result = await syncSeasonMonthlyPayments(
+        generateSeasonId === '' ? null : Number(generateSeasonId),
+      )
+      setMessage(
+        t('payments.syncSeasonResult', {
+          created: result.createdCount,
+          skipped: result.skippedCount,
+        }),
+      )
+      await loadRows()
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setSyncingSeason(false)
+    }
+  }
 
   async function handleGenerate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -182,18 +198,22 @@ export function PaymentsPage() {
 
   return (
     <section className="admin-page admin-page--wide">
-      <h1>{t('payments.title')}</h1>
-      <p>{t('payments.intro')}</p>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('payments.title')}</h1>
+          <p className="admin-page__lede">{t('payments.intro')}</p>
+        </div>
+      </header>
       <p>
-        <Link
-          to={
-            chargeMonth
-              ? `/admin/exports/kibbutz?month=${encodeURIComponent(chargeMonth)}`
-              : '/admin/exports/kibbutz'
-          }
-        >
-          {t('payments.kibbutzExportLink')}
-        </Link>
+            <Link
+              to={
+                chargeMonth
+                  ? `/admin/exports/kibbutz?month=${encodeURIComponent(chargeMonth)}`
+                  : '/admin/exports/kibbutz'
+              }
+            >
+              {t('payments.kibbutzExportLink')}
+            </Link>
       </p>
 
       {error && <p className="admin-page__error">{error}</p>}
@@ -203,24 +223,14 @@ export function PaymentsPage() {
         <form className="admin-form" onSubmit={handleGenerate}>
           <h2>{t('payments.generateTitle')}</h2>
           <p className="clothing-order-form__hint">{t('payments.generateHint')}</p>
-
-          <label className="admin-form__field">
-            <span>{t('payments.generateMonth')}</span>
-            <input
-              type="month"
-              value={generateMonth}
-              onChange={(event) => setGenerateMonth(event.target.value)}
-              required
-              disabled={generating}
-            />
-          </label>
+          <p className="clothing-order-form__hint">{t('payments.syncSeasonHint')}</p>
 
           <label className="admin-form__field">
             <span>{t('payments.generateSeason')}</span>
             <select
               value={generateSeasonId}
               onChange={(event) => setGenerateSeasonId(event.target.value)}
-              disabled={generating}
+              disabled={generating || syncingSeason}
             >
               <option value="">{t('payments.activeSeasonDefault')}</option>
               {seasons.map((season) => (
@@ -233,7 +243,31 @@ export function PaymentsPage() {
           </label>
 
           <div className="admin-form__actions">
-            <button type="submit" disabled={generating}>
+            <button
+              type="button"
+              className="reg-action reg-action--approve"
+              disabled={generating || syncingSeason}
+              onClick={() => void handleSyncSeason()}
+            >
+              {syncingSeason
+                ? t('payments.syncingSeason')
+                : t('payments.syncSeasonSubmit')}
+            </button>
+          </div>
+
+          <label className="admin-form__field">
+            <span>{t('payments.generateMonth')}</span>
+            <input
+              type="month"
+              value={generateMonth}
+              onChange={(event) => setGenerateMonth(event.target.value)}
+              required
+              disabled={generating || syncingSeason}
+            />
+          </label>
+
+          <div className="admin-form__actions">
+            <button type="submit" disabled={generating || syncingSeason}>
               {generating
                 ? t('payments.generating')
                 : t('payments.generateSubmit')}
@@ -274,7 +308,7 @@ export function PaymentsPage() {
           <span>{t('payments.filterStatus')}</span>
           <select
             value={status}
-            onChange={(event) => setStatus(event.target.value)}
+            onChange={(event) => setFilter('status', event.target.value)}
           >
             <option value={ALL}>{t('payments.allStatuses')}</option>
             {PAYMENT_STATUSES.map((value) => (
@@ -289,7 +323,7 @@ export function PaymentsPage() {
           <span>{t('payments.filterType')}</span>
           <select
             value={paymentType}
-            onChange={(event) => setPaymentType(event.target.value)}
+            onChange={(event) => setFilter('paymentType', event.target.value)}
           >
             <option value={ALL}>{t('payments.allTypes')}</option>
             {PAYMENT_TYPES.map((value) => (
@@ -305,13 +339,13 @@ export function PaymentsPage() {
           <input
             type="month"
             value={chargeMonth}
-            onChange={(event) => setChargeMonth(event.target.value)}
+            onChange={(event) => setFilter('chargeMonth', event.target.value)}
           />
         </label>
 
         {chargeMonth && (
           <div className="admin-form__actions">
-            <button type="button" onClick={() => setChargeMonth('')}>
+            <button type="button" onClick={() => setFilter('chargeMonth', '')}>
               {t('payments.clearMonth')}
             </button>
           </div>
@@ -321,9 +355,9 @@ export function PaymentsPage() {
       <div className="admin-table-wrap">
         <h2>{t('payments.listTitle')}</h2>
         {loading ? (
-          <p>{t('common.loading')}</p>
+          <p className="admin-page__loading">{t('common.loading')}</p>
         ) : rows.length === 0 ? (
-          <p>{t('payments.empty')}</p>
+          <p className="dashboard-empty">{t('payments.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -363,8 +397,17 @@ export function PaymentsPage() {
                     {row.isKibbutzMember ? t('common.yes') : t('common.no')}
                   </td>
                   <td className="admin-table__actions">
-                    <Link to={`/admin/payments/${row.id}`}>
-                      {t('payments.viewDetails')}
+                    <Link
+                      to={`/admin/payments/${row.id}`}
+                      className="reg-action reg-action--view"
+                    >
+                      {t('payments.view')}
+                    </Link>
+                    <Link
+                      to={`/admin/payments/${row.id}?edit=1`}
+                      className="reg-action reg-action--edit"
+                    >
+                      {t('payments.edit')}
                     </Link>
                   </td>
                 </tr>

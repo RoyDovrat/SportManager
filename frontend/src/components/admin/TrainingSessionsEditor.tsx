@@ -65,12 +65,16 @@ type TrainingSessionsEditorProps = {
   sessions: TrainingSessionDraft[]
   onChange: (next: TrainingSessionDraft[]) => void
   disabled?: boolean
+  maxSessions?: number
+  hintKey?: 'football' | 'swimming'
 }
 
 export function TrainingSessionsEditor({
   sessions,
   onChange,
   disabled = false,
+  maxSessions = 6,
+  hintKey = 'football',
 }: TrainingSessionsEditorProps) {
   function updateSession(
     key: string,
@@ -91,7 +95,9 @@ export function TrainingSessionsEditor({
     <fieldset className="admin-form__checkbox-group">
       <legend>{t('activityGroups.trainingSessions')}</legend>
       <p className="clothing-order-form__hint">
-        {t('activityGroups.trainingSessionsHint')}
+        {hintKey === 'swimming'
+          ? t('activityGroups.trainingSessionsHintSwimming')
+          : t('activityGroups.trainingSessionsHint')}
       </p>
 
       {sessions.length === 0 ? (
@@ -174,7 +180,7 @@ export function TrainingSessionsEditor({
         <button
           type="button"
           onClick={() => onChange([...sessions, newTrainingSessionDraft()])}
-          disabled={disabled}
+          disabled={disabled || sessions.length >= maxSessions}
         >
           {t('activityGroups.addSession')}
         </button>

@@ -99,6 +99,20 @@ export function cancelPayment(paymentId: number): Promise<PaymentResponse> {
   })
 }
 
+export type PaymentUpdateRequest = {
+  amount: number
+}
+
+export function updatePayment(
+  paymentId: number,
+  request: PaymentUpdateRequest,
+): Promise<PaymentResponse> {
+  return apiRequest<PaymentResponse>(`/api/payments/${paymentId}`, {
+    method: 'PATCH',
+    body: request,
+  })
+}
+
 export function generateMonthlyPayments(
   request: GenerateMonthlyPaymentsRequest,
 ): Promise<GenerateMonthlyPaymentsResponse> {
@@ -110,6 +124,18 @@ export function generateMonthlyPayments(
         chargeMonth: request.chargeMonth,
         ...(request.seasonId != null ? { seasonId: request.seasonId } : {}),
       },
+    },
+  )
+}
+
+export function syncSeasonMonthlyPayments(
+  seasonId?: number | null,
+): Promise<GenerateMonthlyPaymentsResponse> {
+  return apiRequest<GenerateMonthlyPaymentsResponse>(
+    '/api/payments/monthly/sync-season',
+    {
+      method: 'POST',
+      body: seasonId != null ? { seasonId } : {},
     },
   )
 }

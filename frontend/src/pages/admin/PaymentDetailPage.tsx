@@ -1,12 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import {
   cancelPayment,
   confirmPayment,
   getPayment,
+  updatePayment,
   type PaymentResponse,
 } from '../../api/payments'
+import { AdminBackLink } from '../../components/admin/AdminBackLink'
 import {
   StatusBadge,
   paymentStatusTone,
@@ -37,7 +39,9 @@ function formatAmount(amount: number): string {
 
 export function PaymentDetailPage() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const paymentId = Number(id)
+  const preferEdit = searchParams.get('edit') === '1'
 
   const [payment, setPayment] = useState<PaymentResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -45,6 +49,8 @@ export function PaymentDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [confirmMethod, setConfirmMethod] = useState<PaymentMethod>('BIT')
+  const [editAmount, setEditAmount] = useState('')
+  const [savingAmount, setSavingAmount] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -69,6 +75,7 @@ export function PaymentDetailPage() {
         const data = await getPayment(paymentId)
         if (!cancelled) {
           setPayment(data)
+          setEditAmount(String(data.amount))
           if (
             data.paymentMethod === 'BIT' ||
             data.paymentMethod === 'PAYBOX'
@@ -95,6 +102,18 @@ export function PaymentDetailPage() {
     }
   }, [paymentId])
 
+  useEffect(() => {
+    if (!preferEdit || loading || !payment || payment.status !== 'PENDING') {
+      return
+    }
+    const form = document.getElementById('payment-edit-amount')
+    form?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const amountInput = form?.querySelector('input')
+    if (amountInput instanceof HTMLInputElement) {
+      amountInput.focus()
+    }
+  }, [preferEdit, loading, payment])
+
   async function handleConfirm() {
     if (!payment) {
       return
@@ -113,6 +132,7 @@ export function PaymentDetailPage() {
         payment.isKibbutzMember ? {} : { paymentMethod: confirmMethod },
       )
       setPayment(updated)
+      setEditAmount(String(updated.amount))
       setMessage(t('payments.confirmed'))
     } catch (err) {
       setError(formatApiError(err))
@@ -136,6 +156,7 @@ export function PaymentDetailPage() {
     try {
       const updated = await cancelPayment(payment.id)
       setPayment(updated)
+      setEditAmount(String(updated.amount))
       setMessage(t('payments.cancelled'))
     } catch (err) {
       setError(formatApiError(err))
@@ -144,26 +165,106 @@ export function PaymentDetailPage() {
     }
   }
 
+  async function handleSaveAmount(event: FormEvent) {
+    event.preventDefault()
+    if (!payment) {
+      return
+    }
+    const amount = Number(editAmount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError(t('payments.amountInvalid'))
+      return
+    }
+
+    setSavingAmount(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const updated = await updatePayment(payment.id, { amount })
+      setPayment(updated)
+      setEditAmount(String(updated.amount))
+      setMessage(t('payments.amountUpdated'))
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setSavingAmount(false)
+    }
+  }
+
   const canConfirm = payment?.status === 'PENDING'
   const canCancel = payment?.status === 'PENDING'
+  const canEditAmount = payment?.status === 'PENDING'
 
   return (
     <section className="admin-page">
-      <p>
-        <Link to="/admin/payments">{t('payments.backToList')}</Link>
-      </p>
+      <nav className="admin-back-nav" aria-label={t('payments.backToList')}>
+        <AdminBackLink
+          fallbackTo="/admin/payments"
+          className="admin-back"
+          aria-label={t('payments.backToList')}
+        >
+          <span className="admin-back__arrow" aria-hidden="true">
+            →
+          </span>
+          <span>{t('payments.backToList')}</span>
+        </AdminBackLink>
+        {payment?.clothingOrderId != null && (
+          <Link
+            to={`/admin/clothing-orders/${payment.clothingOrderId}`}
+            className="admin-back admin-back--secondary"
+          >
+            <span>{t('clothingOrders.openClothingOrder')}</span>
+          </Link>
+        )}
+      </nav>
 
-      <h1>{t('payments.detailTitle')}</h1>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('payments.detailTitle')}</h1>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       {loading ? (
-        <p>{t('common.loading')}</p>
+        <p className="admin-page__loading">{t('common.loading')}</p>
       ) : payment === null ? (
-        <p>{t('payments.notFound')}</p>
+        <p className="dashboard-empty">{t('payments.notFound')}</p>
       ) : (
         <>
+          {canEditAmount && (
+            <form
+              id="payment-edit-amount"
+              className={`admin-form payment-edit-amount${preferEdit ? ' payment-edit-amount--highlight' : ''}`}
+              onSubmit={(event) => void handleSaveAmount(event)}
+            >
+              <h2>{t('payments.editAmountTitle')}</h2>
+              <p className="admin-form__hint">{t('payments.editAmountHint')}</p>
+              <label className="admin-form__field">
+                <span>{t('payments.amount')}</span>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  value={editAmount}
+                  onChange={(event) => setEditAmount(event.target.value)}
+                  required
+                  disabled={savingAmount || acting}
+                />
+              </label>
+              <div className="admin-form__actions">
+                <button
+                  type="submit"
+                  className="reg-action reg-action--approve"
+                  disabled={savingAmount || acting}
+                >
+                  {savingAmount ? t('common.saving') : t('payments.saveAmount')}
+                </button>
+              </div>
+            </form>
+          )}
+
           {canConfirm && (
             <div className="admin-form payment-confirm-form">
               {!payment.isKibbutzMember && (
@@ -192,6 +293,7 @@ export function PaymentDetailPage() {
               <div className="admin-form__actions">
                 <button
                   type="button"
+                  className="reg-action reg-action--approve"
                   onClick={() => void handleConfirm()}
                   disabled={acting}
                 >
@@ -200,6 +302,7 @@ export function PaymentDetailPage() {
                 {canCancel && (
                   <button
                     type="button"
+                    className="reg-action reg-action--cancel"
                     onClick={() => void handleCancel()}
                     disabled={acting}
                   >
@@ -214,6 +317,7 @@ export function PaymentDetailPage() {
             <div className="admin-form__actions">
               <button
                 type="button"
+                className="reg-action reg-action--cancel"
                 onClick={() => void handleCancel()}
                 disabled={acting}
               >

@@ -1,9 +1,12 @@
 import { apiRequest } from './client'
 import type { ActivityResponse } from './activities'
 import type { SeasonResponse } from './seasons'
+import type { ActivityType } from '../types/enums'
 
-export function getActiveSeason(): Promise<SeasonResponse> {
-  return apiRequest<SeasonResponse>('/api/seasons/active')
+export function getActiveSeason(
+  activityType: ActivityType,
+): Promise<SeasonResponse> {
+  return apiRequest<SeasonResponse>(`/api/seasons/active/${activityType}`)
 }
 
 export function listActiveActivities(): Promise<ActivityResponse[]> {
@@ -61,6 +64,8 @@ export type ClothingCatalogResponse = {
   longKitPrice: number | null
   hoodiePrice: number | null
   allowAlreadyHasClothingSkip: boolean
+  longKitPublicEnabled: boolean
+  hoodiePublicEnabled: boolean
 }
 
 export type ClothingEligibilityResponse = {

@@ -10,14 +10,22 @@ import {
   type SwimmingRegistrationSettingsResponse,
 } from '../../api/swimmingRegistrationSettings'
 import { MarkdownView } from '../../components/ui/MarkdownView'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { t } from '../../i18n/t'
 
+const FILTER_DEFAULTS = {
+  seasonId: '',
+}
+
 export function SwimmingRegistrationSettingsPage() {
+  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const selectedSeasonId =
+    filters.seasonId === '' ? '' : Number(filters.seasonId)
+
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [allSettings, setAllSettings] = useState<
     SwimmingRegistrationSettingsResponse[]
   >([])
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number | ''>('')
   const [current, setCurrent] =
     useState<SwimmingRegistrationSettingsResponse | null>(null)
   const [introMarkdown, setIntroMarkdown] = useState('')
@@ -39,11 +47,16 @@ export function SwimmingRegistrationSettingsPage() {
       setSeasons(seasonData)
       setAllSettings(settingsData)
 
-      const active = seasonData.find((season) => season.isActive)
-      if (active) {
-        setSelectedSeasonId(active.id)
-      } else if (seasonData.length > 0) {
-        setSelectedSeasonId(seasonData[0].id)
+      if (!hasParam('seasonId')) {
+        const active =
+          seasonData.find(
+            (season) => season.isActive && season.activityType === 'SWIMMING',
+          ) ?? seasonData.find((season) => season.isActive)
+        if (active) {
+          setFilter('seasonId', String(active.id))
+        } else if (seasonData.length > 0) {
+          setFilter('seasonId', String(seasonData[0].id))
+        }
       }
     } catch (err) {
       setError(formatApiError(err))
@@ -80,10 +93,11 @@ export function SwimmingRegistrationSettingsPage() {
 
   useEffect(() => {
     void loadSeasonsAndList()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, [])
 
   useEffect(() => {
-    if (typeof selectedSeasonId === 'number') {
+    if (typeof selectedSeasonId === 'number' && !Number.isNaN(selectedSeasonId)) {
       void loadCurrentForSeason(selectedSeasonId)
     } else {
       setCurrent(null)
@@ -137,8 +151,12 @@ export function SwimmingRegistrationSettingsPage() {
 
   return (
     <section className="admin-page">
-      <h1>{t('swimmingSettings.title')}</h1>
-      <p>{t('swimmingSettings.intro')}</p>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('swimmingSettings.title')}</h1>
+          <p className="admin-page__lede">{t('swimmingSettings.intro')}</p>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
@@ -146,11 +164,8 @@ export function SwimmingRegistrationSettingsPage() {
       <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
         <span>{t('swimmingSettings.season')}</span>
         <select
-          value={selectedSeasonId === '' ? '' : String(selectedSeasonId)}
-          onChange={(event) => {
-            const value = event.target.value
-            setSelectedSeasonId(value === '' ? '' : Number(value))
-          }}
+          value={filters.seasonId}
+          onChange={(event) => setFilter('seasonId', event.target.value)}
           disabled={loadingSeasons || seasons.length === 0}
         >
           {seasons.length === 0 ? (
@@ -235,7 +250,7 @@ export function SwimmingRegistrationSettingsPage() {
       <div className="admin-table-wrap">
         <h2>{t('swimmingSettings.all')}</h2>
         {allSettings.length === 0 ? (
-          <p>{t('swimmingSettings.empty')}</p>
+          <p className="dashboard-empty">{t('swimmingSettings.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -253,9 +268,12 @@ export function SwimmingRegistrationSettingsPage() {
                   <td className="admin-table__actions">
                     <button
                       type="button"
-                      onClick={() => setSelectedSeasonId(row.seasonId)}
+                      className="reg-action reg-action--open"
+                      onClick={() =>
+                        setFilter('seasonId', String(row.seasonId))
+                      }
                     >
-                      {t('common.open')}
+                      {t('common.edit')}
                     </button>
                   </td>
                 </tr>

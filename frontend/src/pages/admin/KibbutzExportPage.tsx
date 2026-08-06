@@ -1,8 +1,10 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import { downloadKibbutzExport } from '../../api/kibbutzExport'
+import { activityTypeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
+import { ACTIVITY_TYPES, type ActivityType } from '../../types/enums'
 
 function currentYearMonth(): string {
   const now = new Date()
@@ -45,47 +47,61 @@ export function KibbutzExportPage() {
   const [monthValue, setMonthValue] = useState(() =>
     initialMonthValue(searchParams.get('month')),
   )
-  const [downloading, setDownloading] = useState(false)
+  const [downloadingType, setDownloadingType] = useState<ActivityType | null>(
+    null,
+  )
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  async function handleDownload(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleDownload(activityType: ActivityType) {
     const parsed = parseYearMonth(monthValue)
     if (!parsed) {
       setError(t('kibbutzExport.invalidMonth'))
       return
     }
 
-    setDownloading(true)
+    setDownloadingType(activityType)
     setError(null)
     setMessage(null)
 
     try {
-      const { blob, fileName } = await downloadKibbutzExport(parsed)
+      const { blob, fileName } = await downloadKibbutzExport({
+        ...parsed,
+        activityType,
+      })
       saveBlob(
         blob,
         fileName ??
-          `kibbutz-export-${parsed.year}-${String(parsed.month).padStart(2, '0')}.xlsx`,
+          `kibbutz-export-${activityType.toLowerCase()}-${parsed.year}-${String(parsed.month).padStart(2, '0')}.xlsx`,
       )
-      setMessage(t('kibbutzExport.downloadStarted'))
+      setMessage(
+        t('kibbutzExport.downloadStartedSport', {
+          sport: activityTypeLabel(activityType),
+        }),
+      )
     } catch (err) {
       setError(formatApiError(err))
     } finally {
-      setDownloading(false)
+      setDownloadingType(null)
     }
   }
 
+  const downloading = downloadingType != null
+
   return (
     <section className="admin-page">
-      <h1>{t('kibbutzExport.title')}</h1>
-      <p>{t('kibbutzExport.intro')}</p>
-      <p className="clothing-order-form__hint">{t('kibbutzExport.hint')}</p>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('kibbutzExport.title')}</h1>
+          <p className="admin-page__lede">{t('kibbutzExport.intro')}</p>
+          <p className="clothing-order-form__hint">{t('kibbutzExport.hint')}</p>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
-      <form className="admin-form" onSubmit={handleDownload}>
+      <div className="admin-form">
         <label className="admin-form__field">
           <span>{t('kibbutzExport.month')}</span>
           <input
@@ -98,13 +114,22 @@ export function KibbutzExportPage() {
         </label>
 
         <div className="admin-form__actions">
-          <button type="submit" disabled={downloading || !monthValue}>
-            {downloading
-              ? t('kibbutzExport.downloading')
-              : t('kibbutzExport.download')}
-          </button>
+          {ACTIVITY_TYPES.map((activityType) => (
+            <button
+              key={activityType}
+              type="button"
+              disabled={downloading || !monthValue}
+              onClick={() => void handleDownload(activityType)}
+            >
+              {downloadingType === activityType
+                ? t('kibbutzExport.downloading')
+                : t('kibbutzExport.downloadSport', {
+                    sport: activityTypeLabel(activityType),
+                  })}
+            </button>
+          ))}
         </div>
-      </form>
+      </div>
     </section>
   )
 }

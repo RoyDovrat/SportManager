@@ -52,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleUnauthorized = () => {
+      clearSession()
       setSessionState({ token: null, username: null })
     }
 

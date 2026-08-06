@@ -10,6 +10,7 @@ const navGroups = [
     items: [
       { to: '/admin', labelKey: 'nav.dashboard', icon: 'dashboard' as const },
       { to: '/admin/reports', labelKey: 'nav.reports', icon: 'reports' as const },
+      { to: '/admin/help', labelKey: 'nav.help', icon: 'help' as const },
     ],
   },
   {
@@ -125,7 +126,11 @@ export function AdminLayout() {
 
       <div className="admin-shell">
         <header className="admin-topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <p className="admin-topbar__greeting">
+            <span>{t('nav.hello')}, </span>
+            {username ?? 'admin'}
+          </p>
+          <div className="admin-topbar__actions">
             <button
               type="button"
               className="admin-menu-toggle"
@@ -133,12 +138,6 @@ export function AdminLayout() {
             >
               {t('nav.menu')}
             </button>
-            <p className="admin-topbar__greeting">
-              <span>{t('nav.hello')}, </span>
-              {username ?? 'admin'}
-            </p>
-          </div>
-          <div className="admin-topbar__actions">
             <button type="button" className="layout__logout" onClick={handleLogout}>
               {t('nav.logout')}
             </button>

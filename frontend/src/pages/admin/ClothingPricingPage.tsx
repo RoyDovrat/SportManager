@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ApiError } from '../../api'
 import {
   createClothingPricing,
@@ -9,13 +9,21 @@ import {
 } from '../../api/clothingPricing'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
+import { activityTypeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
+
+const FILTER_DEFAULTS = {
+  seasonId: '',
+}
 
 type PriceForm = {
   shortKitPrice: string
   longKitPrice: string
   hoodiePrice: string
   allowAlreadyHasClothingSkip: boolean
+  longKitPublicEnabled: boolean
+  hoodiePublicEnabled: boolean
 }
 
 const emptyForm: PriceForm = {
@@ -23,12 +31,18 @@ const emptyForm: PriceForm = {
   longKitPrice: '',
   hoodiePrice: '',
   allowAlreadyHasClothingSkip: true,
+  longKitPublicEnabled: true,
+  hoodiePublicEnabled: true,
 }
 
 export function ClothingPricingPage() {
+  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const selectedSeasonId =
+    filters.seasonId === '' ? '' : Number(filters.seasonId)
+
+  const formSectionRef = useRef<HTMLFormElement | null>(null)
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [allPricing, setAllPricing] = useState<ClothingPricingResponse[]>([])
-  const [selectedSeasonId, setSelectedSeasonId] = useState<number | ''>('')
   const [current, setCurrent] = useState<ClothingPricingResponse | null>(null)
   const [form, setForm] = useState<PriceForm>(emptyForm)
   const [loadingSeasons, setLoadingSeasons] = useState(true)
@@ -45,14 +59,19 @@ export function ClothingPricingPage() {
         listSeasons(),
         listClothingPricing(),
       ])
-      setSeasons(seasonData)
+      const footballSeasons = seasonData.filter(
+        (season) => season.activityType === 'FOOTBALL',
+      )
+      setSeasons(footballSeasons)
       setAllPricing(pricingData)
 
-      const active = seasonData.find((season) => season.isActive)
-      if (active) {
-        setSelectedSeasonId(active.id)
-      } else if (seasonData.length > 0) {
-        setSelectedSeasonId(seasonData[0].id)
+      if (!hasParam('seasonId')) {
+        const active = footballSeasons.find((season) => season.isActive)
+        if (active) {
+          setFilter('seasonId', String(active.id))
+        } else if (footballSeasons.length > 0) {
+          setFilter('seasonId', String(footballSeasons[0].id))
+        }
       }
     } catch (err) {
       setError(formatApiError(err))
@@ -69,12 +88,22 @@ export function ClothingPricingPage() {
     try {
       const pricing = await getClothingPricingBySeason(seasonId)
       setCurrent(pricing)
+      const longKitEnabled = pricing.longKitPublicEnabled !== false
+      const hoodieEnabled = pricing.hoodiePublicEnabled !== false
       setForm({
         shortKitPrice: String(pricing.shortKitPrice),
-        longKitPrice: String(pricing.longKitPrice),
-        hoodiePrice: String(pricing.hoodiePrice),
+        longKitPrice:
+          longKitEnabled && pricing.longKitPrice > 0
+            ? String(pricing.longKitPrice)
+            : '',
+        hoodiePrice:
+          hoodieEnabled && pricing.hoodiePrice > 0
+            ? String(pricing.hoodiePrice)
+            : '',
         allowAlreadyHasClothingSkip:
           pricing.allowAlreadyHasClothingSkip !== false,
+        longKitPublicEnabled: longKitEnabled,
+        hoodiePublicEnabled: hoodieEnabled,
       })
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
@@ -90,12 +119,24 @@ export function ClothingPricingPage() {
     }
   }
 
+  function editPricingRow(row: ClothingPricingResponse) {
+    setFilter('seasonId', String(row.seasonId))
+    void loadCurrentForSeason(row.seasonId)
+    window.requestAnimationFrame(() => {
+      formSectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    })
+  }
+
   useEffect(() => {
     void loadSeasonsAndList()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once on mount
   }, [])
 
   useEffect(() => {
-    if (typeof selectedSeasonId === 'number') {
+    if (typeof selectedSeasonId === 'number' && !Number.isNaN(selectedSeasonId)) {
       void loadCurrentForSeason(selectedSeasonId)
     } else {
       setCurrent(null)
@@ -114,11 +155,24 @@ export function ClothingPricingPage() {
     setError(null)
     setMessage(null)
 
+    if (form.longKitPublicEnabled && !(Number(form.longKitPrice) > 0)) {
+      setError(t('clothingPricing.longKitPriceRequired'))
+      setSaving(false)
+      return
+    }
+    if (form.hoodiePublicEnabled && !(Number(form.hoodiePrice) > 0)) {
+      setError(t('clothingPricing.hoodiePriceRequired'))
+      setSaving(false)
+      return
+    }
+
     const payload = {
       shortKitPrice: Number(form.shortKitPrice),
-      longKitPrice: Number(form.longKitPrice),
-      hoodiePrice: Number(form.hoodiePrice),
+      longKitPrice: form.longKitPublicEnabled ? Number(form.longKitPrice) : 0,
+      hoodiePrice: form.hoodiePublicEnabled ? Number(form.hoodiePrice) : 0,
       allowAlreadyHasClothingSkip: form.allowAlreadyHasClothingSkip,
+      longKitPublicEnabled: form.longKitPublicEnabled,
+      hoodiePublicEnabled: form.hoodiePublicEnabled,
     }
 
     try {
@@ -144,29 +198,29 @@ export function ClothingPricingPage() {
   }
 
   return (
-    <section className="admin-page">
-      <h1>{t('clothingPricing.title')}</h1>
-      <p>{t('clothingPricing.intro')}</p>
+    <section className="admin-page admin-page--wide clothing-pricing-page">
+      <header className="clothing-hero">
+        <div>
+          <h1>{t('clothingPricing.title')}</h1>
+          <p className="admin-page__lede">{t('clothingPricing.intro')}</p>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
-      <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
+      <label className="admin-form__field clothing-pricing-page__season">
         <span>{t('clothingPricing.season')}</span>
         <select
-          value={selectedSeasonId === '' ? '' : String(selectedSeasonId)}
-          onChange={(event) => {
-            const value = event.target.value
-            setSelectedSeasonId(value === '' ? '' : Number(value))
-          }}
+          value={filters.seasonId}
+          onChange={(event) => setFilter('seasonId', event.target.value)}
           disabled={loadingSeasons || seasons.length === 0}
-        >
-          {seasons.length === 0 ? (
+        >          {seasons.length === 0 ? (
             <option value="">{t('clothingPricing.noSeasons')}</option>
           ) : (
             seasons.map((season) => (
               <option key={season.id} value={season.id}>
-                {season.name}
+                {season.name} · {activityTypeLabel(season.activityType)}
                 {season.isActive ? ` ${t('clothingPricing.activeSuffix')}` : ''}
               </option>
             ))
@@ -174,7 +228,11 @@ export function ClothingPricingPage() {
         </select>
       </label>
 
-      <form className="admin-form" onSubmit={handleSubmit}>
+      <form
+        ref={formSectionRef}
+        className="admin-form clothing-pricing-form"
+        onSubmit={handleSubmit}
+      >
         <h2>
           {loadingCurrent
             ? t('clothingPricing.loading')
@@ -183,63 +241,132 @@ export function ClothingPricingPage() {
               : t('clothingPricing.createTitle')}
         </h2>
 
-        <label className="admin-form__field">
-          <span>{t('clothingPricing.shortKit')}</span>
-          <input
-            type="number"
-            min={0.01}
-            step="0.01"
-            value={form.shortKitPrice}
-            onChange={(event) => setForm({ ...form, shortKitPrice: event.target.value })}
-            required
-            disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
-          />
-        </label>
+        <div className="clothing-pricing-form__grid">
+          <label className="admin-form__field">
+            <span>{t('clothingPricing.shortKit')}</span>
+            <input
+              type="number"
+              min={0.01}
+              step="0.01"
+              value={form.shortKitPrice}
+              onChange={(event) =>
+                setForm({ ...form, shortKitPrice: event.target.value })
+              }
+              required
+              disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
+            />
+          </label>
 
-        <label className="admin-form__field">
-          <span>{t('clothingPricing.longKit')}</span>
-          <input
-            type="number"
-            min={0.01}
-            step="0.01"
-            value={form.longKitPrice}
-            onChange={(event) => setForm({ ...form, longKitPrice: event.target.value })}
-            required
-            disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
-          />
-        </label>
+          <label className="admin-form__field">
+            <span>{t('clothingPricing.longKit')}</span>
+            <input
+              type="number"
+              min={0.01}
+              step="0.01"
+              value={form.longKitPrice}
+              onChange={(event) =>
+                setForm({ ...form, longKitPrice: event.target.value })
+              }
+              required={form.longKitPublicEnabled}
+              disabled={
+                loadingCurrent ||
+                typeof selectedSeasonId !== 'number' ||
+                !form.longKitPublicEnabled
+              }
+            />
+            {!form.longKitPublicEnabled && (
+              <span className="admin-form__hint">
+                {t('clothingPricing.priceNotNeededWhenHidden')}
+              </span>
+            )}
+          </label>
 
-        <label className="admin-form__field">
-          <span>{t('clothingPricing.hoodie')}</span>
-          <input
-            type="number"
-            min={0.01}
-            step="0.01"
-            value={form.hoodiePrice}
-            onChange={(event) => setForm({ ...form, hoodiePrice: event.target.value })}
-            required
-            disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
-          />
-        </label>
+          <label className="admin-form__field">
+            <span>{t('clothingPricing.hoodie')}</span>
+            <input
+              type="number"
+              min={0.01}
+              step="0.01"
+              value={form.hoodiePrice}
+              onChange={(event) =>
+                setForm({ ...form, hoodiePrice: event.target.value })
+              }
+              required={form.hoodiePublicEnabled}
+              disabled={
+                loadingCurrent ||
+                typeof selectedSeasonId !== 'number' ||
+                !form.hoodiePublicEnabled
+              }
+            />
+            {!form.hoodiePublicEnabled && (
+              <span className="admin-form__hint">
+                {t('clothingPricing.priceNotNeededWhenHidden')}
+              </span>
+            )}
+          </label>
+        </div>
 
-        <label className="admin-form__checkbox">
-          <input
-            type="checkbox"
-            checked={form.allowAlreadyHasClothingSkip}
-            disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
-            onChange={(event) =>
-              setForm({
-                ...form,
-                allowAlreadyHasClothingSkip: event.target.checked,
-              })
-            }
-          />
-          <span>{t('clothingPricing.allowAlreadyHasSkip')}</span>
-        </label>
+        <fieldset className="clothing-pricing-form__visibility">
+          <legend>{t('clothingPricing.publicVisibilityTitle')}</legend>
+          <p className="admin-form__hint">
+            {t('clothingPricing.shortKitAlwaysPublic')}
+          </p>
+          <label className="admin-form__checkbox">
+            <input
+              type="checkbox"
+              checked={form.longKitPublicEnabled}
+              disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  longKitPublicEnabled: event.target.checked,
+                })
+              }
+            />
+            <span>{t('clothingPricing.longKitPublicEnabled')}</span>
+          </label>
+          <label className="admin-form__checkbox">
+            <input
+              type="checkbox"
+              checked={form.hoodiePublicEnabled}
+              disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  hoodiePublicEnabled: event.target.checked,
+                })
+              }
+            />
+            <span>{t('clothingPricing.hoodiePublicEnabled')}</span>
+          </label>
+          <label className="admin-form__checkbox">
+            <input
+              type="checkbox"
+              checked={form.allowAlreadyHasClothingSkip}
+              disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  allowAlreadyHasClothingSkip: event.target.checked,
+                })
+              }
+            />
+            <span>{t('clothingPricing.allowAlreadyHasSkip')}</span>
+          </label>
+        </fieldset>
 
         <div className="admin-form__actions">
-          <button type="submit" disabled={saving || loadingCurrent || typeof selectedSeasonId !== 'number'}>
-            {saving ? t('common.saving') : current ? t('common.save') : t('common.create')}
+          <button
+            type="submit"
+            disabled={
+              saving || loadingCurrent || typeof selectedSeasonId !== 'number'
+            }
+          >
+            {saving
+              ? t('common.saving')
+              : current
+                ? t('common.save')
+                : t('common.create')}
           </button>
         </div>
       </form>
@@ -247,7 +374,7 @@ export function ClothingPricingPage() {
       <div className="admin-table-wrap">
         <h2>{t('clothingPricing.all')}</h2>
         {allPricing.length === 0 ? (
-          <p>{t('clothingPricing.empty')}</p>
+          <p className="dashboard-empty">{t('clothingPricing.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -269,8 +396,12 @@ export function ClothingPricingPage() {
                   <td>{row.longKitPrice}</td>
                   <td>{row.hoodiePrice}</td>
                   <td className="admin-table__actions">
-                    <button type="button" onClick={() => setSelectedSeasonId(row.seasonId)}>
-                      {t('common.open')}
+                    <button
+                      type="button"
+                      className="reg-action reg-action--open"
+                      onClick={() => editPricingRow(row)}
+                    >
+                      {t('common.edit')}
                     </button>
                   </td>
                 </tr>

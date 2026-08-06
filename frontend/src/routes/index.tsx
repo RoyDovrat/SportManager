@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { RequireAuth } from '../auth/RequireAuth'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
+import { AdminHelpPage } from '../pages/admin/AdminHelpPage'
 import { ActivitiesPage } from '../pages/admin/ActivitiesPage'
 import { ActivityGroupDetailPage } from '../pages/admin/ActivityGroupDetailPage'
 import { ActivityGroupsPage } from '../pages/admin/ActivityGroupsPage'
@@ -47,6 +48,7 @@ export function AppRouter() {
           <Route element={<AdminLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="help" element={<AdminHelpPage />} />
             <Route path="seasons" element={<SeasonsPage />} />
             <Route path="activities" element={<ActivitiesPage />} />
             <Route path="activity-pricing" element={<ActivityPricingPage />} />

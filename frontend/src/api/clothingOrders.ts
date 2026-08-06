@@ -14,6 +14,17 @@ export type ClothingOrderRequest = {
   shirtNumber?: number | null
 }
 
+export type ClothingOrderUpdateRequest = {
+  alreadyHasClothing: boolean
+  shortKitQuantity?: number | null
+  shortKitSize?: ClothingSize | null
+  longKitQuantity?: number | null
+  longKitSize?: ClothingSize | null
+  hoodieQuantity?: number | null
+  hoodieSize?: ClothingSize | null
+  shirtNumber?: number | null
+}
+
 export type ClothingOrderResponse = {
   id: number
   registrationId: number
@@ -74,6 +85,16 @@ export function createClothingOrder(
 ): Promise<ClothingOrderResponse> {
   return apiRequest<ClothingOrderResponse>('/api/clothing-orders', {
     method: 'POST',
+    body: request,
+  })
+}
+
+export function updateClothingOrder(
+  orderId: number,
+  request: ClothingOrderUpdateRequest,
+): Promise<ClothingOrderResponse> {
+  return apiRequest<ClothingOrderResponse>(`/api/clothing-orders/${orderId}`, {
+    method: 'PUT',
     body: request,
   })
 }

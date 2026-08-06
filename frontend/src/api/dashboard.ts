@@ -10,6 +10,13 @@ export type PaymentStatusSummary = {
   cancelledAmount: number
 }
 
+export type SeasonNearingEnd = {
+  id: number
+  name: string
+  activityType: string
+  endDate: string
+}
+
 export type DashboardResponse = {
   seasonId: number | null
   seasonName: string | null
@@ -23,6 +30,7 @@ export type DashboardResponse = {
   monthlyIncome: number
   paymentStatusSummary: PaymentStatusSummary
   recentRegistrations: RegistrationResponse[]
+  seasonsNearingEnd: SeasonNearingEnd[]
 }
 
 export function getDashboard(

@@ -58,8 +58,12 @@ function parseQuantity(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function buildRequest(form: FormState, seasonId: number): ClothingOrderRequest {
+function buildRequest(
+  form: FormState,
+  catalog: ClothingCatalogResponse,
+): ClothingOrderRequest {
   const studentIdentityNumber = normalizeIsraeliId(form.studentIdentityNumber)
+  const seasonId = catalog.seasonId
 
   if (form.alreadyHasClothing) {
     return {
@@ -70,8 +74,14 @@ function buildRequest(form: FormState, seasonId: number): ClothingOrderRequest {
   }
 
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
-  const longKitQuantity = parseQuantity(form.longKitQuantity)
-  const hoodieQuantity = parseQuantity(form.hoodieQuantity)
+  const longKitQuantity =
+    catalog.longKitPublicEnabled === false
+      ? 0
+      : parseQuantity(form.longKitQuantity)
+  const hoodieQuantity =
+    catalog.hoodiePublicEnabled === false
+      ? 0
+      : parseQuantity(form.hoodieQuantity)
   const shirtRaw = form.shirtNumber.trim()
 
   return {
@@ -100,13 +110,22 @@ function validateIdentity(form: FormState): string | null {
   return null
 }
 
-function validateItems(form: FormState): string | null {
+function validateItems(
+  form: FormState,
+  catalog: ClothingCatalogResponse,
+): string | null {
   if (form.alreadyHasClothing) {
     return null
   }
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
-  const longKitQuantity = parseQuantity(form.longKitQuantity)
-  const hoodieQuantity = parseQuantity(form.hoodieQuantity)
+  const longKitQuantity =
+    catalog.longKitPublicEnabled === false
+      ? 0
+      : parseQuantity(form.longKitQuantity)
+  const hoodieQuantity =
+    catalog.hoodiePublicEnabled === false
+      ? 0
+      : parseQuantity(form.hoodieQuantity)
   const total = shortKitQuantity + longKitQuantity + hoodieQuantity
   if (total < 1) {
     return t('wizard.clothing.itemsRequired')
@@ -195,7 +214,7 @@ export function ClothingOrderPage() {
       setError(catalogError ?? t('publicClothing.noActiveSeason'))
       return
     }
-    const itemsError = validateItems(form)
+    const itemsError = validateItems(form, catalog)
     if (itemsError) {
       setError(itemsError)
       return
@@ -204,9 +223,7 @@ export function ClothingOrderPage() {
     setSubmitting(true)
     setError(null)
     try {
-      const response = await createClothingOrder(
-        buildRequest(form, catalog.seasonId),
-      )
+      const response = await createClothingOrder(buildRequest(form, catalog))
       setSuccess(response)
       setForm(emptyForm)
       setEligibleStudent(null)
@@ -430,22 +447,26 @@ export function ClothingOrderPage() {
                     })}
                   </strong>
                 </li>
-                <li>
-                  <span>{t('clothingOrders.longKit')}</span>
-                  <strong>
-                    {t('publicClothing.priceAmount', {
-                      amount: catalog.longKitPrice ?? '—',
-                    })}
-                  </strong>
-                </li>
-                <li>
-                  <span>{t('clothingOrders.hoodie')}</span>
-                  <strong>
-                    {t('publicClothing.priceAmount', {
-                      amount: catalog.hoodiePrice ?? '—',
-                    })}
-                  </strong>
-                </li>
+                {catalog.longKitPublicEnabled !== false && (
+                  <li>
+                    <span>{t('clothingOrders.longKit')}</span>
+                    <strong>
+                      {t('publicClothing.priceAmount', {
+                        amount: catalog.longKitPrice ?? '—',
+                      })}
+                    </strong>
+                  </li>
+                )}
+                {catalog.hoodiePublicEnabled !== false && (
+                  <li>
+                    <span>{t('clothingOrders.hoodie')}</span>
+                    <strong>
+                      {t('publicClothing.priceAmount', {
+                        amount: catalog.hoodiePrice ?? '—',
+                      })}
+                    </strong>
+                  </li>
+                )}
               </ul>
             )}
           </section>
@@ -520,32 +541,36 @@ export function ClothingOrderPage() {
                   setForm({ ...form, shortKitSize: value })
                 }
               />
-              <KitFields
-                title={t('clothingOrders.longKit')}
-                price={catalog.longKitPrice}
-                quantity={form.longKitQuantity}
-                size={form.longKitSize}
-                disabled={formDisabled}
-                onQuantityChange={(value) =>
-                  setForm({ ...form, longKitQuantity: value })
-                }
-                onSizeChange={(value) =>
-                  setForm({ ...form, longKitSize: value })
-                }
-              />
-              <KitFields
-                title={t('clothingOrders.hoodie')}
-                price={catalog.hoodiePrice}
-                quantity={form.hoodieQuantity}
-                size={form.hoodieSize}
-                disabled={formDisabled}
-                onQuantityChange={(value) =>
-                  setForm({ ...form, hoodieQuantity: value })
-                }
-                onSizeChange={(value) =>
-                  setForm({ ...form, hoodieSize: value })
-                }
-              />
+              {catalog.longKitPublicEnabled !== false && (
+                <KitFields
+                  title={t('clothingOrders.longKit')}
+                  price={catalog.longKitPrice}
+                  quantity={form.longKitQuantity}
+                  size={form.longKitSize}
+                  disabled={formDisabled}
+                  onQuantityChange={(value) =>
+                    setForm({ ...form, longKitQuantity: value })
+                  }
+                  onSizeChange={(value) =>
+                    setForm({ ...form, longKitSize: value })
+                  }
+                />
+              )}
+              {catalog.hoodiePublicEnabled !== false && (
+                <KitFields
+                  title={t('clothingOrders.hoodie')}
+                  price={catalog.hoodiePrice}
+                  quantity={form.hoodieQuantity}
+                  size={form.hoodieSize}
+                  disabled={formDisabled}
+                  onQuantityChange={(value) =>
+                    setForm({ ...form, hoodieQuantity: value })
+                  }
+                  onSizeChange={(value) =>
+                    setForm({ ...form, hoodieSize: value })
+                  }
+                />
+              )}
             </div>
             <label className="admin-form__field">
               <span>{t('publicClothing.printedNumber')}</span>

@@ -10,6 +10,7 @@ type NavIconProps = {
     | 'payments'
     | 'groups'
     | 'export'
+    | 'help'
     | 'public'
     | 'logout'
 }
@@ -35,6 +36,7 @@ const paths: Record<NavIconProps['name'], string> = {
     'M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm9 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3ZM3 19a5 5 0 0 1 10 0M14 19a5 5 0 0 1 7 0',
   export:
     'M12 3v12m0 0 4-4m-4 4-4-4M5 19h14',
+  help: 'M12 3a9 9 0 1 0 9 9A9 9 0 0 0 12 3Zm0 13h.01M10.5 9.5a1.5 1.5 0 1 1 2.4 1.2c-.5.4-.9.8-.9 1.5V13',
   public:
     'M12 3a9 9 0 1 0 9 9A9 9 0 0 0 12 3Zm0 0c2.5 2.5 4 5.5 4 9s-1.5 6.5-4 9m0-18c-2.5 2.5-4 5.5-4 9s1.5 6.5 4 9M3.5 12h17',
   logout:

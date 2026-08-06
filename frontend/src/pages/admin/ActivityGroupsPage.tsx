@@ -14,6 +14,7 @@ import {
   newTrainingSessionDraft,
   type TrainingSessionDraft,
 } from '../../components/admin/TrainingSessionsEditor'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
   ageGroupLabel,
@@ -32,7 +33,11 @@ import {
   type WaterAdaptationLevel,
 } from '../../types/enums'
 
-const SWIMMING_WEEKLY_OPTIONS = [1, 2, 3, 4, 5, 6] as const
+const FILTER_DEFAULTS = {
+  seasonId: '',
+  activityId: '',
+  activeOnly: '',
+}
 
 type CreateForm = {
   name: string
@@ -59,11 +64,11 @@ const emptyCreateForm: CreateForm = {
 }
 
 export function ActivityGroupsPage() {
+  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { seasonId, activityId: activityFilterId, activeOnly } = filters
+
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [activities, setActivities] = useState<ActivityResponse[]>([])
-  const [seasonId, setSeasonId] = useState('')
-  const [activityFilterId, setActivityFilterId] = useState('')
-  const [activeOnly, setActiveOnly] = useState(false)
   const [rows, setRows] = useState<ActivityGroupResponse[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -86,12 +91,22 @@ export function ActivityGroupsPage() {
 
         const active = seasonData.find((season) => season.isActive)
         const defaultSeasonId = active?.id ?? seasonData[0]?.id
-        if (defaultSeasonId != null) {
-          setSeasonId(String(defaultSeasonId))
+        if (!hasParam('seasonId') && defaultSeasonId != null) {
+          setFilter('seasonId', String(defaultSeasonId))
           setCreateForm((prev) => ({
             ...prev,
             seasonId: String(defaultSeasonId),
           }))
+        } else {
+          const filterSeasonId =
+            filters.seasonId ||
+            (defaultSeasonId != null ? String(defaultSeasonId) : '')
+          if (filterSeasonId) {
+            setCreateForm((prev) => ({
+              ...prev,
+              seasonId: filterSeasonId,
+            }))
+          }
         }
         setFiltersReady(true)
       } catch (err) {
@@ -101,6 +116,7 @@ export function ActivityGroupsPage() {
     }
 
     void loadCatalog()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load catalog once on mount
   }, [])
 
   async function loadRows() {
@@ -118,7 +134,7 @@ export function ActivityGroupsPage() {
         seasonId: Number(seasonId),
         activityId:
           activityFilterId === '' ? null : Number(activityFilterId),
-        activeOnly: activeOnly ? true : null,
+        activeOnly: activeOnly === '1' ? true : null,
       })
       setRows(data)
     } catch (err) {
@@ -180,13 +196,20 @@ export function ActivityGroupsPage() {
         setSaving(false)
         return
       }
+      const activeSessions = createForm.trainingSessions.filter(
+        (session) => session.isActive,
+      )
       let weeklySessions = Number(createForm.weeklySessions)
       if (isFootball) {
-        const activeSessions = createForm.trainingSessions.filter(
-          (session) => session.isActive,
-        )
         if (activeSessions.length !== 1 && activeSessions.length !== 2) {
           setError(t('activityGroups.trainingSessionsExactlyOneOrTwo'))
+          setSaving(false)
+          return
+        }
+        weeklySessions = activeSessions.length
+      } else {
+        if (activeSessions.length < 1 || activeSessions.length > 6) {
+          setError(t('activityGroups.trainingSessionsSwimmingRange'))
           setSaving(false)
           return
         }
@@ -206,17 +229,11 @@ export function ActivityGroupsPage() {
           ? null
           : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
         isActive: createForm.isActive,
-        trainingSessions: isFootball
-          ? draftsToRequest(createForm.trainingSessions)
-          : undefined,
+        trainingSessions: draftsToRequest(createForm.trainingSessions),
       })
       setMessage(t('activityGroups.created'))
       resetCreateForm()
-      if (createForm.seasonId === seasonId) {
-        await loadRows()
-      } else {
-        setSeasonId(createForm.seasonId)
-      }
+      await loadRows()
     } catch (err) {
       setError(formatApiError(err))
     } finally {
@@ -226,8 +243,12 @@ export function ActivityGroupsPage() {
 
   return (
     <section className="admin-page admin-page--wide">
-      <h1>{t('activityGroups.title')}</h1>
-      <p>{t('activityGroups.intro')}</p>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('activityGroups.title')}</h1>
+          <p className="admin-page__lede">{t('activityGroups.intro')}</p>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
@@ -282,10 +303,7 @@ export function ActivityGroupsPage() {
                 weeklySessions: '1',
                 swimmingLessonType: '',
                 waterAdaptationLevel: '',
-                trainingSessions:
-                  nextType === 'FOOTBALL'
-                    ? [newTrainingSessionDraft()]
-                    : [],
+                trainingSessions: [newTrainingSessionDraft()],
               })
             }}
             disabled={saving || !filtersReady}
@@ -334,6 +352,7 @@ export function ActivityGroupsPage() {
                 })
               }}
               disabled={saving}
+              maxSessions={2}
             />
             <p className="clothing-order-form__hint">
               {t('activityGroups.weeklySessionsFromSchedule', {
@@ -410,26 +429,32 @@ export function ActivityGroupsPage() {
               </select>
             </label>
 
-            <label className="admin-form__field">
-              <span>{t('activityGroups.weeklySessionsSwimming')}</span>
-              <select
-                value={createForm.weeklySessions}
-                onChange={(event) =>
-                  setCreateForm({
-                    ...createForm,
-                    weeklySessions: event.target.value,
-                  })
-                }
-                required
-                disabled={saving}
-              >
-                {SWIMMING_WEEKLY_OPTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <TrainingSessionsEditor
+              sessions={createForm.trainingSessions}
+              onChange={(trainingSessions) => {
+                const activeCount = trainingSessions.filter(
+                  (session) => session.isActive,
+                ).length
+                setCreateForm({
+                  ...createForm,
+                  trainingSessions,
+                  weeklySessions:
+                    activeCount >= 1 && activeCount <= 6
+                      ? String(activeCount)
+                      : createForm.weeklySessions,
+                })
+              }}
+              disabled={saving}
+              maxSessions={6}
+              hintKey="swimming"
+            />
+            <p className="clothing-order-form__hint">
+              {t('activityGroups.weeklySessionsFromSchedule', {
+                count: createForm.trainingSessions.filter(
+                  (session) => session.isActive,
+                ).length,
+              })}
+            </p>
           </>
         )}
 
@@ -457,7 +482,7 @@ export function ActivityGroupsPage() {
           <span>{t('activityGroups.filterSeason')}</span>
           <select
             value={seasonId}
-            onChange={(event) => setSeasonId(event.target.value)}
+            onChange={(event) => setFilter('seasonId', event.target.value)}
             disabled={!filtersReady}
           >
             {seasons.map((season) => (
@@ -473,7 +498,7 @@ export function ActivityGroupsPage() {
           <span>{t('activityGroups.filterActivity')}</span>
           <select
             value={activityFilterId}
-            onChange={(event) => setActivityFilterId(event.target.value)}
+            onChange={(event) => setFilter('activityId', event.target.value)}
             disabled={!filtersReady}
           >
             <option value="">{t('activityGroups.allActivities')}</option>
@@ -488,8 +513,10 @@ export function ActivityGroupsPage() {
         <label className="admin-form__checkbox">
           <input
             type="checkbox"
-            checked={activeOnly}
-            onChange={(event) => setActiveOnly(event.target.checked)}
+            checked={activeOnly === '1'}
+            onChange={(event) =>
+              setFilter('activeOnly', event.target.checked ? '1' : '')
+            }
             disabled={!filtersReady}
           />
           <span>{t('activityGroups.activeOnly')}</span>
@@ -502,11 +529,11 @@ export function ActivityGroupsPage() {
           {t('activityGroups.listHint')}
         </p>
         {!seasonId ? (
-          <p>{t('activityGroups.selectSeasonFirst')}</p>
+          <p className="dashboard-empty">{t('activityGroups.selectSeasonFirst')}</p>
         ) : loading ? (
-          <p>{t('common.loading')}</p>
+          <p className="admin-page__loading">{t('common.loading')}</p>
         ) : rows.length === 0 ? (
-          <p>{t('activityGroups.empty')}</p>
+          <p className="dashboard-empty">{t('activityGroups.empty')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -536,8 +563,17 @@ export function ActivityGroupsPage() {
                     {row.isActive ? t('common.active') : t('common.inactive')}
                   </td>
                   <td className="admin-table__actions">
-                    <Link to={`/admin/activity-groups/${row.id}`}>
-                      {t('activityGroups.viewDetails')}
+                    <Link
+                      to={`/admin/activity-groups/${row.id}`}
+                      className="reg-action reg-action--view"
+                    >
+                      {t('activityGroups.view')}
+                    </Link>
+                    <Link
+                      to={`/admin/activity-groups/${row.id}?edit=1`}
+                      className="reg-action reg-action--edit"
+                    >
+                      {t('activityGroups.edit')}
                     </Link>
                   </td>
                 </tr>

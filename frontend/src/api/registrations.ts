@@ -125,3 +125,32 @@ export function cancelRegistration(
     { method: 'PATCH' },
   )
 }
+
+export type RegistrationAdminUpdateRequest = {
+  parentFirstName: string
+  parentLastName: string
+  phoneNumber: string
+  isKibbutzMember: boolean
+  budgetNumber?: string | null
+  studentFirstName: string
+  studentLastName: string
+  age: number
+  ageGroup: AgeGroup
+  gender: Gender
+  hasMedicalLimitation: boolean
+  medicalNotes?: string | null
+  specialRequests?: string | null
+  swimmingLessonType?: SwimmingLessonType | null
+  waterAdaptationLevel?: WaterAdaptationLevel | null
+  weeklySessions?: number | null
+}
+
+export function updateRegistrationAdmin(
+  registrationId: number,
+  request: RegistrationAdminUpdateRequest,
+): Promise<RegistrationResponse> {
+  return apiRequest<RegistrationResponse>(
+    `/api/registrations/${registrationId}`,
+    { method: 'PUT', body: request },
+  )
+}

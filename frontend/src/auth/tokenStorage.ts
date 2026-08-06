@@ -17,4 +17,7 @@ export function setSession(accessToken: string, username: string): void {
 export function clearSession(): void {
   localStorage.removeItem(ACCESS_TOKEN_KEY)
   localStorage.removeItem(USERNAME_KEY)
+  sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+  sessionStorage.removeItem(USERNAME_KEY)
+  localStorage.removeItem('sportmanager.rememberMe')
 }

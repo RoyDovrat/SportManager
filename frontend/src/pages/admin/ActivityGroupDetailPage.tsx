@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   activateActivityGroup,
   assignRegistrationToGroup,
   deactivateActivityGroup,
+  deleteActivityGroup,
   getActivityGroup,
   listEligibleRegistrations,
   listGroupRegistrations,
@@ -13,6 +14,7 @@ import {
 } from '../../api/activityGroups'
 import { formatApiError } from '../../api/formatApiError'
 import type { RegistrationResponse } from '../../api/registrations'
+import { AdminBackLink } from '../../components/admin/AdminBackLink'
 import {
   TrainingSessionsEditor,
   draftsFromSessions,
@@ -39,8 +41,6 @@ import {
   type SwimmingLessonType,
   type WaterAdaptationLevel,
 } from '../../types/enums'
-
-const SWIMMING_WEEKLY_OPTIONS = [1, 2, 3, 4, 5, 6] as const
 
 type EditForm = {
   name: string
@@ -77,7 +77,10 @@ function remainingCapacity(group: ActivityGroupResponse): number | null {
 
 export function ActivityGroupDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const groupId = Number(id)
+  const preferEdit = searchParams.get('edit') === '1'
 
   const [group, setGroup] = useState<ActivityGroupResponse | null>(null)
   const [form, setForm] = useState<EditForm | null>(null)
@@ -135,6 +138,18 @@ export function ActivityGroupDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId])
 
+  useEffect(() => {
+    if (!preferEdit || loading || !form) {
+      return
+    }
+    const editForm = document.getElementById('group-edit')
+    editForm?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const nameInput = editForm?.querySelector('input')
+    if (nameInput instanceof HTMLInputElement) {
+      nameInput.focus()
+    }
+  }, [preferEdit, loading, form])
+
   function toggleAgeGroup(value: AgeGroup) {
     setForm((prev) => {
       if (!prev) {
@@ -189,13 +204,20 @@ export function ActivityGroupDetailPage() {
         setSaving(false)
         return
       }
+      const activeSessions = form.trainingSessions.filter(
+        (session) => session.isActive,
+      )
       let weeklySessions = Number(form.weeklySessions)
       if (isFootball) {
-        const activeSessions = form.trainingSessions.filter(
-          (session) => session.isActive,
-        )
         if (activeSessions.length !== 1 && activeSessions.length !== 2) {
           setError(t('activityGroups.trainingSessionsExactlyOneOrTwo'))
+          setSaving(false)
+          return
+        }
+        weeklySessions = activeSessions.length
+      } else {
+        if (activeSessions.length < 1 || activeSessions.length > 6) {
+          setError(t('activityGroups.trainingSessionsSwimmingRange'))
           setSaving(false)
           return
         }
@@ -213,9 +235,7 @@ export function ActivityGroupDetailPage() {
           ? null
           : (form.waterAdaptationLevel as WaterAdaptationLevel),
         isActive: form.isActive,
-        trainingSessions: isFootball
-          ? draftsToRequest(form.trainingSessions)
-          : undefined,
+        trainingSessions: draftsToRequest(form.trainingSessions),
       })
       setGroup(updated)
       setForm(toEditForm(updated))
@@ -264,6 +284,32 @@ export function ActivityGroupDetailPage() {
     } catch (err) {
       setError(formatApiError(err))
     } finally {
+      setActing(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!group) {
+      return
+    }
+    const confirmed = window.confirm(
+      t('activityGroups.confirmDelete', { name: group.name }),
+    )
+    if (!confirmed) {
+      return
+    }
+
+    setActing(true)
+    setError(null)
+    setMessage(null)
+    try {
+      await deleteActivityGroup(group.id)
+      navigate('/admin/activity-groups', {
+        replace: true,
+        state: { message: t('activityGroups.deleted') },
+      })
+    } catch (err) {
+      setError(formatApiError(err))
       setActing(false)
     }
   }
@@ -332,19 +378,32 @@ export function ActivityGroupDetailPage() {
 
   return (
     <section className="admin-page">
-      <p>
-        <Link to="/admin/activity-groups">{t('activityGroups.backToList')}</Link>
-      </p>
+      <nav className="admin-back-nav" aria-label={t('activityGroups.backToList')}>
+        <AdminBackLink
+          fallbackTo="/admin/activity-groups"
+          className="admin-back"
+          aria-label={t('activityGroups.backToList')}
+        >
+          <span className="admin-back__arrow" aria-hidden="true">
+            →
+          </span>
+          <span>{t('activityGroups.backToList')}</span>
+        </AdminBackLink>
+      </nav>
 
-      <h1>{t('activityGroups.detailTitle')}</h1>
+      <header className="admin-page-hero">
+        <div className="admin-page-hero__copy">
+          <h1>{t('activityGroups.detailTitle')}</h1>
+        </div>
+      </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       {loading ? (
-        <p>{t('common.loading')}</p>
+        <p className="admin-page__loading">{t('common.loading')}</p>
       ) : group === null || form === null ? (
-        <p>{t('activityGroups.notFound')}</p>
+        <p className="dashboard-empty">{t('activityGroups.notFound')}</p>
       ) : (
         <>
           <p>
@@ -369,6 +428,7 @@ export function ActivityGroupDetailPage() {
             {group.isActive ? (
               <button
                 type="button"
+                className="reg-action reg-action--deactivate"
                 onClick={() => void handleDeactivate()}
                 disabled={acting || saving}
               >
@@ -377,15 +437,28 @@ export function ActivityGroupDetailPage() {
             ) : (
               <button
                 type="button"
+                className="reg-action reg-action--activate"
                 onClick={() => void handleActivate()}
                 disabled={acting || saving}
               >
                 {acting ? t('common.saving') : t('common.activate')}
               </button>
             )}
+            <button
+              type="button"
+              className="reg-action reg-action--cancel"
+              onClick={() => void handleDelete()}
+              disabled={acting || saving}
+            >
+              {t('activityGroups.delete')}
+            </button>
           </div>
 
-          <form className="admin-form" onSubmit={handleSave}>
+          <form
+            id="group-edit"
+            className={`admin-form${preferEdit ? ' admin-form--highlight' : ''}`}
+            onSubmit={handleSave}
+          >
             <h2>{t('activityGroups.editTitle')}</h2>
 
             <label className="admin-form__field">
@@ -436,6 +509,7 @@ export function ActivityGroupDetailPage() {
                     })
                   }}
                   disabled={saving}
+                  maxSessions={2}
                 />
                 <p className="clothing-order-form__hint">
                   {t('activityGroups.weeklySessionsFromSchedule', {
@@ -512,26 +586,32 @@ export function ActivityGroupDetailPage() {
                   </select>
                 </label>
 
-                <label className="admin-form__field">
-                  <span>{t('activityGroups.weeklySessionsSwimming')}</span>
-                  <select
-                    value={form.weeklySessions}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        weeklySessions: event.target.value,
-                      })
-                    }
-                    required
-                    disabled={saving}
-                  >
-                    {SWIMMING_WEEKLY_OPTIONS.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <TrainingSessionsEditor
+                  sessions={form.trainingSessions}
+                  onChange={(trainingSessions) => {
+                    const activeCount = trainingSessions.filter(
+                      (session) => session.isActive,
+                    ).length
+                    setForm({
+                      ...form,
+                      trainingSessions,
+                      weeklySessions:
+                        activeCount >= 1 && activeCount <= 6
+                          ? String(activeCount)
+                          : form.weeklySessions,
+                    })
+                  }}
+                  disabled={saving}
+                  maxSessions={6}
+                  hintKey="swimming"
+                />
+                <p className="clothing-order-form__hint">
+                  {t('activityGroups.weeklySessionsFromSchedule', {
+                    count: form.trainingSessions.filter(
+                      (session) => session.isActive,
+                    ).length,
+                  })}
+                </p>
               </>
             )}
 
@@ -548,7 +628,11 @@ export function ActivityGroupDetailPage() {
             </label>
 
             <div className="admin-form__actions">
-              <button type="submit" disabled={saving || acting}>
+              <button
+                type="submit"
+                className="reg-action reg-action--approve"
+                disabled={saving || acting}
+              >
                 {saving ? t('common.saving') : t('common.save')}
               </button>
             </div>
@@ -564,7 +648,7 @@ export function ActivityGroupDetailPage() {
             {isFull ? (
               <p className="admin-page__error">{t('activityGroups.capacityFull')}</p>
             ) : eligible.length === 0 ? (
-              <p>{t('activityGroups.eligibleEmpty')}</p>
+              <p className="dashboard-empty">{t('activityGroups.eligibleEmpty')}</p>
             ) : (
               <fieldset className="admin-form__checkbox-group">
                 <legend>{t('activityGroups.eligibleTitle')}</legend>
@@ -605,6 +689,7 @@ export function ActivityGroupDetailPage() {
             <div className="admin-form__actions">
               <button
                 type="submit"
+                className="reg-action reg-action--approve"
                 disabled={
                   assigning ||
                   saving ||
@@ -624,7 +709,7 @@ export function ActivityGroupDetailPage() {
           <div className="admin-table-wrap">
             <h2>{t('activityGroups.membersTitle')}</h2>
             {members.length === 0 ? (
-              <p>{t('activityGroups.membersEmpty')}</p>
+              <p className="dashboard-empty">{t('activityGroups.membersEmpty')}</p>
             ) : (
               <table className="admin-table">
                 <thead>
@@ -646,11 +731,7 @@ export function ActivityGroupDetailPage() {
                 <tbody>
                   {members.map((member) => (
                     <tr key={member.id}>
-                      <td>
-                        <Link to={`/admin/registrations/${member.id}`}>
-                          {member.id}
-                        </Link>
-                      </td>
+                      <td dir="ltr">{member.id}</td>
                       <td>{studentLabel(member)}</td>
                       <td>{ageGroupLabel(member.studentAgeGroup)}</td>
                       {group.activityType === 'SWIMMING' && (
@@ -678,8 +759,21 @@ export function ActivityGroupDetailPage() {
                         </StatusBadge>
                       </td>
                       <td className="admin-table__actions">
+                        <Link
+                          to={`/admin/registrations/${member.id}`}
+                          className="reg-action reg-action--view"
+                        >
+                          {t('common.view')}
+                        </Link>
+                        <Link
+                          to={`/admin/registrations/${member.id}?edit=1`}
+                          className="reg-action reg-action--edit"
+                        >
+                          {t('common.edit')}
+                        </Link>
                         <button
                           type="button"
+                          className="reg-action reg-action--cancel"
                           onClick={() => void handleUnassign(member.id)}
                           disabled={assigning || saving || acting}
                         >
