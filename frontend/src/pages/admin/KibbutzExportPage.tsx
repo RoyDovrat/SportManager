@@ -1,10 +1,15 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
-import { downloadKibbutzExport } from '../../api/kibbutzExport'
+import {
+  downloadKibbutzClothingExport,
+  downloadKibbutzExport,
+} from '../../api/kibbutzExport'
 import { activityTypeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import { ACTIVITY_TYPES, type ActivityType } from '../../types/enums'
+
+type DownloadKind = ActivityType | 'CLOTHING'
 
 function currentYearMonth(): string {
   const now = new Date()
@@ -47,20 +52,20 @@ export function KibbutzExportPage() {
   const [monthValue, setMonthValue] = useState(() =>
     initialMonthValue(searchParams.get('month')),
   )
-  const [downloadingType, setDownloadingType] = useState<ActivityType | null>(
+  const [downloadingKind, setDownloadingKind] = useState<DownloadKind | null>(
     null,
   )
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  async function handleDownload(activityType: ActivityType) {
+  async function handleDownloadSport(activityType: ActivityType) {
     const parsed = parseYearMonth(monthValue)
     if (!parsed) {
       setError(t('kibbutzExport.invalidMonth'))
       return
     }
 
-    setDownloadingType(activityType)
+    setDownloadingKind(activityType)
     setError(null)
     setMessage(null)
 
@@ -82,11 +87,37 @@ export function KibbutzExportPage() {
     } catch (err) {
       setError(formatApiError(err))
     } finally {
-      setDownloadingType(null)
+      setDownloadingKind(null)
     }
   }
 
-  const downloading = downloadingType != null
+  async function handleDownloadClothing() {
+    const parsed = parseYearMonth(monthValue)
+    if (!parsed) {
+      setError(t('kibbutzExport.invalidMonth'))
+      return
+    }
+
+    setDownloadingKind('CLOTHING')
+    setError(null)
+    setMessage(null)
+
+    try {
+      const { blob, fileName } = await downloadKibbutzClothingExport(parsed)
+      saveBlob(
+        blob,
+        fileName ??
+          `kibbutz-export-clothing-${parsed.year}-${String(parsed.month).padStart(2, '0')}.xlsx`,
+      )
+      setMessage(t('kibbutzExport.downloadStartedClothing'))
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setDownloadingKind(null)
+    }
+  }
+
+  const downloading = downloadingKind != null
 
   return (
     <section className="admin-page">
@@ -119,15 +150,24 @@ export function KibbutzExportPage() {
               key={activityType}
               type="button"
               disabled={downloading || !monthValue}
-              onClick={() => void handleDownload(activityType)}
+              onClick={() => void handleDownloadSport(activityType)}
             >
-              {downloadingType === activityType
+              {downloadingKind === activityType
                 ? t('kibbutzExport.downloading')
                 : t('kibbutzExport.downloadSport', {
                     sport: activityTypeLabel(activityType),
                   })}
             </button>
           ))}
+          <button
+            type="button"
+            disabled={downloading || !monthValue}
+            onClick={() => void handleDownloadClothing()}
+          >
+            {downloadingKind === 'CLOTHING'
+              ? t('kibbutzExport.downloading')
+              : t('kibbutzExport.downloadClothing')}
+          </button>
         </div>
       </div>
     </section>

@@ -1,5 +1,6 @@
 import type { FootballCatalogResponse } from '../../api/publicCatalog'
 import { dayOfWeekLabel } from '../../i18n/labels'
+import { sortByDayOfWeek } from '../../utils/dayOfWeekOrder'
 import { t } from '../../i18n/t'
 
 type FootballCatalogPanelProps = {
@@ -83,8 +84,8 @@ export function FootballCatalogPanel({
         <ul className="football-catalog__list">
           {catalog.groups.map((group) => {
             const isMatch = highlightedGroupId === group.id
-            const activeSessions = group.trainingSessions.filter(
-              (session) => session.isActive,
+            const activeSessions = sortByDayOfWeek(
+              group.trainingSessions.filter((session) => session.isActive),
             )
             return (
               <li

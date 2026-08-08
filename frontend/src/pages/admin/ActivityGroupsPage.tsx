@@ -37,6 +37,22 @@ const FILTER_DEFAULTS = {
   seasonId: '',
   activityId: '',
   activeOnly: '',
+  activityType: '',
+}
+
+function isActivityType(value: string): value is ActivityType {
+  return value === 'FOOTBALL' || value === 'SWIMMING'
+}
+
+function pickSeasonForType(
+  seasonData: SeasonResponse[],
+  activityType: ActivityType,
+): SeasonResponse | undefined {
+  return (
+    seasonData.find(
+      (season) => season.isActive && season.activityType === activityType,
+    ) ?? seasonData.find((season) => season.activityType === activityType)
+  )
 }
 
 type CreateForm = {
@@ -64,8 +80,13 @@ const emptyCreateForm: CreateForm = {
 }
 
 export function ActivityGroupsPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
-  const { seasonId, activityId: activityFilterId, activeOnly } = filters
+  const { filters, setFilter, setFilters, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const {
+    seasonId,
+    activityId: activityFilterId,
+    activeOnly,
+    activityType: activityTypeFilter,
+  } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [activities, setActivities] = useState<ActivityResponse[]>([])
@@ -89,25 +110,29 @@ export function ActivityGroupsPage() {
         setSeasons(seasonData)
         setActivities(activityData)
 
+        const typedFilter = isActivityType(filters.activityType)
+          ? filters.activityType
+          : null
+        const typedSeason = typedFilter
+          ? pickSeasonForType(seasonData, typedFilter)
+          : undefined
         const active = seasonData.find((season) => season.isActive)
-        const defaultSeasonId = active?.id ?? seasonData[0]?.id
+        const defaultSeasonId =
+          typedSeason?.id ?? active?.id ?? seasonData[0]?.id
+
         if (!hasParam('seasonId') && defaultSeasonId != null) {
           setFilter('seasonId', String(defaultSeasonId))
-          setCreateForm((prev) => ({
-            ...prev,
-            seasonId: String(defaultSeasonId),
-          }))
-        } else {
-          const filterSeasonId =
-            filters.seasonId ||
-            (defaultSeasonId != null ? String(defaultSeasonId) : '')
-          if (filterSeasonId) {
-            setCreateForm((prev) => ({
-              ...prev,
-              seasonId: filterSeasonId,
-            }))
-          }
         }
+
+        const resolvedSeasonId =
+          (hasParam('seasonId') && filters.seasonId) ||
+          (defaultSeasonId != null ? String(defaultSeasonId) : '')
+
+        setCreateForm((prev) => ({
+          ...prev,
+          seasonId: resolvedSeasonId || prev.seasonId,
+          activityType: typedFilter ?? prev.activityType,
+        }))
         setFiltersReady(true)
       } catch (err) {
         setError(formatApiError(err))
@@ -157,9 +182,59 @@ export function ActivityGroupsPage() {
     setCreateForm({
       ...emptyCreateForm,
       seasonId: seasonId || createForm.seasonId,
+      activityType: isActivityType(activityTypeFilter)
+        ? activityTypeFilter
+        : emptyCreateForm.activityType,
       trainingSessions: [newTrainingSessionDraft()],
     })
   }
+
+  function handleActivityTypeFilterChange(nextValue: string) {
+    const nextType = isActivityType(nextValue) ? nextValue : ''
+    const typedSeason =
+      nextType !== '' ? pickSeasonForType(seasons, nextType) : undefined
+    // "All types": keep current season if still valid; otherwise first available.
+    const nextSeasonId =
+      nextType !== ''
+        ? typedSeason != null
+          ? String(typedSeason.id)
+          : ''
+        : seasonId ||
+          (seasons[0] != null ? String(seasons[0].id) : '')
+
+    setFilters({
+      activityType: nextType,
+      activityId: '',
+      seasonId: nextSeasonId,
+    })
+
+    // Only lock the create form to a sport when the list filter is sport-specific
+    // (e.g. opened from the guide). Direct "all types" leaves create form free.
+    if (nextType !== '') {
+      setCreateForm((prev) => ({
+        ...prev,
+        activityType: nextType,
+        ageGroups: [],
+        weeklySessions: '1',
+        swimmingLessonType: '',
+        waterAdaptationLevel: '',
+        trainingSessions: [newTrainingSessionDraft()],
+        seasonId: nextSeasonId || prev.seasonId,
+      }))
+    }
+  }
+
+  const seasonsForFilter = isActivityType(activityTypeFilter)
+    ? seasons.filter((season) => season.activityType === activityTypeFilter)
+    : seasons
+  const activitiesForFilter = isActivityType(activityTypeFilter)
+    ? activities.filter(
+        (activity) => activity.activityType === activityTypeFilter,
+      )
+    : activities
+  const visibleRows = isActivityType(activityTypeFilter)
+    ? rows.filter((row) => row.activityType === activityTypeFilter)
+    : rows
 
   function toggleAgeGroup(value: AgeGroup) {
     setCreateForm((prev) => {
@@ -269,36 +344,19 @@ export function ActivityGroupsPage() {
         </label>
 
         <label className="admin-form__field">
-          <span>{t('activityGroups.season')}</span>
-          <select
-            value={createForm.seasonId}
-            onChange={(event) =>
-              setCreateForm({ ...createForm, seasonId: event.target.value })
-            }
-            required
-            disabled={saving || !filtersReady}
-          >
-            <option value="" disabled>
-              {t('activityGroups.selectSeason')}
-            </option>
-            {seasons.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name}
-                {season.isActive ? ` (${t('common.active')})` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="admin-form__field">
           <span>{t('activityGroups.activityType')}</span>
           <select
             value={createForm.activityType}
             onChange={(event) => {
               const nextType = event.target.value as ActivityType
+              const typedSeason = pickSeasonForType(seasons, nextType)
               setCreateForm({
                 ...createForm,
                 activityType: nextType,
+                seasonId:
+                  typedSeason != null
+                    ? String(typedSeason.id)
+                    : createForm.seasonId,
                 ageGroups: [],
                 weeklySessions: '1',
                 swimmingLessonType: '',
@@ -311,6 +369,30 @@ export function ActivityGroupsPage() {
             {ACTIVITY_TYPES.map((value) => (
               <option key={value} value={value}>
                 {activityTypeLabel(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="admin-form__field">
+          <span>{t('activityGroups.season')}</span>
+          <select
+            value={createForm.seasonId}
+            onChange={(event) =>
+              setCreateForm({ ...createForm, seasonId: event.target.value })
+            }
+            required
+            disabled={saving || !filtersReady}
+          >
+            <option value="" disabled>
+              {t('activityGroups.selectSeason')}
+            </option>
+            {seasons
+              .filter((season) => season.activityType === createForm.activityType)
+              .map((season) => (
+              <option key={season.id} value={season.id}>
+                {season.name}
+                {season.isActive ? ` (${t('common.active')})` : ''}
               </option>
             ))}
           </select>
@@ -479,15 +561,33 @@ export function ActivityGroupsPage() {
 
       <div className="admin-filters">
         <label className="admin-form__field">
+          <span>{t('activityGroups.filterActivityType')}</span>
+          <select
+            value={activityTypeFilter}
+            onChange={(event) =>
+              handleActivityTypeFilterChange(event.target.value)
+            }
+            disabled={!filtersReady}
+          >
+            <option value="">{t('activityGroups.allActivityTypes')}</option>
+            {ACTIVITY_TYPES.map((value) => (
+              <option key={value} value={value}>
+                {activityTypeLabel(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="admin-form__field">
           <span>{t('activityGroups.filterSeason')}</span>
           <select
             value={seasonId}
             onChange={(event) => setFilter('seasonId', event.target.value)}
             disabled={!filtersReady}
           >
-            {seasons.map((season) => (
+            {seasonsForFilter.map((season) => (
               <option key={season.id} value={season.id}>
-                {season.name}
+                {season.name} · {activityTypeLabel(season.activityType)}
                 {season.isActive ? ` (${t('common.active')})` : ''}
               </option>
             ))}
@@ -502,7 +602,7 @@ export function ActivityGroupsPage() {
             disabled={!filtersReady}
           >
             <option value="">{t('activityGroups.allActivities')}</option>
-            {activities.map((activity) => (
+            {activitiesForFilter.map((activity) => (
               <option key={activity.id} value={activity.id}>
                 {activityTypeLabel(activity.activityType)}
               </option>
@@ -532,7 +632,7 @@ export function ActivityGroupsPage() {
           <p className="dashboard-empty">{t('activityGroups.selectSeasonFirst')}</p>
         ) : loading ? (
           <p className="admin-page__loading">{t('common.loading')}</p>
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <p className="dashboard-empty">{t('activityGroups.empty')}</p>
         ) : (
           <table className="admin-table">
@@ -548,7 +648,7 @@ export function ActivityGroupsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>{row.name}</td>

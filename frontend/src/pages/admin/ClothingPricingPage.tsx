@@ -41,6 +41,7 @@ export function ClothingPricingPage() {
     filters.seasonId === '' ? '' : Number(filters.seasonId)
 
   const formSectionRef = useRef<HTMLFormElement | null>(null)
+  const formErrorRef = useRef<HTMLParagraphElement | null>(null)
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [allPricing, setAllPricing] = useState<ClothingPricingResponse[]>([])
   const [current, setCurrent] = useState<ClothingPricingResponse | null>(null)
@@ -144,10 +145,17 @@ export function ClothingPricingPage() {
     }
   }, [selectedSeasonId])
 
+  function showFormError(messageText: string) {
+    setError(messageText)
+    requestAnimationFrame(() => {
+      formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (typeof selectedSeasonId !== 'number') {
-      setError(t('clothingPricing.selectSeasonFirst'))
+      showFormError(t('clothingPricing.selectSeasonFirst'))
       return
     }
 
@@ -156,12 +164,12 @@ export function ClothingPricingPage() {
     setMessage(null)
 
     if (form.longKitPublicEnabled && !(Number(form.longKitPrice) > 0)) {
-      setError(t('clothingPricing.longKitPriceRequired'))
+      showFormError(t('clothingPricing.longKitPriceRequired'))
       setSaving(false)
       return
     }
     if (form.hoodiePublicEnabled && !(Number(form.hoodiePrice) > 0)) {
-      setError(t('clothingPricing.hoodiePriceRequired'))
+      showFormError(t('clothingPricing.hoodiePriceRequired'))
       setSaving(false)
       return
     }
@@ -191,7 +199,7 @@ export function ClothingPricingPage() {
       setAllPricing(pricingData)
       await loadCurrentForSeason(selectedSeasonId)
     } catch (err) {
-      setError(formatApiError(err))
+      showFormError(formatApiError(err))
     } finally {
       setSaving(false)
     }
@@ -206,7 +214,6 @@ export function ClothingPricingPage() {
         </div>
       </header>
 
-      {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       <label className="admin-form__field clothing-pricing-page__season">
@@ -354,6 +361,12 @@ export function ClothingPricingPage() {
             <span>{t('clothingPricing.allowAlreadyHasSkip')}</span>
           </label>
         </fieldset>
+
+        {error && (
+          <p ref={formErrorRef} className="admin-page__error" role="alert">
+            {error}
+          </p>
+        )}
 
         <div className="admin-form__actions">
           <button

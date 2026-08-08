@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   createActivityPricing,
   listActivityPricingBySeason,
@@ -63,6 +63,7 @@ export function ActivityPricingPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const formErrorRef = useRef<HTMLParagraphElement>(null)
 
   async function loadSeasons() {
     setLoadingSeasons(true)
@@ -127,10 +128,17 @@ export function ActivityPricingPage() {
     setEditForm({ weeklySessions: '', monthlyPrice: '' })
   }
 
+  function showFormError(messageText: string) {
+    setError(messageText)
+    requestAnimationFrame(() => {
+      formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+  }
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (typeof selectedSeasonId !== 'number') {
-      setError(t('activityPricing.selectSeasonFirst'))
+      showFormError(t('activityPricing.selectSeasonFirst'))
       return
     }
 
@@ -139,7 +147,7 @@ export function ActivityPricingPage() {
       selectedSeason?.activityType != null &&
       selectedSeason.activityType !== createForm.activityType
     ) {
-      setError(
+      showFormError(
         t('activityPricing.seasonActivityMismatch', {
           seasonSport: activityTypeLabel(selectedSeason.activityType),
           pricingSport: activityTypeLabel(createForm.activityType),
@@ -169,7 +177,7 @@ export function ActivityPricingPage() {
       setCreateForm(emptyCreateForm)
       await loadPricing(selectedSeasonId)
     } catch (err) {
-      setError(formatApiError(err))
+      showFormError(formatApiError(err))
     } finally {
       setSaving(false)
     }
@@ -202,7 +210,7 @@ export function ActivityPricingPage() {
       cancelEdit()
       await loadPricing(selectedSeasonId)
     } catch (err) {
-      setError(formatApiError(err))
+      showFormError(formatApiError(err))
     } finally {
       setSaving(false)
     }
@@ -221,7 +229,6 @@ export function ActivityPricingPage() {
         </div>
       </header>
 
-      {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
@@ -343,6 +350,12 @@ export function ActivityPricingPage() {
           />
         </label>
 
+        {error && (
+          <p ref={formErrorRef} className="admin-page__error" role="alert">
+            {error}
+          </p>
+        )}
+
         <div className="admin-form__actions">
           <button type="submit" disabled={saving || typeof selectedSeasonId !== 'number'}>
             {saving && editingId === null ? t('common.saving') : t('common.create')}
@@ -400,6 +413,12 @@ export function ActivityPricingPage() {
               required
             />
           </label>
+
+          {error && (
+            <p className="admin-page__error" role="alert">
+              {error}
+            </p>
+          )}
 
           <div className="admin-form__actions">
             <button type="submit" disabled={saving}>

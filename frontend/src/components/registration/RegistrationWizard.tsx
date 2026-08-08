@@ -75,8 +75,13 @@ function validateParent(form: RegistrationCommonForm): string | null {
   if (!isValidIsraeliMobile(form.phoneNumber)) {
     return t('wizard.errors.phoneInvalid')
   }
-  if (form.isKibbutzMember && !hasText(form.budgetNumber)) {
-    return t('wizard.errors.budgetRequired')
+  if (form.isKibbutzMember) {
+    if (!hasText(form.budgetNumber)) {
+      return t('wizard.errors.budgetRequired')
+    }
+    if (!/^\d+$/.test(form.budgetNumber.trim())) {
+      return t('wizard.errors.budgetDigitsOnly')
+    }
   }
   return null
 }
@@ -305,9 +310,6 @@ export function RegistrationWizard({
           </div>
           <h2>{t('wizard.successTitle')}</h2>
           <p>{t('registration.success')}</p>
-          <p>
-            {t('registration.registrationId')}: <strong>{success.id}</strong>
-          </p>
           <p>
             {t('registration.status')}:{' '}
             <StatusBadge tone={registrationStatusTone(success.status)}>

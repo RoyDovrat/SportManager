@@ -363,9 +363,6 @@ export function ClothingOrderPage() {
               ? t('publicClothing.successSkip')
               : t('publicClothing.successOrder')}
           </p>
-          <p>
-            {t('publicClothing.orderId')}: <strong>{success.id}</strong>
-          </p>
           <p className="wizard-success__hint">{t('publicClothing.successHint')}</p>
           <button
             type="button"

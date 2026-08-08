@@ -73,8 +73,15 @@ export function ParentStep({ form, onChange, disabled = false }: ParentStepProps
         <label className="admin-form__field">
           <span>{t('registration.budgetNumber')}</span>
           <input
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={form.budgetNumber}
-            onChange={(event) => update('budgetNumber', event.target.value)}
+            onChange={(event) =>
+              update(
+                'budgetNumber',
+                event.target.value.replace(/\D/g, ''),
+              )
+            }
             required
             disabled={disabled}
           />

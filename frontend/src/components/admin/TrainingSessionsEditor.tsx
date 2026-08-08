@@ -1,7 +1,8 @@
 import type { GroupTrainingSession } from '../../api/activityGroups'
 import { dayOfWeekLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
-import { DAYS_OF_WEEK, type DayOfWeek } from '../../types/enums'
+import type { DayOfWeek } from '../../types/enums'
+import { WEEK_DAY_ORDER } from '../../utils/dayOfWeekOrder'
 
 export type TrainingSessionDraft = {
   key: string
@@ -119,7 +120,7 @@ export function TrainingSessionsEditor({
                   }
                   disabled={disabled}
                 >
-                  {DAYS_OF_WEEK.map((day) => (
+                  {WEEK_DAY_ORDER.map((day) => (
                     <option key={day} value={day}>
                       {dayOfWeekLabel(day)}
                     </option>

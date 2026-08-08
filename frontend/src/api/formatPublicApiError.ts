@@ -38,6 +38,8 @@ function translateBusinessMessage(message: string | undefined): string | null {
       t('wizard.errors.healthRequired'),
     'Budget number is required for a kibbutz member':
       t('wizard.errors.budgetRequired'),
+    'Budget number must contain only whole numbers':
+      t('wizard.errors.budgetDigitsOnly'),
     'No active football group matches this age group for the selected season':
       t('wizard.errors.footballNoGroup'),
     'Multiple active football groups match this age group; fix admin configuration':

@@ -7,6 +7,11 @@ export type KibbutzExportParams = {
   activityType: ActivityType
 }
 
+export type KibbutzClothingExportParams = {
+  year: number
+  month: number
+}
+
 export function downloadKibbutzExport(
   params: KibbutzExportParams,
 ): Promise<ApiDownloadResult> {
@@ -16,4 +21,14 @@ export function downloadKibbutzExport(
     activityType: params.activityType,
   })
   return apiDownload(`/api/exports/kibbutz?${search.toString()}`)
+}
+
+export function downloadKibbutzClothingExport(
+  params: KibbutzClothingExportParams,
+): Promise<ApiDownloadResult> {
+  const search = new URLSearchParams({
+    year: String(params.year),
+    month: String(params.month),
+  })
+  return apiDownload(`/api/exports/kibbutz/clothing?${search.toString()}`)
 }

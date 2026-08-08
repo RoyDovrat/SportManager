@@ -11,6 +11,7 @@ import {
 } from '../../../i18n/labels'
 import { t } from '../../../i18n/t'
 import type { FootballCatalogResponse } from '../../../api/publicCatalog'
+import { sortByDayOfWeek } from '../../../utils/dayOfWeekOrder'
 import type {
   RegistrationCommonForm,
   SwimmingFormExtras,
@@ -87,9 +88,11 @@ export function ActivityStep({
               {t('footballCatalog.schedule')}
             </span>
             <ul className="football-catalog__session-list">
-              {footballMatchedGroup.trainingSessions
-                .filter((session) => session.isActive)
-                .map((session) => (
+              {sortByDayOfWeek(
+                footballMatchedGroup.trainingSessions.filter(
+                  (session) => session.isActive,
+                ),
+              ).map((session) => (
                   <li key={session.id}>
                     {dayOfWeekLabel(session.dayOfWeek)}{' '}
                     {formatTime(session.startTime)}

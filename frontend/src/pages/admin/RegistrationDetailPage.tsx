@@ -469,9 +469,14 @@ export function RegistrationDetailPage() {
                     <label className="admin-form__field">
                       <span>{t('registration.budgetNumber')}</span>
                       <input
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={form.budgetNumber ?? ''}
                         onChange={(e) =>
-                          setForm({ ...form, budgetNumber: e.target.value })
+                          setForm({
+                            ...form,
+                            budgetNumber: e.target.value.replace(/\D/g, ''),
+                          })
                         }
                         required
                         dir="ltr"

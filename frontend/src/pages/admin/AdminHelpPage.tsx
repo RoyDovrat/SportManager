@@ -50,14 +50,14 @@ const openSeasonSteps: GuideStep[] = [
   {
     titleKey: 'help.stepFootballGroupsTitle',
     bodyKey: 'help.stepFootballGroupsBody',
-    to: '/admin/activity-groups',
+    to: '/admin/activity-groups?activityType=FOOTBALL',
     linkKey: 'help.linkActivityGroups',
     badge: 'required',
   },
   {
     titleKey: 'help.stepSwimmingGroupsTitle',
     bodyKey: 'help.stepSwimmingGroupsBody',
-    to: '/admin/activity-groups',
+    to: '/admin/activity-groups?activityType=SWIMMING',
     linkKey: 'help.linkActivityGroups',
     badge: 'optional',
   },
