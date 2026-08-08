@@ -6,6 +6,7 @@ import com.sportmanager.entity.Student;
 import com.sportmanager.enums.ActivityType;
 import com.sportmanager.enums.PaymentMethod;
 import com.sportmanager.enums.PaymentStatus;
+import com.sportmanager.enums.PaymentType;
 import com.sportmanager.exception.BusinessRuleException;
 import com.sportmanager.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -44,13 +45,42 @@ public class KibbutzExportService {
                 PaymentStatus.PENDING,
                 PaymentMethod.KIBBUTZ_BUDGET,
                 chargeMonth,
-                activityType
+                activityType,
+                List.of(PaymentType.MONTHLY_ACTIVITY, PaymentType.MANUAL_ONE_TIME)
         );
 
+        return buildWorkbook(sheetName(activityType), payments);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportMonthlyKibbutzClothingBilling(int year, int month) {
+        validateYearMonth(year, month);
+
+        LocalDate chargeMonth = LocalDate.of(year, month, 1);
+        List<Payment> payments = paymentRepository.findKibbutzClothingExportPayments(
+                PaymentStatus.PENDING,
+                PaymentMethod.KIBBUTZ_BUDGET,
+                chargeMonth,
+                PaymentType.CLOTHING
+        );
+
+        return buildWorkbook("חיוב קיבוץ ביגוד", payments);
+    }
+
+    public String buildFileName(int year, int month, ActivityType activityType) {
+        String sport = activityType == ActivityType.SWIMMING ? "שחייה" : "כדורגל";
+        return "חיוב-קיבוץ-%s-%04d-%02d.xlsx".formatted(sport, year, month);
+    }
+
+    public String buildClothingFileName(int year, int month) {
+        return "חיוב-קיבוץ-ביגוד-%04d-%02d.xlsx".formatted(year, month);
+    }
+
+    private byte[] buildWorkbook(String sheetTitle, List<Payment> payments) {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            Sheet sheet = workbook.createSheet(sheetName(activityType));
+            Sheet sheet = workbook.createSheet(sheetTitle);
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle totalStyle = createTotalStyle(workbook);
 
@@ -92,11 +122,6 @@ public class KibbutzExportService {
         } catch (IOException ex) {
             throw new BusinessRuleException("יצירת קובץ האקסל לחיוב הקיבוץ נכשלה");
         }
-    }
-
-    public String buildFileName(int year, int month, ActivityType activityType) {
-        String sport = activityType == ActivityType.SWIMMING ? "שחייה" : "כדורגל";
-        return "חיוב-קיבוץ-%s-%04d-%02d.xlsx".formatted(sport, year, month);
     }
 
     private String sheetName(ActivityType activityType) {

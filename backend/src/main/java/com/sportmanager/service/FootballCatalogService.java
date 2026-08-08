@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -100,8 +101,8 @@ public class FootballCatalogService {
                         : group.getTrainingSessions().stream()
                                 .filter(session -> Boolean.TRUE.equals(session.getIsActive()))
                                 .sorted(Comparator
-                                        .comparing((com.sportmanager.entity.GroupTrainingSession s)
-                                                -> s.getDayOfWeek().getValue())
+                                        .comparingInt((com.sportmanager.entity.GroupTrainingSession s)
+                                                -> israeliWeekDayOrder(s.getDayOfWeek()))
                                         .thenComparing(com.sportmanager.entity.GroupTrainingSession::getStartTime))
                                 .map(session -> GroupTrainingSessionResponse.builder()
                                         .id(session.getId())
@@ -131,5 +132,10 @@ public class FootballCatalogService {
                 .monthlyPrice(pricing != null ? pricing.getMonthlyPrice() : null)
                 .activityPricingId(pricing != null ? pricing.getId() : null)
                 .build();
+    }
+
+    /** Sunday-first week order used in Israel (יום ראשון → שבת). */
+    private static int israeliWeekDayOrder(DayOfWeek dayOfWeek) {
+        return dayOfWeek.getValue() % 7;
     }
 }

@@ -71,13 +71,34 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
               AND p.chargeMonth = :chargeMonth
               AND parent.isKibbutzMember = true
               AND activity.activityType = :activityType
+              AND p.paymentType IN :includedPaymentTypes
             ORDER BY parent.lastName, parent.firstName, s.lastName, s.firstName
             """)
     List<Payment> findKibbutzExportPayments(
             @Param("status") PaymentStatus status,
             @Param("paymentMethod") PaymentMethod paymentMethod,
             @Param("chargeMonth") LocalDate chargeMonth,
-            @Param("activityType") ActivityType activityType
+            @Param("activityType") ActivityType activityType,
+            @Param("includedPaymentTypes") Collection<PaymentType> includedPaymentTypes
+    );
+
+    @Query("""
+            SELECT p FROM Payment p
+            JOIN FETCH p.registration r
+            JOIN FETCH r.student s
+            JOIN FETCH s.parent parent
+            WHERE p.status = :status
+              AND p.paymentMethod = :paymentMethod
+              AND p.chargeMonth = :chargeMonth
+              AND parent.isKibbutzMember = true
+              AND p.paymentType = :paymentType
+            ORDER BY parent.lastName, parent.firstName, s.lastName, s.firstName
+            """)
+    List<Payment> findKibbutzClothingExportPayments(
+            @Param("status") PaymentStatus status,
+            @Param("paymentMethod") PaymentMethod paymentMethod,
+            @Param("chargeMonth") LocalDate chargeMonth,
+            @Param("paymentType") PaymentType paymentType
     );
 
     long countByStatus(PaymentStatus status);

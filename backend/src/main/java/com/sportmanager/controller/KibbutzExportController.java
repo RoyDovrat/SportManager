@@ -30,7 +30,20 @@ public class KibbutzExportController {
                 activityType
         );
         String fileName = kibbutzExportService.buildFileName(year, month, activityType);
+        return excelAttachment(fileContent, fileName);
+    }
 
+    @GetMapping("/kibbutz/clothing")
+    public ResponseEntity<byte[]> exportKibbutzClothingBilling(
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        byte[] fileContent = kibbutzExportService.exportMonthlyKibbutzClothingBilling(year, month);
+        String fileName = kibbutzExportService.buildClothingFileName(year, month);
+        return excelAttachment(fileContent, fileName);
+    }
+
+    private static ResponseEntity<byte[]> excelAttachment(byte[] fileContent, String fileName) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                 .contentType(MediaType.parseMediaType(

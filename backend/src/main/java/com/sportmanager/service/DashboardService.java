@@ -84,17 +84,10 @@ public class DashboardService {
                     .toList();
         }
 
-        long openChargesCount = resolvedSeasonId != null
-                ? paymentRepository.countByRegistration_Season_IdAndStatus(
-                        resolvedSeasonId, PaymentStatus.PENDING
-                )
-                : paymentRepository.countByStatus(PaymentStatus.PENDING);
-
-        BigDecimal openChargesAmount = resolvedSeasonId != null
-                ? paymentRepository.sumAmountBySeasonIdAndStatus(
-                        resolvedSeasonId, PaymentStatus.PENDING
-                )
-                : paymentRepository.sumAmountByStatus(PaymentStatus.PENDING);
+        // Open charges are global so manual/clothing charges appear even when the
+        // selected season filter does not match the payment's registration season.
+        long openChargesCount = paymentRepository.countByStatus(PaymentStatus.PENDING);
+        BigDecimal openChargesAmount = paymentRepository.sumAmountByStatus(PaymentStatus.PENDING);
 
         YearMonth currentMonth = YearMonth.now();
         BigDecimal monthlyIncome = paymentRepository.sumPaidAmountBetween(

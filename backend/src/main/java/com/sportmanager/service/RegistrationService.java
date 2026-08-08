@@ -152,11 +152,8 @@ public class RegistrationService {
         Activity activity = registration.getActivity();
         Season season = registration.getSeason();
 
-        if (Boolean.TRUE.equals(request.getIsKibbutzMember())
-                && isBlank(request.getBudgetNumber())) {
-            throw new BusinessRuleException(
-                    "Budget number is required for a kibbutz member"
-            );
+        if (Boolean.TRUE.equals(request.getIsKibbutzMember())) {
+            validateBudgetNumber(request.getBudgetNumber());
         }
 
         parent.setFirstName(request.getParentFirstName().trim());
@@ -251,10 +248,20 @@ public class RegistrationService {
             );
         }
 
-        if (Boolean.TRUE.equals(request.getIsKibbutzMember())
-                && isBlank(request.getBudgetNumber())) {
+        if (Boolean.TRUE.equals(request.getIsKibbutzMember())) {
+            validateBudgetNumber(request.getBudgetNumber());
+        }
+    }
+
+    private void validateBudgetNumber(String budgetNumber) {
+        if (isBlank(budgetNumber)) {
             throw new BusinessRuleException(
                     "Budget number is required for a kibbutz member"
+            );
+        }
+        if (!budgetNumber.trim().matches("\\d+")) {
+            throw new BusinessRuleException(
+                    "Budget number must contain only whole numbers"
             );
         }
     }

@@ -87,10 +87,17 @@ public class ParentService {
     }
 
     private void validateBudgetDetails(ParentUpdateRequest request) {
-        if (Boolean.TRUE.equals(request.getIsKibbutzMember())
-                && isBlank(request.getBudgetNumber())) {
+        if (!Boolean.TRUE.equals(request.getIsKibbutzMember())) {
+            return;
+        }
+        if (isBlank(request.getBudgetNumber())) {
             throw new BusinessRuleException(
                     "Budget number is required for a kibbutz member"
+            );
+        }
+        if (!request.getBudgetNumber().trim().matches("\\d+")) {
+            throw new BusinessRuleException(
+                    "Budget number must contain only whole numbers"
             );
         }
     }
