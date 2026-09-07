@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   getDashboard,
@@ -6,6 +6,7 @@ import {
 } from '../../api/dashboard'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { PaymentSummaryCard } from '../../components/ui/PaymentSummaryCard'
 import {
   StatusBadge,
   registrationStatusTone,
@@ -28,6 +29,36 @@ function formatAmount(amount: number): string {
   })}`
 }
 
+function formatDateTime(date: string, createdAt: string | null): string {
+  if (createdAt) {
+    const parsed = new Date(createdAt)
+    if (!Number.isNaN(parsed.getTime())) {
+      const datePart = parsed.toLocaleDateString('he-IL', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+      const timePart = parsed.toLocaleTimeString('he-IL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+      return `${datePart} ${timePart}`
+    }
+  }
+
+  const [year, month, day] = date.split('-')
+  if (year && month && day) {
+    return `${day}/${month}/${year}`
+  }
+  return date
+}
+
+function currentMonthValue(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
+
 function registrationsLink(seasonId: string, status?: string): string {
   const params = new URLSearchParams()
   if (status) {
@@ -38,6 +69,47 @@ function registrationsLink(seasonId: string, status?: string): string {
   }
   const query = params.toString()
   return query ? `/admin/registrations?${query}` : '/admin/registrations'
+}
+
+function paymentsLink(monthValue?: string): string {
+  const params = new URLSearchParams()
+  params.set('status', '')
+  if (monthValue) {
+    params.set('chargeMonth', monthValue)
+  }
+  return `/admin/payments?${params.toString()}`
+}
+
+function groupsLink(seasonId: string): string {
+  if (seasonId === '') {
+    return '/admin/activity-groups'
+  }
+  return `/admin/activity-groups?seasonId=${encodeURIComponent(seasonId)}`
+}
+
+function MiniIcon({
+  children,
+  label,
+}: {
+  children: ReactNode
+  label: string
+}) {
+  return (
+    <svg
+      className="dashboard-mini-icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <title>{label}</title>
+      {children}
+    </svg>
+  )
 }
 
 export function DashboardPage() {
@@ -98,10 +170,14 @@ export function DashboardPage() {
     void loadDashboard()
   }, [catalogReady, seasonId])
 
-  const summary = dashboard?.paymentStatusSummary
-  const hasAttention =
-    dashboard != null &&
-    (dashboard.pendingRegistrations > 0 || dashboard.openChargesCount > 0)
+  const emptyPaymentSummary = {
+    pendingCount: 0,
+    paidCount: 0,
+    cancelledCount: 0,
+    pendingAmount: 0,
+    paidAmount: 0,
+    cancelledAmount: 0,
+  }
 
   return (
     <section className="admin-page admin-page--wide dashboard-page">
@@ -158,61 +234,80 @@ export function DashboardPage() {
         <p>{t('dashboard.loadFailed')}</p>
       ) : (
         <>
-          {dashboard.seasonName && (
-            <p className="dashboard-season-line">
-              {t('dashboard.showingSeason')}:{' '}
-              <strong>{dashboard.seasonName}</strong>
-            </p>
-          )}
+          <section
+            className="dashboard-attention"
+            aria-label={t('dashboard.attentionTitle')}
+          >
+            <div className="dashboard-attention__head">
+              <h2>{t('dashboard.attentionTitle')}</h2>
+            </div>
+            <div className="dashboard-attention__grid">
+              <Link
+                to={registrationsLink(seasonId, 'PENDING')}
+                className="dashboard-attention__card dashboard-attention__card--pending"
+              >
+                <span className="dashboard-attention__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.pendingRegistrations')}>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </MiniIcon>
+                </span>
+                <span className="dashboard-attention__label">
+                  {t('dashboard.pendingRegistrations')}
+                </span>
+                <strong className="dashboard-attention__value">
+                  {dashboard.pendingRegistrations}
+                </strong>
+                <span className="dashboard-attention__cta">
+                  {t('dashboard.viewAction')}
+                </span>
+              </Link>
 
-          {hasAttention && (
-            <section
-              className="dashboard-attention"
-              aria-label={t('dashboard.attentionTitle')}
-            >
-              <div className="dashboard-attention__head">
-                <h2>{t('dashboard.attentionTitle')}</h2>
-                <p>{t('dashboard.attentionHint')}</p>
-              </div>
-              <div className="dashboard-attention__grid">
-                {dashboard.pendingRegistrations > 0 && (
-                  <Link
-                    to={registrationsLink(seasonId, 'PENDING')}
-                    className="dashboard-attention__card dashboard-attention__card--pending"
-                  >
-                    <span className="dashboard-attention__label">
-                      {t('dashboard.pendingRegistrations')}
-                    </span>
-                    <strong className="dashboard-attention__value">
-                      {dashboard.pendingRegistrations}
-                    </strong>
-                    <span className="dashboard-attention__cta">
-                      {t('dashboard.reviewPending')}
-                    </span>
-                  </Link>
-                )}
-                {dashboard.openChargesCount > 0 && (
-                  <Link
-                    to="/admin/payments?status=PENDING"
-                    className="dashboard-attention__card dashboard-attention__card--charges"
-                  >
-                    <span className="dashboard-attention__label">
-                      {t('dashboard.openCharges')}
-                    </span>
-                    <strong className="dashboard-attention__value">
-                      {dashboard.openChargesCount}
-                    </strong>
-                    <span className="dashboard-attention__meta">
-                      {formatAmount(dashboard.openChargesAmount)}
-                    </span>
-                    <span className="dashboard-attention__cta">
-                      {t('dashboard.reviewCharges')}
-                    </span>
-                  </Link>
-                )}
-              </div>
-            </section>
-          )}
+              <Link
+                to="/admin/payments?status=PENDING"
+                className="dashboard-attention__card dashboard-attention__card--charges"
+              >
+                <span className="dashboard-attention__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.openCharges')}>
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M3 10h18" />
+                    <path d="M7 15h4" />
+                  </MiniIcon>
+                </span>
+                <span className="dashboard-attention__label">
+                  {t('dashboard.openCharges')}
+                </span>
+                <strong className="dashboard-attention__value">
+                  {formatAmount(dashboard.openChargesAmount)}
+                </strong>
+                <span className="dashboard-attention__cta">
+                  {t('dashboard.viewAction')}
+                </span>
+              </Link>
+
+              <Link
+                to={groupsLink(seasonId)}
+                className="dashboard-attention__card dashboard-attention__card--ungrouped"
+              >
+                <span className="dashboard-attention__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.studentsWithoutGroup')}>
+                    <path d="M9 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm9 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3ZM3 19a5 5 0 0 1 10 0M14 19a5 5 0 0 1 7 0" />
+                  </MiniIcon>
+                </span>
+                <span className="dashboard-attention__label">
+                  {t('dashboard.studentsWithoutGroup')}
+                </span>
+                <strong className="dashboard-attention__value">
+                  {dashboard.studentsWithoutGroup ?? 0}
+                </strong>
+                <span className="dashboard-attention__cta">
+                  {t('dashboard.viewAction')}
+                </span>
+              </Link>
+            </div>
+          </section>
 
           <section
             className="dashboard-section"
@@ -220,10 +315,17 @@ export function DashboardPage() {
           >
             <div className="dashboard-section__head">
               <h2>{t('dashboard.overviewTitle')}</h2>
-              <p>{t('dashboard.overviewHint')}</p>
             </div>
             <div className="dashboard-stats">
               <article className="dashboard-stat dashboard-stat--total">
+                <span className="dashboard-stat__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.totalRegistrations')}>
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </MiniIcon>
+                </span>
                 <span className="dashboard-stat__label">
                   {t('dashboard.totalRegistrations')}
                 </span>
@@ -232,6 +334,11 @@ export function DashboardPage() {
                 </strong>
               </article>
               <article className="dashboard-stat dashboard-stat--success">
+                <span className="dashboard-stat__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.approvedRegistrations')}>
+                    <path d="M20 6 9 17l-5-5" />
+                  </MiniIcon>
+                </span>
                 <span className="dashboard-stat__label">
                   {t('dashboard.approvedRegistrations')}
                 </span>
@@ -239,7 +346,13 @@ export function DashboardPage() {
                   {dashboard.approvedRegistrations}
                 </strong>
               </article>
-              <article className="dashboard-stat">
+              <article className="dashboard-stat dashboard-stat--students">
+                <span className="dashboard-stat__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.activeStudents')}>
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                  </MiniIcon>
+                </span>
                 <span className="dashboard-stat__label">
                   {t('dashboard.activeStudents')}
                 </span>
@@ -248,6 +361,12 @@ export function DashboardPage() {
                 </strong>
               </article>
               <article className="dashboard-stat dashboard-stat--muted">
+                <span className="dashboard-stat__icon" aria-hidden="true">
+                  <MiniIcon label={t('dashboard.cancelledRegistrations')}>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="m15 9-6 6M9 9l6 6" />
+                  </MiniIcon>
+                </span>
                 <span className="dashboard-stat__label">
                   {t('dashboard.cancelledRegistrations')}
                 </span>
@@ -255,79 +374,24 @@ export function DashboardPage() {
                   {dashboard.cancelledRegistrations}
                 </strong>
               </article>
-              <article className="dashboard-stat dashboard-stat--income">
-                <span className="dashboard-stat__label">
-                  {t('dashboard.monthlyIncome')}
-                </span>
-                <strong className="dashboard-stat__value">
-                  {formatAmount(dashboard.monthlyIncome)}
-                </strong>
-                <span className="dashboard-stat__hint">
-                  {t('dashboard.monthlyIncomeHint')}
-                </span>
-              </article>
-              {!hasAttention && (
-                <>
-                  <article className="dashboard-stat dashboard-stat--pending">
-                    <span className="dashboard-stat__label">
-                      {t('dashboard.pendingRegistrations')}
-                    </span>
-                    <strong className="dashboard-stat__value">
-                      <Link to={registrationsLink(seasonId, 'PENDING')}>
-                        {dashboard.pendingRegistrations}
-                      </Link>
-                    </strong>
-                  </article>
-                  <article className="dashboard-stat dashboard-stat--pending">
-                    <span className="dashboard-stat__label">
-                      {t('dashboard.openCharges')}
-                    </span>
-                    <strong className="dashboard-stat__value">
-                      <Link to="/admin/payments?status=PENDING">
-                        {dashboard.openChargesCount} ·{' '}
-                        {formatAmount(dashboard.openChargesAmount)}
-                      </Link>
-                    </strong>
-                  </article>
-                </>
-              )}
             </div>
           </section>
 
-          {summary && (
-            <section
-              className="dashboard-panel dashboard-panel--payments"
-              aria-label={t('dashboard.paymentSummary')}
-            >
-              <div className="dashboard-section__head">
-                <h2>{t('dashboard.paymentSummary')}</h2>
-                <p>{t('dashboard.paymentSummaryHint')}</p>
-              </div>
-              <div className="dashboard-payment-row">
-                <div className="dashboard-payment-pill dashboard-payment-pill--pending">
-                  <span>{t('dashboard.pendingPayments')}</span>
-                  <strong>
-                    {summary.pendingCount}
-                    <small>{formatAmount(summary.pendingAmount)}</small>
-                  </strong>
-                </div>
-                <div className="dashboard-payment-pill dashboard-payment-pill--paid">
-                  <span>{t('dashboard.paidPayments')}</span>
-                  <strong>
-                    {summary.paidCount}
-                    <small>{formatAmount(summary.paidAmount)}</small>
-                  </strong>
-                </div>
-                <div className="dashboard-payment-pill dashboard-payment-pill--cancelled">
-                  <span>{t('dashboard.cancelledPayments')}</span>
-                  <strong>
-                    {summary.cancelledCount}
-                    <small>{formatAmount(summary.cancelledAmount)}</small>
-                  </strong>
-                </div>
-              </div>
-            </section>
-          )}
+          <section
+            className="dashboard-payment-grid"
+            aria-label={t('dashboard.paymentSummary')}
+          >
+            <PaymentSummaryCard
+              title={t('dashboard.monthlyPaymentSummary')}
+              summary={dashboard.monthlyPaymentSummary ?? emptyPaymentSummary}
+              viewTo={paymentsLink(currentMonthValue())}
+            />
+            <PaymentSummaryCard
+              title={t('dashboard.yearlyPaymentSummary')}
+              summary={dashboard.yearlyPaymentSummary ?? emptyPaymentSummary}
+              viewTo={paymentsLink()}
+            />
+          </section>
 
           <section
             className="dashboard-panel"
@@ -336,7 +400,6 @@ export function DashboardPage() {
             <div className="dashboard-section__head dashboard-section__head--row">
               <div>
                 <h2>{t('dashboard.recentRegistrations')}</h2>
-                <p>{t('dashboard.recentHint')}</p>
               </div>
               <Link
                 to={registrationsLink(seasonId)}
@@ -349,41 +412,54 @@ export function DashboardPage() {
             {dashboard.recentRegistrations.length === 0 ? (
               <p className="dashboard-empty">{t('dashboard.recentEmpty')}</p>
             ) : (
-              <ul className="dashboard-recent">
-                {dashboard.recentRegistrations.map((row) => (
-                  <li key={row.id} className="dashboard-recent__item">
-                    <div className="dashboard-recent__main">
-                      <strong>
-                        {row.studentFirstName} {row.studentLastName}
-                      </strong>
-                      <span className="dashboard-recent__meta">
-                        {activityTypeLabel(row.activityType)} ·{' '}
-                        {row.registrationDate}
-                      </span>
-                    </div>
-                    <StatusBadge tone={registrationStatusTone(row.status)}>
-                      {registrationStatusLabel(row.status)}
-                    </StatusBadge>
-                    <div className="dashboard-recent__actions">
-                      <Link
-                        to={`/admin/registrations/${row.id}`}
-                        className="reg-action reg-action--view"
-                      >
-                        {t('common.view')}
-                      </Link>
-                      <Link
-                        to={`/admin/registrations/${row.id}?edit=1`}
-                        className="reg-action reg-action--edit"
-                      >
-                        {t('common.edit')}
-                      </Link>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <div className="admin-table-wrap">
+                <table className="admin-table dashboard-recent-table">
+                  <thead>
+                    <tr>
+                      <th>{t('common.status')}</th>
+                      <th>{t('dashboard.activity')}</th>
+                      <th>{t('dashboard.student')}</th>
+                      <th>{t('dashboard.dateAndTime')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboard.recentRegistrations.map((row) => (
+                      <tr key={row.id}>
+                        <td>
+                          <StatusBadge tone={registrationStatusTone(row.status)}>
+                            {registrationStatusLabel(row.status)}
+                          </StatusBadge>
+                        </td>
+                        <td>
+                          <span className="dashboard-recent-table__activity">
+                            <MiniIcon label={activityTypeLabel(row.activityType)}>
+                              {row.activityType === 'SWIMMING' ? (
+                                <path d="M2 16c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 7 0M2 12c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 7 0" />
+                              ) : (
+                                <circle cx="12" cy="12" r="9" />
+                              )}
+                            </MiniIcon>
+                            {activityTypeLabel(row.activityType)}
+                          </span>
+                        </td>
+                        <td>
+                          <Link
+                            to={`/admin/registrations/${row.id}`}
+                            className="dashboard-recent-table__student"
+                          >
+                            {row.studentFirstName} {row.studentLastName}
+                          </Link>
+                        </td>
+                        <td className="dashboard-recent-table__datetime">
+                          {formatDateTime(row.registrationDate, row.createdAt ?? null)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
-
         </>
       )}
     </section>

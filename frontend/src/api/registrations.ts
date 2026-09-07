@@ -34,6 +34,7 @@ export type RegistrationRequest = {
 export type RegistrationResponse = {
   id: number
   registrationDate: string
+  createdAt?: string | null
   status: RegistrationStatus
   studentId: number
   studentFirstName: string

@@ -27,8 +27,11 @@ export type DashboardResponse = {
   activeStudents: number
   openChargesCount: number
   openChargesAmount: number
+  studentsWithoutGroup?: number
   monthlyIncome: number
   paymentStatusSummary: PaymentStatusSummary
+  monthlyPaymentSummary?: PaymentStatusSummary
+  yearlyPaymentSummary?: PaymentStatusSummary
   recentRegistrations: RegistrationResponse[]
   seasonsNearingEnd: SeasonNearingEnd[]
 }
