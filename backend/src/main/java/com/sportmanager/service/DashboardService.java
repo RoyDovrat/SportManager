@@ -52,6 +52,7 @@ public class DashboardService {
         long approvedRegistrations = 0;
         long cancelledRegistrations = 0;
         long activeStudents = 0;
+        long studentsWithoutGroup = 0;
         List<RegistrationResponse> recentRegistrations;
 
         if (resolvedSeasonId != null) {
@@ -68,17 +69,17 @@ public class DashboardService {
             activeStudents = registrationRepository.countDistinctStudentsBySeasonIdAndStatus(
                     resolvedSeasonId, RegistrationStatus.APPROVED
             );
+            studentsWithoutGroup = registrationRepository.countBySeasonIdAndStatusAndActivityGroupIsNull(
+                    resolvedSeasonId, RegistrationStatus.APPROVED
+            );
             recentRegistrations = registrationRepository
-                    .findBySeasonIdAndRegistrationDateOrderByIdDesc(
-                            resolvedSeasonId,
-                            LocalDate.now()
-                    )
+                    .findTop8BySeasonIdOrderByRegistrationDateDescIdDesc(resolvedSeasonId)
                     .stream()
                     .map(registrationService::toResponse)
                     .toList();
         } else {
             recentRegistrations = registrationRepository
-                    .findByRegistrationDateOrderByIdDesc(LocalDate.now())
+                    .findTop8ByOrderByRegistrationDateDescIdDesc()
                     .stream()
                     .map(registrationService::toResponse)
                     .toList();
@@ -97,6 +98,16 @@ public class DashboardService {
         );
 
         PaymentStatusSummary paymentSummary = buildPaymentSummary(resolvedSeasonId);
+        PaymentStatusSummary monthlyPaymentSummary = buildPaymentSummaryForPeriod(
+                resolvedSeasonId,
+                currentMonth.atDay(1),
+                currentMonth.atEndOfMonth()
+        );
+        PaymentStatusSummary yearlyPaymentSummary = buildPaymentSummaryForPeriod(
+                resolvedSeasonId,
+                currentMonth.atDay(1).withDayOfYear(1),
+                currentMonth.atDay(1).withDayOfYear(1).plusYears(1).minusDays(1)
+        );
 
         return DashboardResponse.builder()
                 .seasonId(resolvedSeasonId)
@@ -108,8 +119,11 @@ public class DashboardService {
                 .activeStudents(activeStudents)
                 .openChargesCount(openChargesCount)
                 .openChargesAmount(zeroIfNull(openChargesAmount))
+                .studentsWithoutGroup(studentsWithoutGroup)
                 .monthlyIncome(zeroIfNull(monthlyIncome))
                 .paymentStatusSummary(paymentSummary)
+                .monthlyPaymentSummary(monthlyPaymentSummary)
+                .yearlyPaymentSummary(yearlyPaymentSummary)
                 .recentRegistrations(recentRegistrations)
                 .seasonsNearingEnd(findSeasonsNearingEnd())
                 .build();
@@ -173,6 +187,33 @@ public class DashboardService {
                 .pendingAmount(zeroIfNull(pendingAmount))
                 .paidAmount(zeroIfNull(paidAmount))
                 .cancelledAmount(zeroIfNull(cancelledAmount))
+                .build();
+    }
+
+    private PaymentStatusSummary buildPaymentSummaryForPeriod(
+            Long seasonId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+        return PaymentStatusSummary.builder()
+                .pendingCount(paymentRepository.countByStatusAndPeriod(
+                        PaymentStatus.PENDING, seasonId, fromDate, toDate
+                ))
+                .paidCount(paymentRepository.countByStatusAndPeriod(
+                        PaymentStatus.PAID, seasonId, fromDate, toDate
+                ))
+                .cancelledCount(paymentRepository.countByStatusAndPeriod(
+                        PaymentStatus.CANCELLED, seasonId, fromDate, toDate
+                ))
+                .pendingAmount(zeroIfNull(paymentRepository.sumAmountByStatusAndPeriod(
+                        PaymentStatus.PENDING, seasonId, fromDate, toDate
+                )))
+                .paidAmount(zeroIfNull(paymentRepository.sumAmountByStatusAndPeriod(
+                        PaymentStatus.PAID, seasonId, fromDate, toDate
+                )))
+                .cancelledAmount(zeroIfNull(paymentRepository.sumAmountByStatusAndPeriod(
+                        PaymentStatus.CANCELLED, seasonId, fromDate, toDate
+                )))
                 .build();
     }
 

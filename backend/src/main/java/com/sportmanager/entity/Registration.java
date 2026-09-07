@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -46,6 +47,9 @@ public class Registration {
     @NotNull
     @Column(name = "registration_date", nullable = false)
     private LocalDate registrationDate;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "swimming_lesson_type")
@@ -92,4 +96,11 @@ public class Registration {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_group_id")
     private ActivityGroup activityGroup;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

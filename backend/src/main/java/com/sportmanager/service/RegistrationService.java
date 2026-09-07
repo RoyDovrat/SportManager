@@ -544,6 +544,7 @@ public class RegistrationService {
         return RegistrationResponse.builder()
                 .id(registration.getId())
                 .registrationDate(registration.getRegistrationDate())
+                .createdAt(registration.getCreatedAt())
                 .status(registration.getStatus())
                 .studentId(student.getId())
                 .studentFirstName(student.getFirstName())

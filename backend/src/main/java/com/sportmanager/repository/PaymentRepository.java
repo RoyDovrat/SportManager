@@ -136,5 +136,35 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("toDate") LocalDate toDate
     );
 
+    @Query("""
+            SELECT COUNT(p)
+            FROM Payment p
+            WHERE p.status = :status
+              AND (:seasonId IS NULL OR p.registration.season.id = :seasonId)
+              AND COALESCE(p.chargeMonth, p.paymentDate) >= :fromDate
+              AND COALESCE(p.chargeMonth, p.paymentDate) <= :toDate
+            """)
+    long countByStatusAndPeriod(
+            @Param("status") PaymentStatus status,
+            @Param("seasonId") Long seasonId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0)
+            FROM Payment p
+            WHERE p.status = :status
+              AND (:seasonId IS NULL OR p.registration.season.id = :seasonId)
+              AND COALESCE(p.chargeMonth, p.paymentDate) >= :fromDate
+              AND COALESCE(p.chargeMonth, p.paymentDate) <= :toDate
+            """)
+    java.math.BigDecimal sumAmountByStatusAndPeriod(
+            @Param("status") PaymentStatus status,
+            @Param("seasonId") Long seasonId,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate
+    );
+
     List<Payment> findByRegistration_Season_Id(Long seasonId);
 }

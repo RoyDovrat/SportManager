@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -17,6 +18,7 @@ public class RegistrationResponse {
 
     private Long id;
     private LocalDate registrationDate;
+    private LocalDateTime createdAt;
     private RegistrationStatus status;
 
     private Long studentId;

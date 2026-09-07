@@ -21,10 +21,13 @@ public class DashboardResponse {
 
     private long openChargesCount;
     private BigDecimal openChargesAmount;
+    private long studentsWithoutGroup;
 
     private BigDecimal monthlyIncome;
 
     private PaymentStatusSummary paymentStatusSummary;
+    private PaymentStatusSummary monthlyPaymentSummary;
+    private PaymentStatusSummary yearlyPaymentSummary;
     private List<RegistrationResponse> recentRegistrations;
     private List<SeasonNearingEndResponse> seasonsNearingEnd;
 }

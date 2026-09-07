@@ -35,6 +35,12 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
 
     long countBySeasonIdAndStatus(Long seasonId, RegistrationStatus status);
 
+    long countBySeasonIdAndStatusAndActivityGroupIsNull(Long seasonId, RegistrationStatus status);
+
+    List<Registration> findTop8BySeasonIdOrderByRegistrationDateDescIdDesc(Long seasonId);
+
+    List<Registration> findTop8ByOrderByRegistrationDateDescIdDesc();
+
     @Query("""
             SELECT COUNT(DISTINCT r.student.id)
             FROM Registration r
