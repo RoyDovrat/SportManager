@@ -4556,6 +4556,141 @@ body:has(.wizard-page) {
   opacity: 0.7;
 }
 
+.swim-settings-layout {
+  align-items: stretch;
+}
+
+.swim-markdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.swim-markdown__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.swim-markdown__head > span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.swim-markdown__tabs {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.swim-markdown__tabs button {
+  min-height: 2.1rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy-800);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.swim-markdown__tabs button.is-active {
+  background: var(--accent-blue-soft);
+  border-color: rgb(26 111 154 / 35%);
+  color: #155a7c;
+}
+
+.swim-settings-list .seasons-card-head {
+  align-items: center;
+}
+
+.swim-settings-list .seasons-card-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.swim-markdown textarea {
+  min-height: 14rem;
+  resize: vertical;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  direction: rtl;
+}
+
+.swim-markdown__preview {
+  min-height: 14rem;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #f7fafc;
+}
+
+.swim-settings-list__count {
+  margin-inline-start: auto;
+  min-width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent-blue-soft);
+  color: #155a7c;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.swim-settings-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.swim-settings-list__item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.swim-settings-list__item strong {
+  color: var(--navy-900);
+}
+
+.swim-settings-list__item span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.swim-settings-list__item.is-selected {
+  border-color: rgb(26 111 154 / 35%);
+  background: var(--accent-blue-soft);
+}
+
+.swim-settings-list__item:hover {
+  border-color: var(--border-strong);
+}
+
 @media (max-width: 960px) {
   .seasons-editor {
     grid-template-columns: 1fr;
