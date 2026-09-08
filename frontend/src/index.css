@@ -3753,6 +3753,12 @@ body:has(.wizard-page) {
   max-width: 22rem;
 }
 
+.clothing-visibility-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 @media (max-width: 820px) {
   .clothing-order-form__grid,
   .clothing-pricing-form__grid {
