@@ -68,6 +68,7 @@ type TrainingSessionsEditorProps = {
   disabled?: boolean
   maxSessions?: number
   hintKey?: 'football' | 'swimming'
+  error?: string
 }
 
 export function TrainingSessionsEditor({
@@ -76,6 +77,7 @@ export function TrainingSessionsEditor({
   disabled = false,
   maxSessions = 6,
   hintKey = 'football',
+  error,
 }: TrainingSessionsEditorProps) {
   function updateSession(
     key: string,
@@ -93,16 +95,16 @@ export function TrainingSessionsEditor({
   }
 
   return (
-    <fieldset className="admin-form__checkbox-group">
+    <fieldset className="groups-sessions">
       <legend>{t('activityGroups.trainingSessions')}</legend>
-      <p className="clothing-order-form__hint">
+      <p className="admin-form__hint">
         {hintKey === 'swimming'
           ? t('activityGroups.trainingSessionsHintSwimming')
           : t('activityGroups.trainingSessionsHint')}
       </p>
 
       {sessions.length === 0 ? (
-        <p className="clothing-order-form__hint">
+        <p className="admin-form__hint">
           {t('activityGroups.trainingSessionsEmpty')}
         </p>
       ) : (
@@ -167,6 +169,7 @@ export function TrainingSessionsEditor({
 
               <button
                 type="button"
+                className="reg-action reg-action--cancel"
                 onClick={() => removeSession(session.key)}
                 disabled={disabled}
               >
@@ -177,9 +180,16 @@ export function TrainingSessionsEditor({
         </div>
       )}
 
+      {error && (
+        <p className="groups-inline-error" role="alert">
+          {error}
+        </p>
+      )}
+
       <div className="admin-form__actions">
         <button
           type="button"
+          className="btn btn--secondary"
           onClick={() => onChange([...sessions, newTrainingSessionDraft()])}
           disabled={disabled || sessions.length >= maxSessions}
         >

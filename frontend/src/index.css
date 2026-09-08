@@ -2395,6 +2395,7 @@ body:has(.wizard-page) {
 
 .admin-table-wrap {
   overflow-x: auto;
+  padding: 0.5rem;
   background: var(--surface-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -4036,4 +4037,221 @@ body:has(.wizard-page) {
     justify-content: center;
   }
 }
+
+.groups-page {
+  gap: 1rem;
+}
+
+.groups-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.groups-form.admin-form {
+  max-width: none;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.groups-form__head h2,
+.groups-card h3,
+.groups-sessions legend {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  color: var(--navy-900);
+}
+
+.groups-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.groups-card,
+.groups-sessions {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  min-width: 0;
+}
+
+.groups-sessions .admin-form__actions {
+  padding-block: 0.5rem;
+}
+
+.groups-card .groups-sessions {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.groups-card--error,
+.groups-sessions:has(.groups-inline-error) {
+  border-color: rgb(177 50 36 / 35%);
+  background: linear-gradient(180deg, var(--danger-soft) 0%, #fff 42%);
+}
+
+.groups-age-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.6rem;
+}
+
+.groups-inline-error {
+  margin: 0.35rem 0 0;
+  color: var(--danger);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.groups-capacity-hint {
+  margin-top: 0;
+  padding-top: 0.45rem;
+}
+
+.groups-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: 0.65rem 0.75rem;
+  overflow-x: auto;
+}
+
+.groups-filters .admin-form__field {
+  min-width: 0;
+}
+
+.groups-filters .groups-filters__search {
+  flex: 1 1 10.5rem;
+  min-width: 10.5rem;
+}
+
+.groups-filters .groups-filters__type,
+.groups-filters .groups-filters__season,
+.groups-filters .groups-filters__activity {
+  flex: 0 0 auto;
+}
+
+.groups-filters .groups-filters__type {
+  min-width: 11.75rem;
+}
+
+.groups-filters .groups-filters__season {
+  min-width: 17rem;
+}
+
+.groups-filters .groups-filters__activity {
+  min-width: 9.75rem;
+}
+
+.groups-filters .admin-form__field input {
+  width: 100%;
+}
+
+.groups-filters .admin-form__field select {
+  width: max-content;
+  min-width: 100%;
+  field-sizing: content;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.groups-filters__active,
+.groups-filters__reset {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.groups-filters__active {
+  min-height: 2.6rem;
+}
+
+.groups-toolbar {
+  margin: 0;
+}
+
+.groups-readout {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.groups-readout div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.groups-readout dt {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.groups-readout dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--navy-900);
+}
+
+.groups-chip-list,
+.groups-session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.groups-chip-list li,
+.groups-session-list li {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: var(--navy-100);
+  color: var(--navy-800);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.groups-session-list {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.groups-session-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.groups-page .training-sessions-editor__row {
+  padding: 0.55rem 0.65rem;
+  background: #f7fafc;
+}
+
+.groups-page .training-sessions-editor__row .admin-form__field input,
+.groups-page .training-sessions-editor__row .admin-form__field select {
+  min-height: 2.35rem;
+  padding: 0.4rem 0.55rem;
+}
+
+@media (max-width: 1100px) {
+  .groups-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .groups-form-grid,
+  .groups-age-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 

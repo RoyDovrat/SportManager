@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { listActivities, type ActivityResponse } from '../../api/activities'
 import {
@@ -9,26 +9,31 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import {
-  TrainingSessionsEditor,
+  GroupFormFields,
+  emptyGroupFormErrors,
+  hasGroupFormErrors,
+  resolvedWeeklySessions,
+  validateGroupForm,
+  type GroupFormErrors,
+  type GroupFormValues,
+} from '../../components/admin/GroupFormFields'
+import {
   draftsToRequest,
   newTrainingSessionDraft,
-  type TrainingSessionDraft,
 } from '../../components/admin/TrainingSessionsEditor'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
   ageGroupLabel,
+  dayOfWeekLabel,
   swimmingLessonTypeLabel,
   waterAdaptationLevelLabel,
 } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import {
   ACTIVITY_TYPES,
-  AGE_GROUPS,
-  SWIMMING_LESSON_TYPES,
-  WATER_ADAPTATION_LEVELS,
   type ActivityType,
-  type AgeGroup,
   type SwimmingLessonType,
   type WaterAdaptationLevel,
 } from '../../types/enums'
@@ -55,28 +60,35 @@ function pickSeasonForType(
   )
 }
 
-type CreateForm = {
-  name: string
-  seasonId: string
-  activityType: ActivityType
-  ageGroups: AgeGroup[]
-  weeklySessions: string
-  swimmingLessonType: string
-  waterAdaptationLevel: string
-  isActive: boolean
-  trainingSessions: TrainingSessionDraft[]
+function emptyCreateForm(seasonId = '', activityType: ActivityType = 'FOOTBALL'): GroupFormValues {
+  return {
+    name: '',
+    seasonId,
+    activityType,
+    ageGroups: [],
+    weeklySessions: '1',
+    swimmingLessonType: '',
+    waterAdaptationLevel: '',
+    isActive: true,
+    trainingSessions: [newTrainingSessionDraft()],
+  }
 }
 
-const emptyCreateForm: CreateForm = {
-  name: '',
-  seasonId: '',
-  activityType: 'FOOTBALL',
-  ageGroups: [],
-  weeklySessions: '1',
-  swimmingLessonType: '',
-  waterAdaptationLevel: '',
-  isActive: true,
-  trainingSessions: [newTrainingSessionDraft()],
+function formatSessionTime(value: string): string {
+  return value.length >= 5 ? value.slice(0, 5) : value
+}
+
+function formatSessions(row: ActivityGroupResponse): string {
+  const sessions = (row.trainingSessions ?? []).filter((session) => session.isActive)
+  if (sessions.length === 0) {
+    return t('activityGroups.noSessions')
+  }
+  return sessions
+    .map((session) => {
+      const end = session.endTime ? `–${formatSessionTime(session.endTime)}` : ''
+      return `${dayOfWeekLabel(session.dayOfWeek)} ${formatSessionTime(session.startTime)}${end}`
+    })
+    .join(' · ')
 }
 
 export function ActivityGroupsPage() {
@@ -88,20 +100,22 @@ export function ActivityGroupsPage() {
     activityType: activityTypeFilter,
   } = filters
 
+  const formRef = useRef<HTMLFormElement>(null)
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [activities, setActivities] = useState<ActivityResponse[]>([])
   const [rows, setRows] = useState<ActivityGroupResponse[]>([])
   const [filtersReady, setFiltersReady] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [search, setSearch] = useState('')
   const [message, setMessage] = useState<string | null>(null)
-  const [createForm, setCreateForm] = useState<CreateForm>(emptyCreateForm)
+  const [listError, setListError] = useState<string | null>(null)
+  const [formErrors, setFormErrors] = useState<GroupFormErrors>(emptyGroupFormErrors())
+  const [createForm, setCreateForm] = useState<GroupFormValues>(emptyCreateForm())
 
   useEffect(() => {
     async function loadCatalog() {
-      setError(null)
-
       try {
         const [seasonData, activityData] = await Promise.all([
           listSeasons(),
@@ -135,7 +149,7 @@ export function ActivityGroupsPage() {
         }))
         setFiltersReady(true)
       } catch (err) {
-        setError(formatApiError(err))
+        setListError(formatApiError(err))
         setLoading(false)
       }
     }
@@ -152,7 +166,7 @@ export function ActivityGroupsPage() {
     }
 
     setLoading(true)
-    setError(null)
+    setListError(null)
 
     try {
       const data = await listActivityGroups({
@@ -163,7 +177,7 @@ export function ActivityGroupsPage() {
       })
       setRows(data)
     } catch (err) {
-      setError(formatApiError(err))
+      setListError(formatApiError(err))
       setRows([])
     } finally {
       setLoading(false)
@@ -179,21 +193,21 @@ export function ActivityGroupsPage() {
   }, [filtersReady, seasonId, activityFilterId, activeOnly])
 
   function resetCreateForm() {
-    setCreateForm({
-      ...emptyCreateForm,
-      seasonId: seasonId || createForm.seasonId,
-      activityType: isActivityType(activityTypeFilter)
-        ? activityTypeFilter
-        : emptyCreateForm.activityType,
-      trainingSessions: [newTrainingSessionDraft()],
-    })
+    setCreateForm(
+      emptyCreateForm(
+        seasonId || createForm.seasonId,
+        isActivityType(activityTypeFilter)
+          ? activityTypeFilter
+          : emptyCreateForm().activityType,
+      ),
+    )
+    setFormErrors(emptyGroupFormErrors())
   }
 
   function handleActivityTypeFilterChange(nextValue: string) {
     const nextType = isActivityType(nextValue) ? nextValue : ''
     const typedSeason =
       nextType !== '' ? pickSeasonForType(seasons, nextType) : undefined
-    // "All types": keep current season if still valid; otherwise first available.
     const nextSeasonId =
       nextType !== ''
         ? typedSeason != null
@@ -208,20 +222,24 @@ export function ActivityGroupsPage() {
       seasonId: nextSeasonId,
     })
 
-    // Only lock the create form to a sport when the list filter is sport-specific
-    // (e.g. opened from the guide). Direct "all types" leaves create form free.
     if (nextType !== '') {
       setCreateForm((prev) => ({
-        ...prev,
-        activityType: nextType,
-        ageGroups: [],
-        weeklySessions: '1',
-        swimmingLessonType: '',
-        waterAdaptationLevel: '',
-        trainingSessions: [newTrainingSessionDraft()],
-        seasonId: nextSeasonId || prev.seasonId,
+        ...emptyCreateForm(nextSeasonId || prev.seasonId, nextType),
+        name: prev.name,
+        isActive: prev.isActive,
       }))
     }
+  }
+
+  function resetFilters() {
+    const active = seasons.find((season) => season.isActive) ?? seasons[0]
+    setFilters({
+      activityType: '',
+      activityId: '',
+      activeOnly: '',
+      seasonId: active ? String(active.id) : '',
+    })
+    setSearch('')
   }
 
   const seasonsForFilter = isActivityType(activityTypeFilter)
@@ -232,335 +250,133 @@ export function ActivityGroupsPage() {
         (activity) => activity.activityType === activityTypeFilter,
       )
     : activities
-  const visibleRows = isActivityType(activityTypeFilter)
-    ? rows.filter((row) => row.activityType === activityTypeFilter)
-    : rows
 
-  function toggleAgeGroup(value: AgeGroup) {
-    setCreateForm((prev) => {
-      const exists = prev.ageGroups.includes(value)
-      return {
-        ...prev,
-        ageGroups: exists
-          ? prev.ageGroups.filter((item) => item !== value)
-          : [...prev.ageGroups, value],
-      }
-    })
-  }
+  const visibleRows = useMemo(() => {
+    const typed = isActivityType(activityTypeFilter)
+      ? rows.filter((row) => row.activityType === activityTypeFilter)
+      : rows
+    const q = search.trim()
+    if (!q) {
+      return typed
+    }
+    return typed.filter((row) => row.name.includes(q))
+  }, [activityTypeFilter, rows, search])
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
-    setError(null)
     setMessage(null)
 
-    try {
-      const isFootball = createForm.activityType === 'FOOTBALL'
-      if (createForm.ageGroups.length === 0) {
-        setError(t('activityGroups.ageGroupsRequired'))
-        setSaving(false)
-        return
-      }
-      if (!isFootball && createForm.swimmingLessonType === '') {
-        setError(t('activityGroups.lessonTypeRequired'))
-        setSaving(false)
-        return
-      }
-      if (!isFootball && createForm.waterAdaptationLevel === '') {
-        setError(t('activityGroups.waterLevelRequired'))
-        setSaving(false)
-        return
-      }
-      const activeSessions = createForm.trainingSessions.filter(
-        (session) => session.isActive,
-      )
-      let weeklySessions = Number(createForm.weeklySessions)
-      if (isFootball) {
-        if (activeSessions.length !== 1 && activeSessions.length !== 2) {
-          setError(t('activityGroups.trainingSessionsExactlyOneOrTwo'))
-          setSaving(false)
-          return
-        }
-        weeklySessions = activeSessions.length
-      } else {
-        if (activeSessions.length < 1 || activeSessions.length > 6) {
-          setError(t('activityGroups.trainingSessionsSwimmingRange'))
-          setSaving(false)
-          return
-        }
-        weeklySessions = activeSessions.length
-      }
+    const errors = validateGroupForm(createForm)
+    if (hasGroupFormErrors(errors)) {
+      setFormErrors(errors)
+      setSaving(false)
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      return
+    }
 
+    try {
+      const weeklySessions = resolvedWeeklySessions(createForm)
       await createActivityGroup({
         name: createForm.name.trim(),
         seasonId: Number(createForm.seasonId),
         activityType: createForm.activityType,
         ageGroups: createForm.ageGroups,
         weeklySessions,
-        swimmingLessonType: isFootball
-          ? null
-          : (createForm.swimmingLessonType as SwimmingLessonType),
-        waterAdaptationLevel: isFootball
-          ? null
-          : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
+        swimmingLessonType:
+          createForm.activityType === 'FOOTBALL'
+            ? null
+            : (createForm.swimmingLessonType as SwimmingLessonType),
+        waterAdaptationLevel:
+          createForm.activityType === 'FOOTBALL'
+            ? null
+            : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
         isActive: createForm.isActive,
         trainingSessions: draftsToRequest(createForm.trainingSessions),
       })
       setMessage(t('activityGroups.created'))
       resetCreateForm()
+      setCreating(false)
       await loadRows()
     } catch (err) {
-      setError(formatApiError(err))
+      setFormErrors({ general: formatApiError(err) })
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <section className="admin-page admin-page--wide">
+    <section className="admin-page admin-page--wide groups-page">
       <header className="admin-page-hero">
         <div className="admin-page-hero__copy">
           <h1>{t('activityGroups.title')}</h1>
           <p className="admin-page__lede">{t('activityGroups.intro')}</p>
         </div>
+        <button
+          type="button"
+          className="reg-action reg-action--approve"
+          onClick={() => {
+            setCreating((open) => !open)
+            setMessage(null)
+            if (!creating) {
+              setFormErrors(emptyGroupFormErrors())
+            }
+          }}
+        >
+          {creating ? t('activityGroups.closeCreate') : t('activityGroups.newGroup')}
+        </button>
       </header>
 
-      {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
+      {listError && <p className="admin-page__error">{listError}</p>}
 
-      <form className="admin-form" onSubmit={handleCreate}>
-        <h2>{t('activityGroups.createTitle')}</h2>
-
-        <label className="admin-form__field">
-          <span>{t('common.name')}</span>
-          <input
-            value={createForm.name}
-            onChange={(event) =>
-              setCreateForm({ ...createForm, name: event.target.value })
-            }
-            required
-            disabled={saving || !filtersReady}
-          />
-        </label>
-
-        <label className="admin-form__field">
-          <span>{t('activityGroups.activityType')}</span>
-          <select
-            value={createForm.activityType}
-            onChange={(event) => {
-              const nextType = event.target.value as ActivityType
-              const typedSeason = pickSeasonForType(seasons, nextType)
-              setCreateForm({
-                ...createForm,
-                activityType: nextType,
-                seasonId:
-                  typedSeason != null
-                    ? String(typedSeason.id)
-                    : createForm.seasonId,
-                ageGroups: [],
-                weeklySessions: '1',
-                swimmingLessonType: '',
-                waterAdaptationLevel: '',
-                trainingSessions: [newTrainingSessionDraft()],
-              })
+      {creating && (
+        <form
+          ref={formRef}
+          className="admin-form groups-form"
+          onSubmit={handleCreate}
+        >
+          <div className="groups-form__head">
+            <h2>{t('activityGroups.createTitle')}</h2>
+          </div>
+          <GroupFormFields
+            values={createForm}
+            errors={formErrors}
+            onChange={(next) => {
+              setCreateForm(next)
+              setFormErrors(emptyGroupFormErrors())
             }}
             disabled={saving || !filtersReady}
-          >
-            {ACTIVITY_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {activityTypeLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="admin-form__field">
-          <span>{t('activityGroups.season')}</span>
-          <select
-            value={createForm.seasonId}
-            onChange={(event) =>
-              setCreateForm({ ...createForm, seasonId: event.target.value })
-            }
-            required
-            disabled={saving || !filtersReady}
-          >
-            <option value="" disabled>
-              {t('activityGroups.selectSeason')}
-            </option>
-            {seasons
-              .filter((season) => season.activityType === createForm.activityType)
-              .map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name}
-                {season.isActive ? ` (${t('common.active')})` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {createForm.activityType === 'FOOTBALL' ? (
-          <>
-            <fieldset className="admin-form__checkbox-group">
-              <legend>{t('activityGroups.ageGroups')}</legend>
-              <p className="clothing-order-form__hint">
-                {t('activityGroups.ageGroupsHint')}
-              </p>
-              {AGE_GROUPS.map((value) => (
-                <label key={value} className="admin-form__checkbox">
-                  <input
-                    type="checkbox"
-                    checked={createForm.ageGroups.includes(value)}
-                    onChange={() => toggleAgeGroup(value)}
-                    disabled={saving}
-                  />
-                  <span>{ageGroupLabel(value)}</span>
-                </label>
-              ))}
-            </fieldset>
-
-            <TrainingSessionsEditor
-              sessions={createForm.trainingSessions}
-              onChange={(trainingSessions) => {
-                const activeCount = trainingSessions.filter(
-                  (session) => session.isActive,
-                ).length
-                setCreateForm({
-                  ...createForm,
-                  trainingSessions,
-                  weeklySessions:
-                    activeCount === 1 || activeCount === 2
-                      ? String(activeCount)
-                      : createForm.weeklySessions,
-                })
-              }}
-              disabled={saving}
-              maxSessions={2}
-            />
-            <p className="clothing-order-form__hint">
-              {t('activityGroups.weeklySessionsFromSchedule', {
-                count: createForm.trainingSessions.filter(
-                  (session) => session.isActive,
-                ).length,
-              })}
-            </p>
-          </>
-        ) : (
-          <>
-            <label className="admin-form__field">
-              <span>{t('activityGroups.lessonType')}</span>
-              <select
-                value={createForm.swimmingLessonType}
-                onChange={(event) =>
-                  setCreateForm({
-                    ...createForm,
-                    swimmingLessonType: event.target.value,
-                  })
-                }
-                required
-                disabled={saving}
-              >
-                <option value="">{t('activityGroups.selectLessonType')}</option>
-                {SWIMMING_LESSON_TYPES.map((value) => (
-                  <option key={value} value={value}>
-                    {swimmingLessonTypeLabel(value)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="clothing-order-form__hint">
-              {t('activityGroups.lessonCapacityHint')}
-            </p>
-
-            <fieldset className="admin-form__checkbox-group">
-              <legend>{t('activityGroups.ageGroups')}</legend>
-              <p className="clothing-order-form__hint">
-                {t('activityGroups.ageGroupsHintSwimming')}
-              </p>
-              {AGE_GROUPS.map((value) => (
-                <label key={value} className="admin-form__checkbox">
-                  <input
-                    type="checkbox"
-                    checked={createForm.ageGroups.includes(value)}
-                    onChange={() => toggleAgeGroup(value)}
-                    disabled={saving}
-                  />
-                  <span>{ageGroupLabel(value)}</span>
-                </label>
-              ))}
-            </fieldset>
-
-            <label className="admin-form__field">
-              <span>{t('activityGroups.waterLevel')}</span>
-              <select
-                value={createForm.waterAdaptationLevel}
-                onChange={(event) =>
-                  setCreateForm({
-                    ...createForm,
-                    waterAdaptationLevel: event.target.value,
-                  })
-                }
-                required
-                disabled={saving}
-              >
-                <option value="">{t('activityGroups.selectWaterLevel')}</option>
-                {WATER_ADAPTATION_LEVELS.map((value) => (
-                  <option key={value} value={value}>
-                    {waterAdaptationLevelLabel(value)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <TrainingSessionsEditor
-              sessions={createForm.trainingSessions}
-              onChange={(trainingSessions) => {
-                const activeCount = trainingSessions.filter(
-                  (session) => session.isActive,
-                ).length
-                setCreateForm({
-                  ...createForm,
-                  trainingSessions,
-                  weeklySessions:
-                    activeCount >= 1 && activeCount <= 6
-                      ? String(activeCount)
-                      : createForm.weeklySessions,
-                })
-              }}
-              disabled={saving}
-              maxSessions={6}
-              hintKey="swimming"
-            />
-            <p className="clothing-order-form__hint">
-              {t('activityGroups.weeklySessionsFromSchedule', {
-                count: createForm.trainingSessions.filter(
-                  (session) => session.isActive,
-                ).length,
-              })}
-            </p>
-          </>
-        )}
-
-        <label className="admin-form__checkbox">
-          <input
-            type="checkbox"
-            checked={createForm.isActive}
-            onChange={(event) =>
-              setCreateForm({ ...createForm, isActive: event.target.checked })
-            }
-            disabled={saving}
+            seasons={seasons}
           />
-          <span>{t('common.active')}</span>
+          <div className="admin-form__actions">
+            <button type="submit" disabled={saving || !filtersReady}>
+              {saving ? t('common.saving') : t('common.create')}
+            </button>
+            <button
+              type="button"
+              className="btn btn--secondary"
+              onClick={resetCreateForm}
+              disabled={saving}
+            >
+              {t('activityGroups.clearForm')}
+            </button>
+          </div>
+        </form>
+      )}
+
+      <div className="admin-filters groups-filters">
+        <label className="admin-form__field groups-filters__search">
+          <span>{t('common.name')}</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t('activityGroups.searchPlaceholder')}
+          />
         </label>
 
-        <div className="admin-form__actions">
-          <button type="submit" disabled={saving || !filtersReady}>
-            {saving ? t('common.saving') : t('common.create')}
-          </button>
-        </div>
-      </form>
-
-      <div className="admin-filters">
-        <label className="admin-form__field">
+        <label className="admin-form__field groups-filters__type">
           <span>{t('activityGroups.filterActivityType')}</span>
           <select
             value={activityTypeFilter}
@@ -578,7 +394,7 @@ export function ActivityGroupsPage() {
           </select>
         </label>
 
-        <label className="admin-form__field">
+        <label className="admin-form__field groups-filters__season">
           <span>{t('activityGroups.filterSeason')}</span>
           <select
             value={seasonId}
@@ -594,7 +410,7 @@ export function ActivityGroupsPage() {
           </select>
         </label>
 
-        <label className="admin-form__field">
+        <label className="admin-form__field groups-filters__activity">
           <span>{t('activityGroups.filterActivity')}</span>
           <select
             value={activityFilterId}
@@ -610,7 +426,7 @@ export function ActivityGroupsPage() {
           </select>
         </label>
 
-        <label className="admin-form__checkbox">
+        <label className="admin-form__checkbox groups-filters__active">
           <input
             type="checkbox"
             checked={activeOnly === '1'}
@@ -621,13 +437,19 @@ export function ActivityGroupsPage() {
           />
           <span>{t('activityGroups.activeOnly')}</span>
         </label>
+
+        <button
+          type="button"
+          className="btn btn--secondary groups-filters__reset"
+          onClick={resetFilters}
+        >
+          {t('activityGroups.resetFilters')}
+        </button>
       </div>
 
       <div className="admin-table-wrap">
         <h2>{t('activityGroups.listTitle')}</h2>
-        <p className="clothing-order-form__hint">
-          {t('activityGroups.listHint')}
-        </p>
+        <p className="admin-form__hint">{t('activityGroups.listHint')}</p>
         {!seasonId ? (
           <p className="dashboard-empty">{t('activityGroups.selectSeasonFirst')}</p>
         ) : loading ? (
@@ -644,6 +466,7 @@ export function ActivityGroupsPage() {
                 <th>{t('activityGroups.attributes')}</th>
                 <th>{t('activityGroups.members')}</th>
                 <th>{t('common.status')}</th>
+                <th>{t('activityGroups.sessionsColumn')}</th>
                 <th>{t('common.actions')}</th>
               </tr>
             </thead>
@@ -660,8 +483,11 @@ export function ActivityGroupsPage() {
                       : row.memberCount}
                   </td>
                   <td>
-                    {row.isActive ? t('common.active') : t('common.inactive')}
+                    <StatusBadge tone={row.isActive ? 'success' : 'neutral'}>
+                      {row.isActive ? t('common.active') : t('common.inactive')}
+                    </StatusBadge>
                   </td>
+                  <td>{formatSessions(row)}</td>
                   <td className="admin-table__actions">
                     <Link
                       to={`/admin/activity-groups/${row.id}`}

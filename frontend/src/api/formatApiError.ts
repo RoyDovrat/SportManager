@@ -5,10 +5,7 @@ export function formatApiError(error: unknown): string {
   if (error instanceof ApiError) {
     const fieldErrors = error.body?.fieldErrors
     if (fieldErrors && Object.keys(fieldErrors).length > 0) {
-      const details = Object.entries(fieldErrors)
-        .map(([field, message]) => `${field}: ${message}`)
-        .join('; ')
-      return `${error.message} (${details})`
+      return Object.values(fieldErrors).join(' · ')
     }
     return error.message
   }
