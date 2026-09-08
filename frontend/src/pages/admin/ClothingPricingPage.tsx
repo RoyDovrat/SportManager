@@ -10,6 +10,7 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
+import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { t } from '../../i18n/t'
@@ -534,14 +535,12 @@ export function ClothingPricingPage() {
             placeholder={t('clothingPricing.searchPlaceholder')}
           />
         </label>
-        <button
-          type="button"
-          className="btn btn--secondary seasons-filters__reset"
+        <FilterClearButton
           onClick={() => setSearch('')}
           disabled={search.trim() === ''}
         >
           {t('clothingPricing.resetFilters')}
-        </button>
+        </FilterClearButton>
       </div>
 
       <div className="admin-table-wrap">

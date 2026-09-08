@@ -10,6 +10,7 @@ import {
 } from '../../api/activities'
 import { formatApiError } from '../../api/formatApiError'
 import { NavIcon } from '../../components/ui/NavIcon'
+import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { activityTypeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
@@ -342,14 +343,12 @@ export function ActivitiesPage() {
           <span>{t('activities.activeOnly')}</span>
         </label>
 
-        <button
-          type="button"
-          className="btn btn--secondary seasons-filters__reset"
+        <FilterClearButton
           onClick={resetFilters}
           disabled={!filtersActive}
         >
           {t('activities.resetFilters')}
-        </button>
+        </FilterClearButton>
       </div>
 
       <div className="admin-table-wrap">

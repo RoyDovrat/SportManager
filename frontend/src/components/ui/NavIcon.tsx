@@ -13,6 +13,10 @@ type NavIconProps = {
     | 'help'
     | 'public'
     | 'logout'
+    | 'filter'
+    | 'clear'
+    | 'football'
+    | 'swimming'
 }
 
 const paths: Record<NavIconProps['name'], string> = {
@@ -41,6 +45,14 @@ const paths: Record<NavIconProps['name'], string> = {
     'M12 3a9 9 0 1 0 9 9A9 9 0 0 0 12 3Zm0 0c2.5 2.5 4 5.5 4 9s-1.5 6.5-4 9m0-18c-2.5 2.5-4 5.5-4 9s1.5 6.5 4 9M3.5 12h17',
   logout:
     'M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5m5-8H9m6 0 3-3m-3 3 3 3',
+  filter:
+    'M4 6h16l-6.2 7.4V19l-3.6 1.5v-7.1L4 6Z',
+  clear:
+    'M4 7h16M9 7V5h6v2m-7 4v6m4-6v6M6 7l1 12h10l1-12',
+  football:
+    'M12 3a9 9 0 1 0 9 9A9 9 0 0 0 12 3Zm-5.2 5.2h10.4M6.8 15.8h10.4M9 4.8 7.2 12 9 19.2M15 4.8 16.8 12 15 19.2',
+  swimming:
+    'M4 18c1.6-1.1 3.2-1.1 4.8 0s3.2 1.1 4.8 0 3.2-1.1 4.8 0M7 8.2a2 2 0 1 0-2-2 2 2 0 0 0 2 2Zm1.4 1.2c1.6-2 4-2.2 6.1-.3.7.7 1.6 1 2.5.8',
 }
 
 export function NavIcon({ name }: NavIconProps) {

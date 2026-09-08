@@ -6,6 +6,7 @@ import {
 } from '../../api/dashboard'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { NavIcon } from '../../components/ui/NavIcon'
 import { PaymentSummaryCard } from '../../components/ui/PaymentSummaryCard'
 import {
   StatusBadge,
@@ -170,6 +171,8 @@ export function DashboardPage() {
     void loadDashboard()
   }, [catalogReady, seasonId])
 
+  const selectedSeason = seasons.find((season) => String(season.id) === seasonId)
+
   const emptyPaymentSummary = {
     pendingCount: 0,
     paidCount: 0,
@@ -187,25 +190,42 @@ export function DashboardPage() {
           <p className="admin-page__lede">{t('dashboard.welcomeLede')}</p>
         </div>
 
-        <label className="dashboard-hero__season">
-          <span>{t('dashboard.season')}</span>
-          <select
-            value={seasonId}
-            onChange={(event) => setFilter('seasonId', event.target.value)}
-            disabled={!catalogReady || seasons.length === 0}
+        <div className="seasons-hero-meta">
+          <label
+            className={
+              selectedSeason?.isActive
+                ? 'seasons-active-chip seasons-active-chip--on pricing-season-picker'
+                : 'seasons-active-chip pricing-season-picker'
+            }
           >
-            {seasons.length === 0 ? (
-              <option value="">{t('dashboard.noSeasons')}</option>
-            ) : (
-              seasons.map((season) => (
-                <option key={season.id} value={season.id}>
-                  {season.name} · {activityTypeLabel(season.activityType)}
-                  {season.isActive ? ` (${t('common.active')})` : ''}
-                </option>
-              ))
-            )}
-          </select>
-        </label>
+            <span className="seasons-active-chip__label">
+              <NavIcon name="seasons" />
+              {t('dashboard.season')}
+            </span>
+            <div className="seasons-active-chip__row">
+              <select
+                className="pricing-season-picker__select"
+                value={seasonId}
+                onChange={(event) => setFilter('seasonId', event.target.value)}
+                disabled={!catalogReady || seasons.length === 0}
+              >
+                {seasons.length === 0 ? (
+                  <option value="">{t('dashboard.noSeasons')}</option>
+                ) : (
+                  seasons.map((season) => (
+                    <option key={season.id} value={season.id}>
+                      {season.name} · {activityTypeLabel(season.activityType)}
+                      {season.isActive ? ` · ${t('common.active')}` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+              {selectedSeason?.isActive && (
+                <StatusBadge tone="success">{t('common.active')}</StatusBadge>
+              )}
+            </div>
+          </label>
+        </div>
       </header>
 
       {error && <p className="admin-page__error">{error}</p>}

@@ -21,6 +21,7 @@ import {
   draftsToRequest,
   newTrainingSessionDraft,
 } from '../../components/admin/TrainingSessionsEditor'
+import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
@@ -438,13 +439,9 @@ export function ActivityGroupsPage() {
           <span>{t('activityGroups.activeOnly')}</span>
         </label>
 
-        <button
-          type="button"
-          className="btn btn--secondary groups-filters__reset"
-          onClick={resetFilters}
-        >
+        <FilterClearButton onClick={resetFilters}>
           {t('activityGroups.resetFilters')}
-        </button>
+        </FilterClearButton>
       </div>
 
       <div className="admin-table-wrap">

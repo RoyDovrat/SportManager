@@ -1,8 +1,24 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { NavIcon } from '../components/ui/NavIcon'
 import { t } from '../i18n/t'
+
+function adminTheme(pathname: string): string {
+  if (pathname.startsWith('/admin/registrations')) return 'registrations'
+  if (pathname.startsWith('/admin/clothing-orders')) return 'clothing-orders'
+  if (pathname.startsWith('/admin/clothing-pricing')) return 'clothing-pricing'
+  if (pathname.startsWith('/admin/activity-pricing')) return 'activity-pricing'
+  if (pathname.startsWith('/admin/activity-groups')) return 'groups'
+  if (pathname.startsWith('/admin/swimming-registration')) return 'swimming'
+  if (pathname.startsWith('/admin/payments')) return 'payments'
+  if (pathname.startsWith('/admin/reports')) return 'reports'
+  if (pathname.startsWith('/admin/help')) return 'help'
+  if (pathname.startsWith('/admin/seasons')) return 'seasons'
+  if (pathname.startsWith('/admin/activities')) return 'activities'
+  if (pathname.startsWith('/admin/exports/kibbutz')) return 'export'
+  return 'dashboard'
+}
 
 const navGroups = [
   {
@@ -66,7 +82,10 @@ const navGroups = [
 export function AdminLayout() {
   const { username, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [navOpen, setNavOpen] = useState(false)
+  const theme = adminTheme(pathname)
+  const initial = (username ?? 'A').slice(0, 1).toUpperCase()
 
   function handleLogout() {
     logout()
@@ -78,7 +97,7 @@ export function AdminLayout() {
   }
 
   return (
-    <div className={`layout layout--admin${navOpen ? ' admin-nav-open' : ''}`}>
+    <div className={`layout layout--admin admin-theme-${theme}${navOpen ? ' admin-nav-open' : ''}`}>
       <button
         type="button"
         className="admin-sidebar-backdrop"
@@ -88,8 +107,13 @@ export function AdminLayout() {
 
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
-          <span className="admin-sidebar__brand-name">{t('appName')}</span>
-          <span className="admin-sidebar__brand-sub">{t('nav.admin')}</span>
+          <span className="admin-sidebar__mark" aria-hidden="true">
+            <NavIcon name="activities" />
+          </span>
+          <div className="admin-sidebar__brand-copy">
+            <span className="admin-sidebar__brand-name">{t('appName')}</span>
+            <span className="admin-sidebar__brand-sub">{t('nav.admin')}</span>
+          </div>
         </div>
 
         <nav className="admin-sidebar__nav" aria-label={t('nav.admin')}>
@@ -127,8 +151,13 @@ export function AdminLayout() {
       <div className="admin-shell">
         <header className="admin-topbar">
           <p className="admin-topbar__greeting">
-            <span>{t('nav.hello')}, </span>
-            {username ?? 'admin'}
+            <span className="admin-topbar__avatar" aria-hidden="true">
+              {initial}
+            </span>
+            <span className="admin-topbar__identity">
+              <span className="admin-topbar__hello">{t('nav.hello')},</span>{' '}
+              <span className="admin-topbar__name">{username ?? 'admin'}</span>
+            </span>
           </p>
           <div className="admin-topbar__actions">
             <button

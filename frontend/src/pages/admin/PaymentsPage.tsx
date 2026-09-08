@@ -9,6 +9,8 @@ import {
   type PaymentResponse,
 } from '../../api/payments'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { FilterClearButton } from '../../components/ui/FilterClearButton'
+import { NavIcon } from '../../components/ui/NavIcon'
 import {
   StatusBadge,
   paymentStatusTone,
@@ -57,7 +59,7 @@ function currentMonthValue(): string {
 }
 
 export function PaymentsPage() {
-  const { filters, setFilter } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setFilters } = useUrlFilters(FILTER_DEFAULTS)
   const { status, paymentType, chargeMonth } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
@@ -196,90 +198,48 @@ export function PaymentsPage() {
     }
   }
 
+  const filtersActive =
+    status !== FILTER_DEFAULTS.status ||
+    paymentType !== ALL ||
+    chargeMonth !== ALL
+
+  function resetFilters() {
+    setFilters({ ...FILTER_DEFAULTS })
+  }
+
+  const exportHref = chargeMonth
+    ? `/admin/exports/kibbutz?month=${encodeURIComponent(chargeMonth)}`
+    : '/admin/exports/kibbutz'
+
   return (
-    <section className="admin-page admin-page--wide">
+    <section className="admin-page admin-page--wide payments-page">
       <header className="admin-page-hero">
         <div className="admin-page-hero__copy">
           <h1>{t('payments.title')}</h1>
           <p className="admin-page__lede">{t('payments.intro')}</p>
         </div>
+        <div className="seasons-hero-meta">
+          <Link to={exportHref} className="admin-export-link">
+            <NavIcon name="export" />
+            {t('payments.kibbutzExportLink')}
+          </Link>
+        </div>
       </header>
-      <p>
-            <Link
-              to={
-                chargeMonth
-                  ? `/admin/exports/kibbutz?month=${encodeURIComponent(chargeMonth)}`
-                  : '/admin/exports/kibbutz'
-              }
-            >
-              {t('payments.kibbutzExportLink')}
-            </Link>
-      </p>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
       <div className="payments-actions">
-        <form className="admin-form" onSubmit={handleGenerate}>
-          <h2>{t('payments.generateTitle')}</h2>
-          <p className="clothing-order-form__hint">{t('payments.generateHint')}</p>
-          <p className="clothing-order-form__hint">{t('payments.syncSeasonHint')}</p>
-
-          <label className="admin-form__field">
-            <span>{t('payments.generateSeason')}</span>
-            <select
-              value={generateSeasonId}
-              onChange={(event) => setGenerateSeasonId(event.target.value)}
-              disabled={generating || syncingSeason}
-            >
-              <option value="">{t('payments.activeSeasonDefault')}</option>
-              {seasons.map((season) => (
-                <option key={season.id} value={season.id}>
-                  {season.name}
-                  {season.isActive ? ` (${t('common.active')})` : ''}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="admin-form__actions">
-            <button
-              type="button"
-              className="reg-action reg-action--approve"
-              disabled={generating || syncingSeason}
-              onClick={() => void handleSyncSeason()}
-            >
-              {syncingSeason
-                ? t('payments.syncingSeason')
-                : t('payments.syncSeasonSubmit')}
-            </button>
+        <form className="payments-action-card" onSubmit={handleClothingPayment}>
+          <div className="seasons-card-head">
+            <span className="seasons-card-icon" aria-hidden="true">
+              <NavIcon name="clothing" />
+            </span>
+            <div>
+              <h2>{t('payments.clothingPaymentTitle')}</h2>
+              <p>{t('payments.clothingPaymentHint')}</p>
+            </div>
           </div>
-
-          <label className="admin-form__field">
-            <span>{t('payments.generateMonth')}</span>
-            <input
-              type="month"
-              value={generateMonth}
-              onChange={(event) => setGenerateMonth(event.target.value)}
-              required
-              disabled={generating || syncingSeason}
-            />
-          </label>
-
-          <div className="admin-form__actions">
-            <button type="submit" disabled={generating || syncingSeason}>
-              {generating
-                ? t('payments.generating')
-                : t('payments.generateSubmit')}
-            </button>
-          </div>
-        </form>
-
-        <form className="admin-form" onSubmit={handleClothingPayment}>
-          <h2>{t('payments.clothingPaymentTitle')}</h2>
-          <p className="clothing-order-form__hint">
-            {t('payments.clothingPaymentHint')}
-          </p>
 
           <label className="admin-form__field">
             <span>{t('payments.clothingOrderId')}</span>
@@ -301,9 +261,77 @@ export function PaymentsPage() {
             </button>
           </div>
         </form>
+
+        <form className="payments-action-card" onSubmit={handleGenerate}>
+          <div className="seasons-card-head">
+            <span className="seasons-card-icon" aria-hidden="true">
+              <NavIcon name="seasons" />
+            </span>
+            <div>
+              <h2>{t('payments.generateTitle')}</h2>
+              <p>{t('payments.generateHint')}</p>
+            </div>
+          </div>
+
+          <div className="payments-action-card__grid">
+            <label className="admin-form__field">
+              <span>{t('payments.generateSeason')}</span>
+              <select
+                value={generateSeasonId}
+                onChange={(event) => setGenerateSeasonId(event.target.value)}
+                disabled={generating || syncingSeason}
+              >
+                <option value="">{t('payments.activeSeasonDefault')}</option>
+                {seasons.map((season) => (
+                  <option key={season.id} value={season.id}>
+                    {season.name}
+                    {season.isActive ? ` (${t('common.active')})` : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="admin-form__field">
+              <span>{t('payments.generateMonth')}</span>
+              <input
+                type="month"
+                value={generateMonth}
+                onChange={(event) => setGenerateMonth(event.target.value)}
+                required
+                disabled={generating || syncingSeason}
+              />
+            </label>
+          </div>
+
+          <p className="payments-action-card__hint">
+            {t('payments.syncSeasonHint')}
+          </p>
+
+          <div className="admin-form__actions">
+            <button type="submit" disabled={generating || syncingSeason}>
+              {generating
+                ? t('payments.generating')
+                : t('payments.generateSubmit')}
+            </button>
+            <button
+              type="button"
+              className="reg-action reg-action--approve"
+              disabled={generating || syncingSeason}
+              onClick={() => void handleSyncSeason()}
+            >
+              {syncingSeason
+                ? t('payments.syncingSeason')
+                : t('payments.syncSeasonSubmit')}
+            </button>
+          </div>
+        </form>
       </div>
 
-      <div className="admin-filters">
+      <div className="admin-filters payments-filters">
+        <p className="payments-filters__title">
+          <NavIcon name="filter" />
+          {t('payments.filterTitle')}
+        </p>
         <label className="admin-form__field">
           <span>{t('payments.filterStatus')}</span>
           <select
@@ -343,21 +371,30 @@ export function PaymentsPage() {
           />
         </label>
 
-        {chargeMonth && (
-          <div className="admin-form__actions">
-            <button type="button" onClick={() => setFilter('chargeMonth', '')}>
-              {t('payments.clearMonth')}
-            </button>
-          </div>
-        )}
+        <FilterClearButton onClick={resetFilters} disabled={!filtersActive}>
+          {t('payments.resetFilters')}
+        </FilterClearButton>
       </div>
 
       <div className="admin-table-wrap">
-        <h2>{t('payments.listTitle')}</h2>
+        <div className="seasons-table-head">
+          <h2>
+            <NavIcon name="payments" />
+            {t('payments.listTitle')}
+          </h2>
+        </div>
         {loading ? (
           <p className="admin-page__loading">{t('common.loading')}</p>
         ) : rows.length === 0 ? (
-          <p className="dashboard-empty">{t('payments.empty')}</p>
+          <div className="registrations-empty">
+            <span className="registrations-empty__icon" aria-hidden="true">
+              <NavIcon name="payments" />
+            </span>
+            <p>{t('payments.empty')}</p>
+            <p className="registrations-empty__hint">
+              {t('payments.emptyHint')}
+            </p>
+          </div>
         ) : (
           <table className="admin-table">
             <thead>

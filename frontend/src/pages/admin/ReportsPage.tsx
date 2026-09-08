@@ -7,6 +7,7 @@ import {
 } from '../../api/reports'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { BreakdownChart } from '../../components/ui/BreakdownChart'
+import { NavIcon } from '../../components/ui/NavIcon'
 import {
   StatusBadge,
   paymentStatusTone,
@@ -108,6 +109,8 @@ export function ReportsPage() {
     void loadReport()
   }, [catalogReady, seasonId])
 
+  const selectedSeason = seasons.find((season) => String(season.id) === seasonId)
+
   const activitySplit = useMemo(
     () => (report ? countByActivity(report) : { football: 0, swimming: 0 }),
     [report],
@@ -122,25 +125,42 @@ export function ReportsPage() {
           <p className="admin-page__lede">{t('reports.intro')}</p>
         </div>
 
-        <label className="reports-hero__season">
-          <span>{t('reports.season')}</span>
-          <select
-            value={seasonId}
-            onChange={(event) => setFilter('seasonId', event.target.value)}
-            disabled={!catalogReady || seasons.length === 0}
+        <div className="seasons-hero-meta">
+          <label
+            className={
+              selectedSeason?.isActive
+                ? 'seasons-active-chip seasons-active-chip--on pricing-season-picker'
+                : 'seasons-active-chip pricing-season-picker'
+            }
           >
-            {seasons.length === 0 ? (
-              <option value="">{t('reports.noSeasons')}</option>
-            ) : (
-              seasons.map((season) => (
-                <option key={season.id} value={season.id}>
-                  {season.name}
-                  {season.isActive ? ` (${t('common.active')})` : ''}
-                </option>
-              ))
-            )}
-          </select>
-        </label>
+            <span className="seasons-active-chip__label">
+              <NavIcon name="seasons" />
+              {t('reports.season')}
+            </span>
+            <div className="seasons-active-chip__row">
+              <select
+                className="pricing-season-picker__select"
+                value={seasonId}
+                onChange={(event) => setFilter('seasonId', event.target.value)}
+                disabled={!catalogReady || seasons.length === 0}
+              >
+                {seasons.length === 0 ? (
+                  <option value="">{t('reports.noSeasons')}</option>
+                ) : (
+                  seasons.map((season) => (
+                    <option key={season.id} value={season.id}>
+                      {season.name}
+                      {season.isActive ? ` · ${t('common.active')}` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+              {selectedSeason?.isActive && (
+                <StatusBadge tone="success">{t('common.active')}</StatusBadge>
+              )}
+            </div>
+          </label>
+        </div>
       </header>
 
       {error && <p className="admin-page__error">{error}</p>}

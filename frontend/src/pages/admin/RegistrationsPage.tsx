@@ -8,6 +8,7 @@ import {
   type RegistrationResponse,
 } from '../../api/registrations'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { NavIcon } from '../../components/ui/NavIcon'
 import {
   StatusBadge,
   registrationStatusTone,
@@ -167,14 +168,21 @@ export function RegistrationsPage() {
   return (
     <section className="admin-page admin-page--wide registrations-page">
       <header className="registrations-hero">
-        <div>
-          <h1>{t('registrations.title')}</h1>
-          <p className="admin-page__lede">{t('registrations.intro')}</p>
+        <div className="registrations-hero__copy">
+          <span className="registrations-hero__mark" aria-hidden="true">
+            <NavIcon name="registrations" />
+          </span>
+          <div>
+            <h1>{t('registrations.title')}</h1>
+            <p className="admin-page__lede">{t('registrations.intro')}</p>
+          </div>
         </div>
         {!loading && (
-          <p className="registrations-hero__count">
-            {t('registrations.resultCount', { count: rows.length })}
-          </p>
+          <div className="registrations-hero__count">
+            <NavIcon name="groups" />
+            <strong>{rows.length}</strong>
+            <span>{t('registrations.countCaption')}</span>
+          </div>
         )}
       </header>
 
@@ -182,6 +190,10 @@ export function RegistrationsPage() {
       {message && <p className="admin-page__ok">{message}</p>}
 
       <div className="admin-filters registrations-filters">
+        <p className="registrations-filters__title">
+          <NavIcon name="filter" />
+          {t('registrations.filterTitle')}
+        </p>
         <label className="admin-form__field">
           <span>{t('registrations.filterSeason')}</span>
           <select
@@ -233,11 +245,22 @@ export function RegistrationsPage() {
       </div>
 
       <section className="registrations-list" aria-label={t('registrations.listTitle')}>
-        <h2>{t('registrations.listTitle')}</h2>
+        <h2>
+          <NavIcon name="registrations" />
+          {t('registrations.listTitle')}
+        </h2>
         {loading ? (
           <p className="admin-page__loading">{t('common.loading')}</p>
         ) : rows.length === 0 ? (
-          <p className="dashboard-empty">{t('registrations.empty')}</p>
+          <div className="registrations-empty">
+            <span className="registrations-empty__icon" aria-hidden="true">
+              <NavIcon name="registrations" />
+            </span>
+            <p>{t('registrations.empty')}</p>
+            <p className="registrations-empty__hint">
+              {t('registrations.emptyHint')}
+            </p>
+          </div>
         ) : (
           <ul className="registrations-cards">
             {rows.map((row) => {
