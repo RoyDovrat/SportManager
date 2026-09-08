@@ -82,7 +82,7 @@ class ActivityGroupServiceFootballSessionsTest {
 
         assertThatThrownBy(() -> activityGroupService.createGroup(request))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("training");
+                .hasMessageContaining("אימון");
     }
 
     @Test
@@ -96,7 +96,7 @@ class ActivityGroupServiceFootballSessionsTest {
 
         assertThatThrownBy(() -> activityGroupService.createGroup(request))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("duplicate");
+                .hasMessageContaining("אותו יום");
     }
 
     @Test
@@ -111,7 +111,7 @@ class ActivityGroupServiceFootballSessionsTest {
 
         assertThatThrownBy(() -> activityGroupService.createGroup(request))
                 .isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("at most 2");
+                .hasMessageContaining("לכל היותר שני");
     }
 
     @Test

@@ -16,7 +16,7 @@ import java.util.Set;
 @Setter
 public class ActivityGroupUpdateRequest {
 
-    @NotBlank(message = "Group name is required")
+    @NotBlank(message = "יש להזין שם קבוצה")
     private String name;
 
     private Set<AgeGroup> ageGroups;
@@ -29,6 +29,6 @@ public class ActivityGroupUpdateRequest {
 
     private List<GroupTrainingSessionRequest> trainingSessions = new ArrayList<>();
 
-    @NotNull(message = "Is active is required")
+    @NotNull(message = "יש לציין אם הקבוצה פעילה")
     private Boolean isActive;
 }

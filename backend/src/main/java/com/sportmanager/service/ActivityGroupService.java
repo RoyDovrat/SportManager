@@ -181,7 +181,7 @@ public class ActivityGroupService {
     @Transactional
     public List<ActivityGroupResponse> getGroups(Long seasonId, Long activityId, Boolean activeOnly) {
         if (seasonId == null) {
-            throw new BusinessRuleException("seasonId query parameter is required");
+            throw new BusinessRuleException("יש לבחור עונה");
         }
         getSeason(seasonId);
 
@@ -254,7 +254,7 @@ public class ActivityGroupService {
         Registration registration = registrationService.getRegistrationEntity(registrationId);
 
         if (registration.getActivityGroup() == null) {
-            throw new BusinessRuleException("Registration is not assigned to any group");
+            throw new BusinessRuleException("ההרשמה אינה משויכת לקבוצה");
         }
 
         registration.setActivityGroup(null);
@@ -312,34 +312,24 @@ public class ActivityGroupService {
 
     public ActivityGroup getGroupEntity(Long groupId) {
         return activityGroupRepository.findById(groupId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Activity group was not found with id: " + groupId
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("הקבוצה לא נמצאה"));
     }
 
     private void validateCanAssign(Registration registration, ActivityGroup group) {
         if (registration.getStatus() != RegistrationStatus.APPROVED) {
-            throw new BusinessRuleException(
-                    "Only approved registrations can be assigned to a group"
-            );
+            throw new BusinessRuleException("ניתן לשייך לקבוצה רק הרשמות מאושרות");
         }
         if (!Boolean.TRUE.equals(group.getIsActive())) {
-            throw new BusinessRuleException("Cannot assign registration to an inactive group");
+            throw new BusinessRuleException("לא ניתן לשייך הרשמה לקבוצה שאינה פעילה");
         }
         if (!Objects.equals(registration.getSeason().getId(), group.getSeason().getId())) {
-            throw new BusinessRuleException(
-                    "Registration season must match the activity group season"
-            );
+            throw new BusinessRuleException("עונת ההרשמה חייבת להתאים לעונת הקבוצה");
         }
         if (!Objects.equals(registration.getActivity().getId(), group.getActivity().getId())) {
-            throw new BusinessRuleException(
-                    "Registration activity must match the activity group activity"
-            );
+            throw new BusinessRuleException("החוג בהרשמה חייב להתאים לחוג של הקבוצה");
         }
         if (!isEligibleForGroup(registration, group)) {
-            throw new BusinessRuleException(
-                    "Registration does not match the activity group rules"
-            );
+            throw new BusinessRuleException("ההרשמה אינה תואמת את כללי הקבוצה");
         }
     }
 
@@ -372,9 +362,7 @@ public class ActivityGroupService {
         }
         int memberCount = registrationRepository.findByActivityGroupId(group.getId()).size();
         if (memberCount >= maxCapacity) {
-            throw new BusinessRuleException(
-                    "This swimming lesson is full (max " + maxCapacity + " participants)"
-            );
+            throw new BusinessRuleException("השיעור מלא (מקסימום " + maxCapacity + " משתתפים)");
         }
     }
 
@@ -400,48 +388,34 @@ public class ActivityGroupService {
 
         if (activityType == ActivityType.FOOTBALL) {
             if (normalizedAgeGroups.isEmpty()) {
-                throw new BusinessRuleException(
-                        "At least one age group is required for football groups"
-                );
+                throw new BusinessRuleException("יש לבחור לפחות קבוצת גיל אחת לקבוצת כדורגל");
             }
             if (swimmingLessonType != null || waterAdaptationLevel != null) {
-                throw new BusinessRuleException(
-                        "Swimming attributes must not be provided for football groups"
-                );
+                throw new BusinessRuleException("לא ניתן להזין מאפייני שחייה לקבוצת כדורגל");
             }
             if (weeklySessions == null || (weeklySessions != 1 && weeklySessions != 2)) {
-                throw new BusinessRuleException(
-                        "Football groups require weeklySessions of 1 or 2"
-                );
+                throw new BusinessRuleException("לקבוצת כדורגל נדרש אימון אחד או שניים בשבוע");
             }
             return;
         }
 
         if (activityType == ActivityType.SWIMMING) {
             if (swimmingLessonType == null) {
-                throw new BusinessRuleException(
-                        "Swimming lesson type is required for swimming groups"
-                );
+                throw new BusinessRuleException("יש לבחור סוג שיעור לקבוצת שחייה");
             }
             if (normalizedAgeGroups.isEmpty()) {
-                throw new BusinessRuleException(
-                        "At least one age group is required for swimming groups"
-                );
+                throw new BusinessRuleException("יש לבחור לפחות קבוצת גיל אחת לקבוצת שחייה");
             }
             if (waterAdaptationLevel == null) {
-                throw new BusinessRuleException(
-                        "Water adaptation level is required for swimming groups"
-                );
+                throw new BusinessRuleException("יש לבחור רמת הסתגלות למים לקבוצת שחייה");
             }
             if (weeklySessions == null || weeklySessions < 1 || weeklySessions > 6) {
-                throw new BusinessRuleException(
-                        "Swimming groups require weeklySessions between 1 and 6"
-                );
+                throw new BusinessRuleException("לקבוצת שחייה נדרשים בין מפגש אחד לשישה מפגשים בשבוע");
             }
             return;
         }
 
-        throw new BusinessRuleException("Unsupported activity type");
+        throw new BusinessRuleException("סוג חוג לא נתמך");
     }
 
     private void applyTypeSpecificAttributes(
@@ -489,13 +463,13 @@ public class ActivityGroupService {
 
         if (activeCount > 2) {
             throw new BusinessRuleException(
-                    "Football groups support at most 2 active training sessions per week"
+                    "לקבוצת כדורגל אפשר להגדיר לכל היותר שני מפגשי אימון פעילים בשבוע"
             );
         }
         if (Boolean.TRUE.equals(isActive)) {
             if (activeCount != 1 && activeCount != 2) {
                 throw new BusinessRuleException(
-                        "An active football group requires exactly 1 or 2 active training sessions"
+                        "לקבוצת כדורגל פעילה יש להגדיר בדיוק אימון אחד או שני אימונים פעילים"
                 );
             }
             return (int) activeCount;
@@ -517,12 +491,10 @@ public class ActivityGroupService {
 
         for (GroupTrainingSessionRequest session : sessions) {
             if (session.getDayOfWeek() == null || session.getStartTime() == null) {
-                throw new BusinessRuleException(
-                        "Each training session requires a day of week and start time"
-                );
+                throw new BusinessRuleException("לכל מפגש אימון נדרשים יום ושעת התחלה");
             }
             if (session.getIsActive() == null) {
-                throw new BusinessRuleException("Each training session requires isActive");
+                throw new BusinessRuleException("לכל מפגש אימון יש לציין אם הוא פעיל");
             }
         }
 
@@ -531,7 +503,7 @@ public class ActivityGroupService {
             String key = session.getDayOfWeek() + "|" + session.getStartTime();
             if (!seen.add(key)) {
                 throw new BusinessRuleException(
-                        "duplicate training day and start time are not allowed in the same group"
+                        "לא ניתן להגדיר שני מפגשים באותו יום ובאותה שעת התחלה באותה קבוצה"
                 );
             }
         }
@@ -542,7 +514,7 @@ public class ActivityGroupService {
 
         if (Boolean.TRUE.equals(isActive) && (activeCount != 1 && activeCount != 2)) {
             throw new BusinessRuleException(
-                    "An active football group requires exactly 1 or 2 active training sessions"
+                    "לקבוצת כדורגל פעילה יש להגדיר בדיוק אימון אחד או שני אימונים פעילים"
             );
         }
 
@@ -550,7 +522,7 @@ public class ActivityGroupService {
                 && activeCount > 0
                 && activeCount != weeklySessions.longValue()) {
             throw new BusinessRuleException(
-                    "Football group weeklySessions must match the number of active training sessions"
+                    "מספר האימונים בשבוע חייב להתאים למספר המפגשים הפעילים"
             );
         }
     }
@@ -586,8 +558,8 @@ public class ActivityGroupService {
             for (AgeGroup ageGroup : requested) {
                 if (otherAges.contains(ageGroup)) {
                     throw new BusinessRuleException(
-                            "Age group " + ageGroup
-                                    + " is already used by another active football group in this season"
+                            "קבוצת הגיל «" + ageGroup.hebrewLabel()
+                                    + "» כבר בשימוש בקבוצת כדורגל פעילה אחרת בעונה זו"
                     );
                 }
             }
@@ -604,12 +576,10 @@ public class ActivityGroupService {
 
         for (GroupTrainingSessionRequest session : sessions) {
             if (session.getDayOfWeek() == null || session.getStartTime() == null) {
-                throw new BusinessRuleException(
-                        "Each training session requires a day of week and start time"
-                );
+                throw new BusinessRuleException("לכל מפגש אימון נדרשים יום ושעת התחלה");
             }
             if (session.getIsActive() == null) {
-                throw new BusinessRuleException("Each training session requires isActive");
+                throw new BusinessRuleException("לכל מפגש אימון יש לציין אם הוא פעיל");
             }
         }
 
@@ -618,7 +588,7 @@ public class ActivityGroupService {
             String key = session.getDayOfWeek() + "|" + session.getStartTime();
             if (!seen.add(key)) {
                 throw new BusinessRuleException(
-                        "duplicate training day and start time are not allowed in the same group"
+                        "לא ניתן להגדיר שני מפגשים באותו יום ובאותה שעת התחלה באותה קבוצה"
                 );
             }
         }
@@ -629,22 +599,20 @@ public class ActivityGroupService {
 
         if (Boolean.TRUE.equals(isActive)) {
             if (weeklySessions == null || weeklySessions < 1 || weeklySessions > 6) {
-                throw new BusinessRuleException(
-                        "Swimming weeklySessions must be between 1 and 6"
-                );
+                throw new BusinessRuleException("מספר המפגשים בשבוע בשחייה חייב להיות בין 1 ל־6");
             }
             if (activeCount != weeklySessions.longValue()) {
                 throw new BusinessRuleException(
-                        "An active swimming group requires exactly "
+                        "לקבוצת שחייה פעילה יש להגדיר בדיוק "
                                 + weeklySessions
-                                + " active training session(s) matching weeklySessions"
+                                + " מפגשים פעילים"
                 );
             }
         } else if (weeklySessions != null
                 && activeCount > 0
                 && activeCount != weeklySessions.longValue()) {
             throw new BusinessRuleException(
-                    "Swimming group weeklySessions must match the number of active training sessions"
+                    "מספר המפגשים בשבוע חייב להתאים למספר המפגשים הפעילים"
             );
         }
     }
@@ -699,24 +667,18 @@ public class ActivityGroupService {
                 );
 
         if (exists) {
-            throw new ConflictException(
-                    "An activity group with this name already exists for the season and activity"
-            );
+            throw new ConflictException("כבר קיימת קבוצה בשם זה לעונה ולחוג זה");
         }
     }
 
     private Season getSeason(Long seasonId) {
         return seasonRepository.findById(seasonId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Season was not found with id: " + seasonId
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("העונה לא נמצאה"));
     }
 
     private Activity getActivity(ActivityType activityType) {
         return activityRepository.findByActivityType(activityType)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Activity was not found with type: " + activityType
-                ));
+                .orElseThrow(() -> new ResourceNotFoundException("החוג לא נמצא"));
     }
 
     private ActivityGroupResponse toResponse(ActivityGroup group) {

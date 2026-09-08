@@ -28,8 +28,8 @@ public class GlobalExceptionHandler {
 
         return buildResponse(
                 HttpStatus.BAD_REQUEST,
-                "Validation Failed",
-                "Request validation failed",
+                "שגיאת אימות",
+                "יש לתקן את פרטי הטופס.",
                 request.getRequestURI(),
                 fieldErrors
         );

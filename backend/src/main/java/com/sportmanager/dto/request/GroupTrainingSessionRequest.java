@@ -13,14 +13,14 @@ public class GroupTrainingSessionRequest {
 
     private Long id;
 
-    @NotNull(message = "Day of week is required")
+    @NotNull(message = "יש לבחור יום")
     private DayOfWeek dayOfWeek;
 
-    @NotNull(message = "Start time is required")
+    @NotNull(message = "יש לבחור שעת התחלה")
     private LocalTime startTime;
 
     private LocalTime endTime;
 
-    @NotNull(message = "Is active is required")
+    @NotNull(message = "יש לציין אם המפגש פעיל")
     private Boolean isActive = true;
 }

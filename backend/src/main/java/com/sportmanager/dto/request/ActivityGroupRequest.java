@@ -17,13 +17,13 @@ import java.util.Set;
 @Setter
 public class ActivityGroupRequest {
 
-    @NotBlank(message = "Group name is required")
+    @NotBlank(message = "יש להזין שם קבוצה")
     private String name;
 
-    @NotNull(message = "Season id is required")
+    @NotNull(message = "יש לבחור עונה")
     private Long seasonId;
 
-    @NotNull(message = "Activity type is required")
+    @NotNull(message = "יש לבחור סוג חוג")
     private ActivityType activityType;
 
     private Set<AgeGroup> ageGroups;
@@ -37,6 +37,6 @@ public class ActivityGroupRequest {
     /** Football training slots (day + start time). Ignored for swimming until needed. */
     private List<GroupTrainingSessionRequest> trainingSessions = new ArrayList<>();
 
-    @NotNull(message = "Is active is required")
+    @NotNull(message = "יש לציין אם הקבוצה פעילה")
     private Boolean isActive;
 }
