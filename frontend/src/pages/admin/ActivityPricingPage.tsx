@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   createActivityPricing,
   listActivityPricingBySeason,
@@ -7,6 +7,8 @@ import {
 } from '../../api/activityPricing'
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
+import { NavIcon } from '../../components/ui/NavIcon'
+import { StatusBadge } from '../../components/ui/StatusBadge'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -26,44 +28,49 @@ const FILTER_DEFAULTS = {
   seasonId: '',
 }
 
-type CreateFormState = {
+type FormState = {
   activityType: ActivityType
   swimmingLessonType: SwimmingLessonType
   weeklySessions: string
   monthlyPrice: string
 }
 
-type EditFormState = {
-  weeklySessions: string
-  monthlyPrice: string
-}
-
-const emptyCreateForm: CreateFormState = {
+const emptyForm: FormState = {
   activityType: 'FOOTBALL',
   swimmingLessonType: 'GROUP',
   weeklySessions: '1',
   monthlyPrice: '',
 }
 
+function formatPrice(amount: number): string {
+  return `₪${amount.toLocaleString('he-IL', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`
+}
+
 export function ActivityPricingPage() {
   const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
+  const formRef = useRef<HTMLDivElement>(null)
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [rows, setRows] = useState<ActivityPricingResponse[]>([])
-  const [createForm, setCreateForm] = useState<CreateFormState>(emptyCreateForm)
+  const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editForm, setEditForm] = useState<EditFormState>({
-    weeklySessions: '',
-    monthlyPrice: '',
-  })
+  const [creating, setCreating] = useState(false)
   const [loadingSeasons, setLoadingSeasons] = useState(true)
   const [loadingRows, setLoadingRows] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const formErrorRef = useRef<HTMLParagraphElement>(null)
+  const [search, setSearch] = useState('')
+  const [activityTypeFilter, setActivityTypeFilter] = useState('')
+  const [weeklyFilter, setWeeklyFilter] = useState('')
+
+  const formOpen = creating || editingId !== null
+  const isFootball = form.activityType === 'FOOTBALL'
 
   async function loadSeasons() {
     setLoadingSeasons(true)
@@ -113,68 +120,129 @@ export function ActivityPricingPage() {
     }
   }, [selectedSeasonId])
 
+  useEffect(() => {
+    if (!formOpen) {
+      return
+    }
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [formOpen, editingId])
+
+  function resetForm() {
+    setEditingId(null)
+    setForm(emptyForm)
+  }
+
+  function closeForm() {
+    setCreating(false)
+    resetForm()
+    setMessage(null)
+    setError(null)
+  }
+
+  function toggleForm() {
+    if (formOpen) {
+      closeForm()
+      return
+    }
+    resetForm()
+    setCreating(true)
+    setMessage(null)
+    setError(null)
+  }
+
   function startEdit(row: ActivityPricingResponse) {
+    setCreating(false)
     setEditingId(row.id)
-    setEditForm({
-      weeklySessions: row.weeklySessions?.toString() ?? '',
+    setForm({
+      activityType: row.activityType,
+      swimmingLessonType: row.swimmingLessonType ?? 'GROUP',
+      weeklySessions: row.weeklySessions?.toString() ?? '1',
       monthlyPrice: String(row.monthlyPrice),
     })
     setMessage(null)
     setError(null)
   }
 
-  function cancelEdit() {
-    setEditingId(null)
-    setEditForm({ weeklySessions: '', monthlyPrice: '' })
+  function resetFilters() {
+    setSearch('')
+    setActivityTypeFilter('')
+    setWeeklyFilter('')
+  }
+
+  function handleActivityTypeChange(nextType: ActivityType) {
+    setForm({
+      ...form,
+      activityType: nextType,
+      weeklySessions: '1',
+    })
+    const matching =
+      seasons.find(
+        (season) => season.isActive && season.activityType === nextType,
+      ) ?? seasons.find((season) => season.activityType === nextType)
+    if (matching) {
+      setFilter('seasonId', String(matching.id))
+      setEditingId(null)
+    }
   }
 
   function showFormError(messageText: string) {
     setError(messageText)
     requestAnimationFrame(() => {
-      formErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     })
   }
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (typeof selectedSeasonId !== 'number') {
       showFormError(t('activityPricing.selectSeasonFirst'))
       return
     }
 
-    const selectedSeason = seasons.find((season) => season.id === selectedSeasonId)
-    if (
-      selectedSeason?.activityType != null &&
-      selectedSeason.activityType !== createForm.activityType
-    ) {
-      showFormError(
-        t('activityPricing.seasonActivityMismatch', {
-          seasonSport: activityTypeLabel(selectedSeason.activityType),
-          pricingSport: activityTypeLabel(createForm.activityType),
-        }),
-      )
-      return
+    if (editingId === null) {
+      const selectedSeason = seasons.find((season) => season.id === selectedSeasonId)
+      if (
+        selectedSeason?.activityType != null &&
+        selectedSeason.activityType !== form.activityType
+      ) {
+        showFormError(
+          t('activityPricing.seasonActivityMismatch', {
+            seasonSport: activityTypeLabel(selectedSeason.activityType),
+            pricingSport: activityTypeLabel(form.activityType),
+          }),
+        )
+        return
+      }
     }
 
     setSaving(true)
     setError(null)
     setMessage(null)
 
-    const monthlyPrice = Number(createForm.monthlyPrice)
+    const monthlyPrice = Number(form.monthlyPrice)
     const weeklySessions =
-      createForm.activityType === 'SWIMMING' ? 1 : Number(createForm.weeklySessions)
+      form.activityType === 'SWIMMING' ? 1 : Number(form.weeklySessions)
 
     try {
-      await createActivityPricing({
-        seasonId: selectedSeasonId,
-        activityType: createForm.activityType,
-        swimmingLessonType:
-          createForm.activityType === 'SWIMMING' ? createForm.swimmingLessonType : null,
-        weeklySessions,
-        monthlyPrice,
-      })
-      setMessage(t('activityPricing.created'))
-      setCreateForm(emptyCreateForm)
+      if (editingId === null) {
+        await createActivityPricing({
+          seasonId: selectedSeasonId,
+          activityType: form.activityType,
+          swimmingLessonType:
+            form.activityType === 'SWIMMING' ? form.swimmingLessonType : null,
+          weeklySessions,
+          monthlyPrice,
+        })
+        setMessage(t('activityPricing.created'))
+      } else {
+        await updateActivityPricing(editingId, {
+          monthlyPrice,
+          weeklySessions: form.activityType === 'SWIMMING' ? 1 : weeklySessions,
+        })
+        setMessage(t('activityPricing.updated'))
+      }
+      setCreating(false)
+      resetForm()
       await loadPricing(selectedSeasonId)
     } catch (err) {
       showFormError(formatApiError(err))
@@ -183,101 +251,284 @@ export function ActivityPricingPage() {
     }
   }
 
-  async function handleUpdate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (editingId === null || editingRow === null || typeof selectedSeasonId !== 'number') {
-      return
-    }
+  const visibleRows = useMemo(() => {
+    const query = search.trim()
+    return rows.filter((row) => {
+      if (activityTypeFilter !== '' && row.activityType !== activityTypeFilter) {
+        return false
+      }
+      if (weeklyFilter !== '') {
+        if (row.activityType !== 'FOOTBALL') {
+          return false
+        }
+        if (String(row.weeklySessions ?? '') !== weeklyFilter) {
+          return false
+        }
+      }
+      if (query) {
+        const haystack = [
+          activityTypeLabel(row.activityType),
+          row.swimmingLessonType
+            ? swimmingLessonTypeLabel(row.swimmingLessonType)
+            : '',
+          String(row.monthlyPrice),
+        ].join(' ')
+        if (!haystack.includes(query)) {
+          return false
+        }
+      }
+      return true
+    })
+  }, [activityTypeFilter, rows, search, weeklyFilter])
 
-    setSaving(true)
-    setError(null)
-    setMessage(null)
-
-    const monthlyPrice = Number(editForm.monthlyPrice)
-    const weeklySessions =
-      editingRow.activityType === 'SWIMMING'
-        ? 1
-        : editForm.weeklySessions.trim() === ''
-          ? null
-          : Number(editForm.weeklySessions)
-
-    try {
-      await updateActivityPricing(editingId, {
-        monthlyPrice,
-        weeklySessions,
-      })
-      setMessage(t('activityPricing.updated'))
-      cancelEdit()
-      await loadPricing(selectedSeasonId)
-    } catch (err) {
-      showFormError(formatApiError(err))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const isFootball = createForm.activityType === 'FOOTBALL'
-  const editingRow = rows.find((row) => row.id === editingId) ?? null
+  const filtersActive =
+    search.trim() !== '' || activityTypeFilter !== '' || weeklyFilter !== ''
+  const selectedSeason = seasons.find(
+    (season) => String(season.id) === filters.seasonId,
+  )
 
   return (
-    <section className="admin-page">
+    <section className="admin-page admin-page--wide seasons-page">
       <header className="admin-page-hero">
         <div className="admin-page-hero__copy">
           <h1>{t('activityPricing.title')}</h1>
           <p className="admin-page__lede">{t('activityPricing.intro')}</p>
-          <p className="admin-form__hint">{t('activityPricing.billingHint')}</p>
+        </div>
+        <div className="seasons-hero-meta">
+          <label
+            className={
+              selectedSeason?.isActive
+                ? 'seasons-active-chip seasons-active-chip--on pricing-season-picker'
+                : 'seasons-active-chip pricing-season-picker'
+            }
+          >
+            <span className="seasons-active-chip__label">
+              <NavIcon name="seasons" />
+              {t('activityPricing.season')}
+            </span>
+            <div className="seasons-active-chip__row">
+              <select
+                className="pricing-season-picker__select"
+                value={filters.seasonId}
+                onChange={(event) => {
+                  setFilter('seasonId', event.target.value)
+                  closeForm()
+                }}
+                disabled={loadingSeasons || seasons.length === 0}
+              >
+                {seasons.length === 0 ? (
+                  <option value="">{t('activityPricing.noSeasons')}</option>
+                ) : (
+                  seasons.map((season) => (
+                    <option key={season.id} value={season.id}>
+                      {season.name}
+                      {season.isActive ? ` · ${t('common.active')}` : ''}
+                    </option>
+                  ))
+                )}
+              </select>
+              {selectedSeason?.isActive && (
+                <StatusBadge tone="success">{t('common.active')}</StatusBadge>
+              )}
+            </div>
+          </label>
+          <button
+            type="button"
+            className="reg-action reg-action--approve"
+            onClick={toggleForm}
+          >
+            {formOpen ? t('activityPricing.closeCreate') : t('activityPricing.newPrice')}
+          </button>
         </div>
       </header>
 
       {message && <p className="admin-page__ok">{message}</p>}
+      {error && (
+        <p className="admin-page__error" role="alert">
+          {error}
+        </p>
+      )}
 
-      <label className="admin-form__field" style={{ maxWidth: '28rem' }}>
-        <span>{t('activityPricing.season')}</span>
-        <select
-          value={filters.seasonId}
-          onChange={(event) => {
-            setFilter('seasonId', event.target.value)
-            cancelEdit()
-          }}
-          disabled={loadingSeasons || seasons.length === 0}
-        >
-          {seasons.length === 0 ? (
-            <option value="">{t('activityPricing.noSeasons')}</option>
-          ) : (
-            seasons.map((season) => (
-              <option key={season.id} value={season.id}>
-                {season.name} · {activityTypeLabel(season.activityType)}
-                {season.isActive ? ` ${t('activityPricing.activeSuffix')}` : ''}
-              </option>
-            ))
-          )}
-        </select>
-      </label>
+      {formOpen && (
+        <div ref={formRef} className="seasons-editor">
+          <form className="admin-form seasons-form" onSubmit={handleSubmit}>
+            <div className="seasons-card-head">
+              <span className="seasons-card-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+              <div>
+                <h2>
+                  {editingId === null
+                    ? t('activityPricing.createTitle')
+                    : t('activityPricing.editTitle')}
+                </h2>
+                <p>
+                  {editingId === null
+                    ? t('activityPricing.createSubtitle')
+                    : t('activityPricing.editSubtitle')}
+                </p>
+              </div>
+            </div>
 
-      <form className="admin-form" onSubmit={handleCreate}>
-        <h2>{t('activityPricing.createTitle')}</h2>
+            <div className="seasons-form-grid">
+              <label className="admin-form__field">
+                <span>{t('activities.activityType')}</span>
+                <select
+                  value={form.activityType}
+                  onChange={(event) =>
+                    handleActivityTypeChange(event.target.value as ActivityType)
+                  }
+                  disabled={editingId !== null}
+                >
+                  {ACTIVITY_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {activityTypeLabel(type)}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-        <label className="admin-form__field">
+              <label className="admin-form__field">
+                <span>{t('activityPricing.weeklySessions')}</span>
+                <select
+                  value={form.weeklySessions}
+                  onChange={(event) =>
+                    setForm({ ...form, weeklySessions: event.target.value })
+                  }
+                  required={isFootball}
+                  disabled={!isFootball}
+                >
+                  {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="admin-form__field">
+                <span>
+                  {isFootball
+                    ? t('activityPricing.monthlyPrice')
+                    : t('activityPricing.unitPrice')}
+                </span>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  value={form.monthlyPrice}
+                  onChange={(event) =>
+                    setForm({ ...form, monthlyPrice: event.target.value })
+                  }
+                  required
+                />
+              </label>
+
+              <label className="admin-form__field">
+                <span>{t('activityPricing.lessonType')}</span>
+                <select
+                  value={form.swimmingLessonType}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      swimmingLessonType: event.target.value as SwimmingLessonType,
+                      weeklySessions: '1',
+                    })
+                  }
+                  disabled={isFootball || editingId !== null}
+                >
+                  {SWIMMING_LESSON_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {swimmingLessonTypeLabel(type)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="seasons-form__footer">
+              <div className="admin-form__actions">
+                <button
+                  type="submit"
+                  disabled={saving || typeof selectedSeasonId !== 'number'}
+                >
+                  {saving
+                    ? t('common.saving')
+                    : editingId === null
+                      ? t('common.create')
+                      : t('common.save')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={editingId === null ? resetForm : closeForm}
+                  disabled={saving}
+                >
+                  {editingId === null
+                    ? t('activityPricing.clearForm')
+                    : t('common.cancelEdit')}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <aside
+            className="seasons-instructions"
+            aria-labelledby="pricing-instructions-title"
+          >
+            <div className="seasons-card-head">
+              <span className="seasons-card-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                >
+                  <path d="M12 11v7" />
+                  <circle cx="12" cy="7" r="1.15" fill="currentColor" stroke="none" />
+                </svg>
+              </span>
+              <div>
+                <h2 id="pricing-instructions-title">
+                  {t('activityPricing.instructionsTitle')}
+                </h2>
+                <p>{t('activityPricing.instructionsIntro')}</p>
+              </div>
+            </div>
+            <ul className="seasons-instructions__list">
+              <li>{t('activityPricing.tipByType')}</li>
+              <li>{t('activityPricing.tipFootball')}</li>
+              <li>{t('activityPricing.tipSwimming')}</li>
+              <li>{t('activityPricing.tipSeasonMatch')}</li>
+            </ul>
+            <div className="pricing-plans-count">
+              <strong>{rows.length}</strong>
+              <span>{t('activityPricing.plansInSeason')}</span>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      <div className="admin-filters seasons-filters">
+        <label className="admin-form__field seasons-filters__search">
+          <span>{t('common.type')}</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t('activityPricing.searchPlaceholder')}
+          />
+        </label>
+
+        <label className="admin-form__field seasons-filters__type">
           <span>{t('activities.activityType')}</span>
           <select
-            value={createForm.activityType}
-            onChange={(event) => {
-              const nextType = event.target.value as ActivityType
-              setCreateForm({
-                ...createForm,
-                activityType: nextType,
-                weeklySessions: '1',
-              })
-              const matching =
-                seasons.find(
-                  (season) => season.isActive && season.activityType === nextType,
-                ) ?? seasons.find((season) => season.activityType === nextType)
-              if (matching) {
-                setFilter('seasonId', String(matching.id))
-                cancelEdit()
-              }
-            }}
+            value={activityTypeFilter}
+            onChange={(event) => setActivityTypeFilter(event.target.value)}
           >
+            <option value="">{t('activityPricing.allActivityTypes')}</option>
             {ACTIVITY_TYPES.map((type) => (
               <option key={type} value={type}>
                 {activityTypeLabel(type)}
@@ -286,159 +537,51 @@ export function ActivityPricingPage() {
           </select>
         </label>
 
-        {isFootball ? (
-          <label className="admin-form__field">
-            <span>{t('activityPricing.weeklySessions')}</span>
-            <select
-              value={createForm.weeklySessions}
-              onChange={(event) =>
-                setCreateForm({ ...createForm, weeklySessions: event.target.value })
-              }
-              required
-            >
-              {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <>
-            <label className="admin-form__field">
-              <span>{t('activityPricing.lessonType')}</span>
-              <select
-                value={createForm.swimmingLessonType}
-                onChange={(event) =>
-                  setCreateForm({
-                    ...createForm,
-                    swimmingLessonType: event.target.value as SwimmingLessonType,
-                    weeklySessions: '1',
-                  })
-                }
-              >
-                {SWIMMING_LESSON_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {swimmingLessonTypeLabel(type)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="admin-form__hint">{t('activityPricing.swimmingUnitHint')}</p>
-          </>
-        )}
-
-        {isFootball && (
-          <p className="admin-form__hint">{t('activityPricing.footballMonthlyHint')}</p>
-        )}
-
-        <label className="admin-form__field">
-          <span>
-            {isFootball
-              ? t('activityPricing.monthlyPrice')
-              : t('activityPricing.unitPrice')}
-          </span>
-          <input
-            type="number"
-            min={0.01}
-            step="0.01"
-            value={createForm.monthlyPrice}
-            onChange={(event) =>
-              setCreateForm({ ...createForm, monthlyPrice: event.target.value })
-            }
-            required
-          />
+        <label className="admin-form__field seasons-filters__type">
+          <span>{t('activityPricing.weeklySessions')}</span>
+          <select
+            value={weeklyFilter}
+            onChange={(event) => setWeeklyFilter(event.target.value)}
+          >
+            <option value="">{t('activityPricing.allWeeklySessions')}</option>
+            {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
         </label>
 
-        {error && (
-          <p ref={formErrorRef} className="admin-page__error" role="alert">
-            {error}
-          </p>
-        )}
-
-        <div className="admin-form__actions">
-          <button type="submit" disabled={saving || typeof selectedSeasonId !== 'number'}>
-            {saving && editingId === null ? t('common.saving') : t('common.create')}
-          </button>
-        </div>
-      </form>
-
-      {editingRow && (
-        <form className="admin-form" onSubmit={handleUpdate}>
-          <h2>{t('activityPricing.editTitle')}</h2>
-          <p>
-            {activityTypeLabel(editingRow.activityType)}
-            {editingRow.swimmingLessonType
-              ? ` · ${swimmingLessonTypeLabel(editingRow.swimmingLessonType)}`
-              : ''}
-            {editingRow.activityType === 'FOOTBALL' &&
-            editingRow.weeklySessions != null
-              ? ` · ${t('activityPricing.weeklySessions')}: ${editingRow.weeklySessions}`
-              : ''}
-          </p>
-
-          {editingRow.activityType === 'FOOTBALL' && (
-            <label className="admin-form__field">
-              <span>{t('activityPricing.weeklySessions')}</span>
-              <select
-                value={editForm.weeklySessions}
-                onChange={(event) =>
-                  setEditForm({ ...editForm, weeklySessions: event.target.value })
-                }
-                required
-              >
-                {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          <label className="admin-form__field">
-            <span>
-              {editingRow.activityType === 'SWIMMING'
-                ? t('activityPricing.unitPrice')
-                : t('activityPricing.monthlyPrice')}
-            </span>
-            <input
-              type="number"
-              min={0.01}
-              step="0.01"
-              value={editForm.monthlyPrice}
-              onChange={(event) =>
-                setEditForm({ ...editForm, monthlyPrice: event.target.value })
-              }
-              required
-            />
-          </label>
-
-          {error && (
-            <p className="admin-page__error" role="alert">
-              {error}
-            </p>
-          )}
-
-          <div className="admin-form__actions">
-            <button type="submit" disabled={saving}>
-              {saving ? t('common.saving') : t('common.save')}
-            </button>
-            <button type="button" onClick={cancelEdit} disabled={saving}>
-              {t('common.cancelEdit')}
-            </button>
-          </div>
-        </form>
-      )}
+        <button
+          type="button"
+          className="btn btn--secondary seasons-filters__reset"
+          onClick={resetFilters}
+          disabled={!filtersActive}
+        >
+          {t('activityPricing.resetFilters')}
+        </button>
+      </div>
 
       <div className="admin-table-wrap">
-        <h2>{t('activityPricing.forSeason')}</h2>
+        <div className="seasons-table-head">
+          <h2>{t('activityPricing.forSeason')}</h2>
+          {!loadingRows && rows.length > 0 && (
+            <p className="seasons-table-count">
+              {t('activityPricing.showingCount', {
+                shown: visibleRows.length,
+                total: rows.length,
+              })}
+            </p>
+          )}
+        </div>
         {loadingRows ? (
           <p className="admin-page__loading">{t('activityPricing.loading')}</p>
         ) : typeof selectedSeasonId !== 'number' ? (
           <p className="dashboard-empty">{t('activityPricing.selectSeason')}</p>
         ) : rows.length === 0 ? (
           <p className="dashboard-empty">{t('activityPricing.empty')}</p>
+        ) : visibleRows.length === 0 ? (
+          <p className="dashboard-empty">{t('activityPricing.emptyFiltered')}</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -452,8 +595,13 @@ export function ActivityPricingPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
+              {visibleRows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={
+                    editingId === row.id ? 'seasons-row--editing' : undefined
+                  }
+                >
                   <td>{row.id}</td>
                   <td>{activityTypeLabel(row.activityType)}</td>
                   <td>
@@ -466,7 +614,7 @@ export function ActivityPricingPage() {
                       ? (row.weeklySessions ?? '—')
                       : '—'}
                   </td>
-                  <td>{row.monthlyPrice}</td>
+                  <td>{formatPrice(row.monthlyPrice)}</td>
                   <td className="admin-table__actions">
                     <button
                       type="button"

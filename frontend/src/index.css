@@ -4495,6 +4495,61 @@ body:has(.wizard-page) {
   background: rgb(26 111 154 / 7%);
 }
 
+.pricing-plans-count {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  color: var(--navy-800);
+  font-size: 0.9rem;
+}
+
+.pricing-plans-count strong {
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--navy-900);
+}
+
+.pricing-season-picker {
+  min-width: min(100%, 18rem);
+}
+
+.pricing-season-picker .seasons-active-chip__row {
+  flex-wrap: nowrap;
+}
+
+.pricing-season-picker__select {
+  flex: 1 1 10rem;
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.7rem;
+  padding-inline-end: 1.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--navy-900);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23132b4d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.2 8 10l4-3.8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.55rem center;
+  background-size: 0.95rem;
+}
+
+.pricing-season-picker__select:focus {
+  outline: 2px solid rgb(26 111 154 / 28%);
+  border-color: var(--accent-blue);
+}
+
+.pricing-season-picker__select:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 @media (max-width: 960px) {
   .seasons-editor {
     grid-template-columns: 1fr;
