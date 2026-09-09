@@ -8,6 +8,7 @@ import com.sportmanager.exception.ConflictException;
 import com.sportmanager.exception.ResourceNotFoundException;
 import com.sportmanager.repository.ActivityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ActivityService {
 
     private final ActivityRepository activityRepository;
@@ -25,7 +27,7 @@ public class ActivityService {
 
         Activity activity = new Activity();
         activity.setActivityType(request.getActivityType());
-        activity.setIsActive(request.getIsActive());
+        activity.setIsActive(true);
 
         return toResponse(activityRepository.save(activity));
     }
@@ -66,9 +68,31 @@ public class ActivityService {
         validateActivityTypeIsAvailable(request.getActivityType(), activityId);
 
         activity.setActivityType(request.getActivityType());
-        activity.setIsActive(request.getIsActive());
+        activity.setIsActive(true);
 
         return toResponse(activityRepository.save(activity));
+    }
+
+    @Transactional
+    public void ensureDefaultActivities() {
+        for (ActivityType type : ActivityType.values()) {
+            activityRepository.findByActivityType(type).ifPresentOrElse(
+                    existing -> {
+                        if (!Boolean.TRUE.equals(existing.getIsActive())) {
+                            existing.setIsActive(true);
+                            activityRepository.save(existing);
+                            log.info("Activated existing {} activity.", type);
+                        }
+                    },
+                    () -> {
+                        Activity activity = new Activity();
+                        activity.setActivityType(type);
+                        activity.setIsActive(true);
+                        activityRepository.save(activity);
+                        log.info("Created default {} activity.", type);
+                    }
+            );
+        }
     }
 
     @Transactional
