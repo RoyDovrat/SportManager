@@ -34,6 +34,7 @@ import {
 import { t } from '../../i18n/t'
 import {
   ACTIVITY_TYPES,
+  compareAgeGroups,
   type ActivityType,
   type SwimmingLessonType,
   type WaterAdaptationLevel,
@@ -514,7 +515,12 @@ function formatAttributes(row: ActivityGroupResponse): string {
   const isFootball = row.activityType === 'FOOTBALL'
 
   if (!isFootball && row.ageGroups?.length) {
-    parts.push(row.ageGroups.map((value) => ageGroupLabel(value)).join(', '))
+    parts.push(
+      [...row.ageGroups]
+        .sort(compareAgeGroups)
+        .map((value) => ageGroupLabel(value))
+        .join(', '),
+    )
   }
 
   const weeklySessions = isFootball

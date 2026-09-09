@@ -503,7 +503,6 @@ export function ActivityPricingPage() {
               <li>{t('activityPricing.tipByType')}</li>
               <li>{t('activityPricing.tipFootball')}</li>
               <li>{t('activityPricing.tipSwimming')}</li>
-              <li>{t('activityPricing.tipSeasonMatch')}</li>
             </ul>
             <div className="pricing-plans-count">
               <strong>{rows.length}</strong>

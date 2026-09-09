@@ -21,6 +21,10 @@ export const SWIMMING_AGE_GROUPS = [
   'OLD_GAN_RIMON',
 ] as const satisfies readonly AgeGroup[]
 
+export function compareAgeGroups(a: AgeGroup, b: AgeGroup): number {
+  return AGE_GROUPS.indexOf(a) - AGE_GROUPS.indexOf(b)
+}
+
 export const SWIMMING_LESSON_TYPES = ['PRIVATE', 'PAIR', 'GROUP'] as const
 export type SwimmingLessonType = (typeof SWIMMING_LESSON_TYPES)[number]
 

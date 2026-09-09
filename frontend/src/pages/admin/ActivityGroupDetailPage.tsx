@@ -41,17 +41,14 @@ import {
   waterAdaptationLevelLabel,
 } from '../../i18n/labels'
 import { t } from '../../i18n/t'
-import type {
-  SwimmingLessonType,
-  WaterAdaptationLevel,
-} from '../../types/enums'
+import { compareAgeGroups, type SwimmingLessonType, type WaterAdaptationLevel } from '../../types/enums'
 
 function toEditForm(group: ActivityGroupResponse): GroupFormValues {
   return {
     name: group.name,
     seasonId: String(group.seasonId),
     activityType: group.activityType,
-    ageGroups: group.ageGroups ?? [],
+    ageGroups: [...(group.ageGroups ?? [])].sort(compareAgeGroups),
     weeklySessions: String(group.weeklySessions ?? 1),
     swimmingLessonType: group.swimmingLessonType ?? '',
     waterAdaptationLevel: group.waterAdaptationLevel ?? '',
@@ -613,7 +610,7 @@ export function ActivityGroupDetailPage() {
                 <h3>{t('activityGroups.ageGroups')}</h3>
                 {group.ageGroups?.length ? (
                   <ul className="groups-chip-list">
-                    {group.ageGroups.map((value) => (
+                    {[...group.ageGroups].sort(compareAgeGroups).map((value) => (
                       <li key={value}>{ageGroupLabel(value)}</li>
                     ))}
                   </ul>
