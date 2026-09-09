@@ -15,7 +15,6 @@ function adminTheme(pathname: string): string {
   if (pathname.startsWith('/admin/reports')) return 'reports'
   if (pathname.startsWith('/admin/help')) return 'help'
   if (pathname.startsWith('/admin/seasons')) return 'seasons'
-  if (pathname.startsWith('/admin/activities')) return 'activities'
   if (pathname.startsWith('/admin/exports/kibbutz')) return 'export'
   return 'dashboard'
 }
@@ -59,7 +58,6 @@ const navGroups = [
     labelKey: 'nav.groupSetup',
     items: [
       { to: '/admin/seasons', labelKey: 'nav.seasons', icon: 'seasons' as const },
-      { to: '/admin/activities', labelKey: 'nav.activities', icon: 'activities' as const },
       {
         to: '/admin/activity-pricing',
         labelKey: 'nav.activityPricing',

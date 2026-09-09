@@ -375,7 +375,7 @@ export function ActivityPricingPage() {
 
             <div className="seasons-form-grid">
               <label className="admin-form__field">
-                <span>{t('activities.activityType')}</span>
+                <span>{t('seasons.activityType')}</span>
                 <select
                   value={form.activityType}
                   onChange={(event) =>
@@ -524,7 +524,7 @@ export function ActivityPricingPage() {
         </label>
 
         <label className="admin-form__field seasons-filters__type">
-          <span>{t('activities.activityType')}</span>
+          <span>{t('seasons.activityType')}</span>
           <select
             value={activityTypeFilter}
             onChange={(event) => setActivityTypeFilter(event.target.value)}
@@ -586,7 +586,7 @@ export function ActivityPricingPage() {
             <thead>
               <tr>
                 <th>{t('common.id')}</th>
-                <th>{t('activities.activityType')}</th>
+                <th>{t('seasons.activityType')}</th>
                 <th>{t('activityPricing.lessonType')}</th>
                 <th>{t('activityPricing.weeklySessions')}</th>
                 <th>{t('activityPricing.priceColumn')}</th>

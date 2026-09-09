@@ -9,6 +9,7 @@ import {
   type PaymentResponse,
 } from '../../api/payments'
 import { AdminBackLink } from '../../components/admin/AdminBackLink'
+import { DateText } from '../../components/ui/DateText'
 import {
   StatusBadge,
   paymentStatusTone,
@@ -347,7 +348,7 @@ export function PaymentDetailPage() {
               />
               <DetailRow
                 label={t('payments.chargeMonth')}
-                value={displayValue(payment.chargeMonth)}
+                value={<DateText value={payment.chargeMonth} />}
               />
               <DetailRow
                 label={t('payments.method')}
@@ -359,7 +360,7 @@ export function PaymentDetailPage() {
               />
               <DetailRow
                 label={t('payments.paymentDate')}
-                value={displayValue(payment.paymentDate)}
+                value={<DateText value={payment.paymentDate} />}
               />
               <DetailRow
                 label={t('payments.registrationId')}

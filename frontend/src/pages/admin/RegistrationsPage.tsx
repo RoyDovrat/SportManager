@@ -9,6 +9,7 @@ import {
 } from '../../api/registrations'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
+import { DateText } from '../../components/ui/DateText'
 import {
   StatusBadge,
   registrationStatusTone,
@@ -302,7 +303,9 @@ export function RegistrationsPage() {
                         <dl>
                           <div>
                             <dt>{t('registrations.date')}</dt>
-                            <dd>{row.registrationDate}</dd>
+                            <dd>
+                              <DateText value={row.registrationDate} />
+                            </dd>
                           </div>
                           <div>
                             <dt>{t('registrations.identity')}</dt>

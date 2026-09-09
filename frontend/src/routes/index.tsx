@@ -3,7 +3,6 @@ import { RequireAuth } from '../auth/RequireAuth'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { PublicLayout } from '../layouts/PublicLayout'
 import { AdminHelpPage } from '../pages/admin/AdminHelpPage'
-import { ActivitiesPage } from '../pages/admin/ActivitiesPage'
 import { ActivityGroupDetailPage } from '../pages/admin/ActivityGroupDetailPage'
 import { ActivityGroupsPage } from '../pages/admin/ActivityGroupsPage'
 import { ActivityPricingPage } from '../pages/admin/ActivityPricingPage'
@@ -50,7 +49,7 @@ export function AppRouter() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="help" element={<AdminHelpPage />} />
             <Route path="seasons" element={<SeasonsPage />} />
-            <Route path="activities" element={<ActivitiesPage />} />
+            <Route path="activities" element={<Navigate to="/admin/seasons" replace />} />
             <Route path="activity-pricing" element={<ActivityPricingPage />} />
             <Route path="clothing-pricing" element={<ClothingPricingPage />} />
             <Route

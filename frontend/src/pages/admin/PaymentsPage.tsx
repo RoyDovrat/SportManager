@@ -10,6 +10,7 @@ import {
 } from '../../api/payments'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
+import { DateText } from '../../components/ui/DateText'
 import { NavIcon } from '../../components/ui/NavIcon'
 import {
   StatusBadge,
@@ -418,7 +419,9 @@ export function PaymentsPage() {
                     {row.studentFirstName} {row.studentLastName}
                   </td>
                   <td>{formatAmount(row.amount)}</td>
-                  <td>{row.chargeMonth ?? '—'}</td>
+                  <td>
+                    <DateText value={row.chargeMonth} />
+                  </td>
                   <td>{paymentTypeLabel(row.paymentType)}</td>
                   <td>
                     <StatusBadge tone={paymentStatusTone(row.status)}>

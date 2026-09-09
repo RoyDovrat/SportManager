@@ -7,11 +7,13 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
+import { DateText } from '../../components/ui/DateText'
 import { PaymentSummaryCard } from '../../components/ui/PaymentSummaryCard'
 import {
   StatusBadge,
   registrationStatusTone,
 } from '../../components/ui/StatusBadge'
+import { formatIsoDate } from '../../utils/formatDate'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -28,31 +30,6 @@ function formatAmount(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}`
-}
-
-function formatDateTime(date: string, createdAt: string | null): string {
-  if (createdAt) {
-    const parsed = new Date(createdAt)
-    if (!Number.isNaN(parsed.getTime())) {
-      const datePart = parsed.toLocaleDateString('he-IL', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-      const timePart = parsed.toLocaleTimeString('he-IL', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-      return `${datePart} ${timePart}`
-    }
-  }
-
-  const [year, month, day] = date.split('-')
-  if (year && month && day) {
-    return `${day}/${month}/${year}`
-  }
-  return date
 }
 
 function currentMonthValue(): string {
@@ -238,7 +215,7 @@ export function DashboardPage() {
               {t('dashboard.seasonEndAlertBody', {
                 name: season.name,
                 sport: activityTypeLabel(season.activityType as 'FOOTBALL' | 'SWIMMING'),
-                endDate: season.endDate,
+                endDate: formatIsoDate(season.endDate),
               })}
             </p>
           ))}
@@ -471,7 +448,10 @@ export function DashboardPage() {
                           </Link>
                         </td>
                         <td className="dashboard-recent-table__datetime">
-                          {formatDateTime(row.registrationDate, row.createdAt ?? null)}
+                          <DateText
+                            value={row.registrationDate}
+                            createdAt={row.createdAt ?? null}
+                          />
                         </td>
                       </tr>
                     ))}

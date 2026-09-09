@@ -20,13 +20,6 @@ const openSeasonSteps: GuideStep[] = [
     badge: 'required',
   },
   {
-    titleKey: 'help.stepActivitiesTitle',
-    bodyKey: 'help.stepActivitiesBody',
-    to: '/admin/activities',
-    linkKey: 'help.linkActivities',
-    badge: 'required',
-  },
-  {
     titleKey: 'help.stepActivityPricingTitle',
     bodyKey: 'help.stepActivityPricingBody',
     to: '/admin/activity-pricing',

@@ -12,6 +12,7 @@ import { formatApiError } from '../../api/formatApiError'
 import { NavIcon } from '../../components/ui/NavIcon'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { DateText } from '../../components/ui/DateText'
 import { activityTypeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import { ACTIVITY_TYPES, type ActivityType } from '../../types/enums'
@@ -160,18 +161,20 @@ export function SeasonsPage() {
 
   const visibleSeasons = useMemo(() => {
     const query = search.trim()
-    return seasons.filter((season) => {
-      if (activityTypeFilter !== '' && season.activityType !== activityTypeFilter) {
-        return false
-      }
-      if (activeOnly && !season.isActive) {
-        return false
-      }
-      if (query && !season.name.includes(query)) {
-        return false
-      }
-      return true
-    })
+    return seasons
+      .filter((season) => {
+        if (activityTypeFilter !== '' && season.activityType !== activityTypeFilter) {
+          return false
+        }
+        if (activeOnly && !season.isActive) {
+          return false
+        }
+        if (query && !season.name.includes(query)) {
+          return false
+        }
+        return true
+      })
+      .sort((a, b) => a.id - b.id)
   }, [activeOnly, activityTypeFilter, search, seasons])
 
   const filtersActive =
@@ -450,8 +453,12 @@ export function SeasonsPage() {
                   <td>{season.id}</td>
                   <td>{season.name}</td>
                   <td>{activityTypeLabel(season.activityType)}</td>
-                  <td>{season.startDate}</td>
-                  <td>{season.endDate}</td>
+                  <td>
+                    <DateText value={season.startDate} />
+                  </td>
+                  <td>
+                    <DateText value={season.endDate} />
+                  </td>
                   <td>
                     <StatusBadge tone={season.isActive ? 'success' : 'neutral'}>
                       {season.isActive ? t('common.active') : t('common.inactive')}

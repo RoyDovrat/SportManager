@@ -10,6 +10,7 @@ import {
   type RegistrationResponse,
 } from '../../api/registrations'
 import { AdminBackLink } from '../../components/admin/AdminBackLink'
+import { DateText } from '../../components/ui/DateText'
 import {
   StatusBadge,
   registrationStatusTone,
@@ -282,7 +283,7 @@ export function RegistrationDetailPage() {
                   {ageGroupLabel(registration.studentAgeGroup)}
                 </span>
                 <span className="registrations-chip registrations-chip--muted">
-                  {registration.registrationDate}
+                  <DateText value={registration.registrationDate} />
                 </span>
               </p>
             </div>
@@ -611,7 +612,7 @@ export function RegistrationDetailPage() {
                 <DetailRow label={t('common.id')} value={registration.id} />
                 <DetailRow
                   label={t('registrations.date')}
-                  value={registration.registrationDate}
+                  value={<DateText value={registration.registrationDate} />}
                 />
                 <DetailRow
                   label={t('registrations.activity')}

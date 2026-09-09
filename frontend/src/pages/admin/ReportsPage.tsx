@@ -7,6 +7,7 @@ import {
 } from '../../api/reports'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { BreakdownChart } from '../../components/ui/BreakdownChart'
+import { DateText } from '../../components/ui/DateText'
 import { NavIcon } from '../../components/ui/NavIcon'
 import {
   StatusBadge,
@@ -401,7 +402,9 @@ export function ReportsPage() {
                             {registrationStatusLabel(row.status)}
                           </StatusBadge>
                         </td>
-                        <td>{row.registrationDate}</td>
+                        <td>
+                          <DateText value={row.registrationDate} />
+                        </td>
                         <td className="admin-table__actions">
                           <Link
                             to={`/admin/registrations/${row.id}`}

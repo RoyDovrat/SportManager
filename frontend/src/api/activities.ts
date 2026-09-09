@@ -7,40 +7,6 @@ export type ActivityResponse = {
   isActive: boolean
 }
 
-export type ActivityRequest = {
-  activityType: ActivityType
-  isActive: boolean
-}
-
 export function listActivities(): Promise<ActivityResponse[]> {
   return apiRequest<ActivityResponse[]>('/api/activities')
-}
-
-export function createActivity(request: ActivityRequest): Promise<ActivityResponse> {
-  return apiRequest<ActivityResponse>('/api/activities', {
-    method: 'POST',
-    body: request,
-  })
-}
-
-export function updateActivity(
-  activityId: number,
-  request: ActivityRequest,
-): Promise<ActivityResponse> {
-  return apiRequest<ActivityResponse>(`/api/activities/${activityId}`, {
-    method: 'PUT',
-    body: request,
-  })
-}
-
-export function activateActivity(activityId: number): Promise<ActivityResponse> {
-  return apiRequest<ActivityResponse>(`/api/activities/${activityId}/activate`, {
-    method: 'PATCH',
-  })
-}
-
-export function deactivateActivity(activityId: number): Promise<ActivityResponse> {
-  return apiRequest<ActivityResponse>(`/api/activities/${activityId}/deactivate`, {
-    method: 'PATCH',
-  })
 }
