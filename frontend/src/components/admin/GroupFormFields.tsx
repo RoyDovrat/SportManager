@@ -29,7 +29,7 @@ export type GroupFormValues = {
   ageGroups: AgeGroup[]
   weeklySessions: string
   swimmingLessonType: string
-  waterAdaptationLevel: string
+  waterAdaptationLevels: WaterAdaptationLevel[]
   isActive: boolean
   trainingSessions: TrainingSessionDraft[]
 }
@@ -63,7 +63,7 @@ export function validateGroupForm(values: GroupFormValues): GroupFormErrors {
   if (!isFootball && values.swimmingLessonType === '') {
     errors.lessonType = t('activityGroups.lessonTypeRequired')
   }
-  if (!isFootball && values.waterAdaptationLevel === '') {
+  if (!isFootball && (values.waterAdaptationLevels ?? []).length === 0) {
     errors.waterLevel = t('activityGroups.waterLevelRequired')
   }
   if (isFootball) {
@@ -115,6 +115,17 @@ export function GroupFormFields({
     })
   }
 
+  function toggleWaterLevel(value: WaterAdaptationLevel) {
+    const current = values.waterAdaptationLevels ?? []
+    const exists = current.includes(value)
+    onChange({
+      ...values,
+      waterAdaptationLevels: exists
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    })
+  }
+
   return (
     <div className="groups-form-grid">
       <section className="groups-card">
@@ -158,7 +169,7 @@ export function GroupFormFields({
                   ageGroups: [],
                   weeklySessions: '1',
                   swimmingLessonType: '',
-                  waterAdaptationLevel: '',
+                  waterAdaptationLevels: [],
                   trainingSessions: [newTrainingSessionDraft()],
                 })
               }}
@@ -232,33 +243,34 @@ export function GroupFormFields({
               {t('activityGroups.lessonCapacityHint')}
             </p>
 
-            <label className="admin-form__field">
+            <div
+              className={
+                errors.waterLevel
+                  ? 'groups-water-levels groups-water-levels--error'
+                  : 'groups-water-levels'
+              }
+            >
               <span>{t('activityGroups.waterLevel')}</span>
-              <select
-                value={values.waterAdaptationLevel}
-                onChange={(event) =>
-                  onChange({
-                    ...values,
-                    waterAdaptationLevel: event.target.value,
-                  })
-                }
-                required
-                disabled={disabled}
-                aria-invalid={Boolean(errors.waterLevel)}
-              >
-                <option value="">{t('activityGroups.selectWaterLevel')}</option>
+              <p className="admin-form__hint">{t('activityGroups.waterLevelHint')}</p>
+              <div className="groups-age-grid">
                 {WATER_ADAPTATION_LEVELS.map((value) => (
-                  <option key={value} value={value}>
-                    {waterAdaptationLevelLabel(value as WaterAdaptationLevel)}
-                  </option>
+                  <label key={value} className="admin-form__checkbox">
+                    <input
+                      type="checkbox"
+                      checked={(values.waterAdaptationLevels ?? []).includes(value)}
+                      onChange={() => toggleWaterLevel(value)}
+                      disabled={disabled}
+                    />
+                    <span>{waterAdaptationLevelLabel(value)}</span>
+                  </label>
                 ))}
-              </select>
-            </label>
-            {errors.waterLevel && (
-              <p className="groups-inline-error" role="alert">
-                {errors.waterLevel}
-              </p>
-            )}
+              </div>
+              {errors.waterLevel && (
+                <p className="groups-inline-error" role="alert">
+                  {errors.waterLevel}
+                </p>
+              )}
+            </div>
           </>
         )}
 

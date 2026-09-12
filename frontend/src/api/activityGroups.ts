@@ -25,7 +25,7 @@ export type ActivityGroupResponse = {
   activityType: ActivityType
   ageGroups: AgeGroup[]
   swimmingLessonType: SwimmingLessonType | null
-  waterAdaptationLevel: WaterAdaptationLevel | null
+  waterAdaptationLevels: WaterAdaptationLevel[]
   weeklySessions: number | null
   isActive: boolean
   memberCount: number
@@ -40,6 +40,7 @@ export type ActivityGroupRequest = {
   activityType: ActivityType
   ageGroups?: AgeGroup[] | null
   swimmingLessonType?: SwimmingLessonType | null
+  waterAdaptationLevels?: WaterAdaptationLevel[] | null
   waterAdaptationLevel?: WaterAdaptationLevel | null
   weeklySessions?: number | null
   isActive: boolean
@@ -50,6 +51,7 @@ export type ActivityGroupUpdateRequest = {
   name: string
   ageGroups?: AgeGroup[] | null
   swimmingLessonType?: SwimmingLessonType | null
+  waterAdaptationLevels?: WaterAdaptationLevel[] | null
   waterAdaptationLevel?: WaterAdaptationLevel | null
   weeklySessions?: number | null
   isActive: boolean

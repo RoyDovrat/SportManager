@@ -39,6 +39,13 @@ export const WATER_ADAPTATION_LEVELS = [
 ] as const
 export type WaterAdaptationLevel = (typeof WATER_ADAPTATION_LEVELS)[number]
 
+export function compareWaterAdaptationLevels(
+  a: WaterAdaptationLevel,
+  b: WaterAdaptationLevel,
+): number {
+  return WATER_ADAPTATION_LEVELS.indexOf(a) - WATER_ADAPTATION_LEVELS.indexOf(b)
+}
+
 export const REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'CANCELLED'] as const
 export type RegistrationStatus = (typeof REGISTRATION_STATUSES)[number]
 

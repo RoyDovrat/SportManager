@@ -35,9 +35,9 @@ import { t } from '../../i18n/t'
 import {
   ACTIVITY_TYPES,
   compareAgeGroups,
+  compareWaterAdaptationLevels,
   type ActivityType,
   type SwimmingLessonType,
-  type WaterAdaptationLevel,
 } from '../../types/enums'
 
 const FILTER_DEFAULTS = {
@@ -70,7 +70,7 @@ function emptyCreateForm(seasonId = '', activityType: ActivityType = 'FOOTBALL')
     ageGroups: [],
     weeklySessions: '1',
     swimmingLessonType: '',
-    waterAdaptationLevel: '',
+    waterAdaptationLevels: [],
     isActive: true,
     trainingSessions: [newTrainingSessionDraft()],
   }
@@ -289,10 +289,14 @@ export function ActivityGroupsPage() {
           createForm.activityType === 'FOOTBALL'
             ? null
             : (createForm.swimmingLessonType as SwimmingLessonType),
+        waterAdaptationLevels:
+          createForm.activityType === 'FOOTBALL'
+            ? []
+            : (createForm.waterAdaptationLevels ?? []),
         waterAdaptationLevel:
           createForm.activityType === 'FOOTBALL'
             ? null
-            : (createForm.waterAdaptationLevel as WaterAdaptationLevel),
+            : (createForm.waterAdaptationLevels?.[0] ?? null),
         isActive: createForm.isActive,
         trainingSessions: draftsToRequest(createForm.trainingSessions),
       })
@@ -534,8 +538,13 @@ function formatAttributes(row: ActivityGroupResponse): string {
   if (row.swimmingLessonType) {
     parts.push(swimmingLessonTypeLabel(row.swimmingLessonType))
   }
-  if (row.waterAdaptationLevel) {
-    parts.push(waterAdaptationLevelLabel(row.waterAdaptationLevel))
+  if (row.waterAdaptationLevels?.length) {
+    parts.push(
+      [...row.waterAdaptationLevels]
+        .sort(compareWaterAdaptationLevels)
+        .map((value) => waterAdaptationLevelLabel(value))
+        .join(', '),
+    )
   }
   return parts.length > 0 ? parts.join(' · ') : '—'
 }

@@ -2,9 +2,11 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   activateActivityGroup,
+  assignRegistrationToGroup,
   deactivateActivityGroup,
   deleteActivityGroup,
   getActivityGroup,
+  listEligibleRegistrations,
   listGroupRegistrations,
   unassignRegistrationFromGroup,
   updateActivityGroup,
@@ -39,7 +41,7 @@ import {
   waterAdaptationLevelLabel,
 } from '../../i18n/labels'
 import { t } from '../../i18n/t'
-import { compareAgeGroups, type SwimmingLessonType, type WaterAdaptationLevel } from '../../types/enums'
+import { compareAgeGroups, compareWaterAdaptationLevels, type SwimmingLessonType } from '../../types/enums'
 
 function toEditForm(group: ActivityGroupResponse): GroupFormValues {
   return {
@@ -49,7 +51,9 @@ function toEditForm(group: ActivityGroupResponse): GroupFormValues {
     ageGroups: [...(group.ageGroups ?? [])].sort(compareAgeGroups),
     weeklySessions: String(group.weeklySessions ?? 1),
     swimmingLessonType: group.swimmingLessonType ?? '',
-    waterAdaptationLevel: group.waterAdaptationLevel ?? '',
+    waterAdaptationLevels: [...(group.waterAdaptationLevels ?? [])].sort(
+      compareWaterAdaptationLevels,
+    ),
     isActive: group.isActive,
     trainingSessions: draftsFromSessions(group.trainingSessions),
   }
@@ -57,6 +61,13 @@ function toEditForm(group: ActivityGroupResponse): GroupFormValues {
 
 function studentLabel(row: RegistrationResponse): string {
   return `${row.studentFirstName} ${row.studentLastName}`
+}
+
+function remainingCapacity(group: ActivityGroupResponse): number | null {
+  if (group.maxCapacity == null) {
+    return null
+  }
+  return Math.max(0, group.maxCapacity - group.memberCount)
 }
 
 function formatSessionTime(value: string): string {
@@ -70,10 +81,13 @@ export function ActivityGroupDetailPage() {
   const groupId = Number(id)
   const editing = searchParams.get('edit') === '1'
   const formRef = useRef<HTMLFormElement>(null)
+  const assignRef = useRef<HTMLFormElement>(null)
 
   const [group, setGroup] = useState<ActivityGroupResponse | null>(null)
   const [form, setForm] = useState<GroupFormValues | null>(null)
   const [members, setMembers] = useState<RegistrationResponse[]>([])
+  const [eligible, setEligible] = useState<RegistrationResponse[]>([])
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [acting, setActing] = useState(false)
@@ -90,6 +104,7 @@ export function ActivityGroupDetailPage() {
       setGroup(null)
       setForm(null)
       setMembers([])
+      setEligible([])
       setLoading(false)
       return
     }
@@ -100,18 +115,22 @@ export function ActivityGroupDetailPage() {
     }
 
     try {
-      const [data, memberData] = await Promise.all([
+      const [data, memberData, eligibleData] = await Promise.all([
         getActivityGroup(groupId),
         listGroupRegistrations(groupId),
+        listEligibleRegistrations(groupId),
       ])
       setGroup(data)
       setForm(toEditForm(data))
       setMembers(memberData)
+      setEligible(eligibleData)
+      setSelectedIds([])
     } catch (err) {
       setFormErrors({ general: formatApiError(err) })
       setGroup(null)
       setForm(null)
       setMembers([])
+      setEligible([])
     } finally {
       setLoading(false)
     }
@@ -142,6 +161,18 @@ export function ActivityGroupDetailPage() {
     setSearchParams(next, { replace: true })
   }
 
+  function toggleSelected(registrationId: number, remaining: number | null) {
+    setSelectedIds((prev) => {
+      if (prev.includes(registrationId)) {
+        return prev.filter((id) => id !== registrationId)
+      }
+      if (remaining != null && prev.length >= remaining) {
+        return prev
+      }
+      return [...prev, registrationId]
+    })
+  }
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!group || !form) {
@@ -167,10 +198,12 @@ export function ActivityGroupDetailPage() {
           group.activityType === 'FOOTBALL'
             ? null
             : (form.swimmingLessonType as SwimmingLessonType),
+        waterAdaptationLevels:
+          group.activityType === 'FOOTBALL' ? [] : (form.waterAdaptationLevels ?? []),
         waterAdaptationLevel:
           group.activityType === 'FOOTBALL'
             ? null
-            : (form.waterAdaptationLevel as WaterAdaptationLevel),
+            : (form.waterAdaptationLevels?.[0] ?? null),
         isActive: form.isActive,
         trainingSessions: draftsToRequest(form.trainingSessions),
       })
@@ -178,8 +211,13 @@ export function ActivityGroupDetailPage() {
       setForm(toEditForm(updated))
       setFormErrors(emptyGroupFormErrors())
       setMessage(t('activityGroups.updated'))
-      const memberData = await listGroupRegistrations(group.id)
+      const [memberData, eligibleData] = await Promise.all([
+        listGroupRegistrations(group.id),
+        listEligibleRegistrations(group.id),
+      ])
       setMembers(memberData)
+      setEligible(eligibleData)
+      setSelectedIds([])
     } catch (err) {
       setFormErrors({ general: formatApiError(err) })
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -200,8 +238,6 @@ export function ActivityGroupDetailPage() {
       setGroup(updated)
       setForm(toEditForm(updated))
       setMessage(t('activityGroups.activated'))
-      const memberData = await listGroupRegistrations(group.id)
-      setMembers(memberData)
     } catch (err) {
       setAssignError(formatApiError(err))
     } finally {
@@ -254,6 +290,47 @@ export function ActivityGroupDetailPage() {
     }
   }
 
+  async function handleAssign(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!group) {
+      return
+    }
+
+    if (selectedIds.length === 0) {
+      setAssignError(t('activityGroups.selectAtLeastOne'))
+      assignRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      return
+    }
+
+    const remaining = remainingCapacity(group)
+    if (remaining != null && selectedIds.length > remaining) {
+      setAssignError(t('activityGroups.tooManySelected', { remaining }))
+      assignRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      return
+    }
+
+    setAssigning(true)
+    setAssignError(null)
+    setMessage(null)
+
+    try {
+      for (const registrationId of selectedIds) {
+        await assignRegistrationToGroup(group.id, registrationId)
+      }
+      setMessage(
+        selectedIds.length === 1
+          ? t('activityGroups.assigned')
+          : t('activityGroups.assignedCount', { count: selectedIds.length }),
+      )
+      await loadGroupAndMembers()
+    } catch (err) {
+      setAssignError(formatApiError(err))
+      await loadGroupAndMembers()
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   async function handleUnassign(registrationId: number) {
     if (!window.confirm(t('activityGroups.confirmUnassign'))) {
       return
@@ -274,6 +351,8 @@ export function ActivityGroupDetailPage() {
     }
   }
 
+  const remaining = group ? remainingCapacity(group) : null
+  const isFull = remaining === 0
   const activeSessions = (group?.trainingSessions ?? []).filter(
     (session) => session.isActive,
   )
@@ -409,6 +488,87 @@ export function ActivityGroupDetailPage() {
                   </button>
                 </div>
               </form>
+
+              <form
+                ref={assignRef}
+                className="admin-form groups-form"
+                onSubmit={handleAssign}
+              >
+                <h2>{t('activityGroups.assignTitle')}</h2>
+                <p className="admin-form__hint">
+                  {group.activityType === 'SWIMMING'
+                    ? t('activityGroups.assignHint')
+                    : t('activityGroups.assignHintFootball')}
+                </p>
+                {assignError && (
+                  <p className="groups-inline-error" role="alert">
+                    {assignError}
+                  </p>
+                )}
+                {isFull ? (
+                  <p className="groups-inline-error">
+                    {t('activityGroups.capacityFull')}
+                  </p>
+                ) : eligible.length === 0 ? (
+                  <p className="dashboard-empty">
+                    {t('activityGroups.eligibleEmpty')}
+                  </p>
+                ) : (
+                  <fieldset className="admin-form__checkbox-group">
+                    <legend>{t('activityGroups.eligibleTitle')}</legend>
+                    {remaining != null && (
+                      <p className="admin-form__hint">
+                        {t('activityGroups.capacity')}: {group.memberCount}/
+                        {group.maxCapacity}
+                        {' · '}
+                        {t('activityGroups.remainingSlots', { count: remaining })}
+                      </p>
+                    )}
+                    {eligible.map((row) => (
+                      <label key={row.id} className="admin-form__checkbox">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(row.id)}
+                          onChange={() => toggleSelected(row.id, remaining)}
+                          disabled={assigning || saving || acting}
+                        />
+                        <span>
+                          {studentLabel(row)}
+                          {' · '}
+                          {ageGroupLabel(row.studentAgeGroup)}
+                          {row.swimmingLessonType
+                            ? ` · ${swimmingLessonTypeLabel(row.swimmingLessonType)}`
+                            : ''}
+                          {row.waterAdaptationLevel
+                            ? ` · ${waterAdaptationLevelLabel(row.waterAdaptationLevel)}`
+                            : ''}
+                          {row.weeklySessions != null
+                            ? ` · ${t('activityGroups.weeklySessionsShort')}: ${row.weeklySessions}`
+                            : ''}
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
+                <div className="admin-form__actions">
+                  <button
+                    type="submit"
+                    className="reg-action reg-action--approve"
+                    disabled={
+                      assigning ||
+                      saving ||
+                      acting ||
+                      isFull ||
+                      eligible.length === 0 ||
+                      selectedIds.length === 0
+                    }
+                  >
+                    {assigning
+                      ? t('activityGroups.assigning')
+                      : t('activityGroups.assignSelected')}
+                  </button>
+                </div>
+              </form>
             </>
           ) : (
             <div className="groups-form-grid">
@@ -443,14 +603,17 @@ export function ActivityGroupDetailPage() {
                       </dd>
                     </div>
                   )}
-                  {group.waterAdaptationLevel && (
+                  {group.waterAdaptationLevels?.length ? (
                     <div>
                       <dt>{t('activityGroups.waterLevel')}</dt>
                       <dd>
-                        {waterAdaptationLevelLabel(group.waterAdaptationLevel)}
+                        {[...group.waterAdaptationLevels]
+                          .sort(compareWaterAdaptationLevels)
+                          .map((value) => waterAdaptationLevelLabel(value))
+                          .join(' · ')}
                       </dd>
                     </div>
-                  )}
+                  ) : null}
                 </dl>
               </section>
 
