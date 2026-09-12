@@ -13,12 +13,15 @@ import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.w3c.dom.Element;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -77,12 +80,13 @@ public class KibbutzExportService {
     }
 
     private byte[] buildWorkbook(String sheetTitle, List<Payment> payments) {
-        try (Workbook workbook = new XSSFWorkbook();
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
-            Sheet sheet = workbook.createSheet(sheetTitle);
+            XSSFSheet sheet = workbook.createSheet(sheetTitle);
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle totalStyle = createTotalStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
 
             createHeaderRow(sheet, headerStyle);
 
@@ -94,12 +98,20 @@ public class KibbutzExportService {
                 Parent parent = student.getParent();
 
                 Row row = sheet.createRow(rowIndex++);
-                row.createCell(0).setCellValue(formatName(parent.getFirstName(), parent.getLastName()));
-                row.createCell(1).setCellValue(formatName(student.getFirstName(), student.getLastName()));
-                row.createCell(2).setCellValue(
+                Cell parentCell = row.createCell(0);
+                parentCell.setCellValue(formatName(parent.getFirstName(), parent.getLastName()));
+                parentCell.setCellStyle(dataStyle);
+                Cell studentCell = row.createCell(1);
+                studentCell.setCellValue(formatName(student.getFirstName(), student.getLastName()));
+                studentCell.setCellStyle(dataStyle);
+                Cell budgetCell = row.createCell(2);
+                budgetCell.setCellValue(
                         parent.getBudgetNumber() != null ? parent.getBudgetNumber() : ""
                 );
-                row.createCell(3).setCellValue(payment.getAmount().doubleValue());
+                budgetCell.setCellStyle(dataStyle);
+                Cell amountCell = row.createCell(3);
+                amountCell.setCellValue(payment.getAmount().doubleValue());
+                amountCell.setCellStyle(dataStyle);
 
                 total = total.add(payment.getAmount());
             }
@@ -117,10 +129,37 @@ public class KibbutzExportService {
                 sheet.autoSizeColumn(i);
             }
 
+            applyHebrewRtlView(workbook, sheet);
+
             workbook.write(outputStream);
             return outputStream.toByteArray();
         } catch (IOException ex) {
             throw new BusinessRuleException("יצירת קובץ האקסל לחיוב הקיבוץ נכשלה");
+        }
+    }
+
+    private void applyHebrewRtlView(XSSFWorkbook workbook, XSSFSheet sheet) {
+        sheet.setRightToLeft(true);
+
+        var sheetViews = sheet.getCTWorksheet().getSheetViews();
+        if (sheetViews != null) {
+            for (var view : sheetViews.getSheetViewArray()) {
+                view.setRightToLeft(true);
+                if (view.getDomNode() instanceof Element element) {
+                    element.setAttribute("rightToLeft", "1");
+                }
+            }
+        }
+
+        var workbookViews = workbook.getCTWorkbook().getBookViews();
+        if (workbookViews == null) {
+            workbookViews = workbook.getCTWorkbook().addNewBookViews();
+        }
+        if (workbookViews.sizeOfWorkbookViewArray() == 0) {
+            workbookViews.addNewWorkbookView();
+        }
+        if (workbookViews.getWorkbookViewArray(0).getDomNode() instanceof Element element) {
+            element.setAttribute("rtl", "1");
         }
     }
 
@@ -160,6 +199,7 @@ public class KibbutzExportService {
         Font font = workbook.createFont();
         font.setBold(true);
         style.setFont(font);
+        style.setAlignment(HorizontalAlignment.RIGHT);
         return style;
     }
 
@@ -168,6 +208,13 @@ public class KibbutzExportService {
         Font font = workbook.createFont();
         font.setBold(true);
         style.setFont(font);
+        style.setAlignment(HorizontalAlignment.RIGHT);
+        return style;
+    }
+
+    private CellStyle createDataStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setAlignment(HorizontalAlignment.RIGHT);
         return style;
     }
 
