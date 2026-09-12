@@ -108,11 +108,17 @@ export function PaymentSummaryCard({
                 style={{ background: slice.color }}
                 aria-hidden="true"
               />
-              <span className="payment-summary-card__name">{slice.label}</span>
-              <span className="payment-summary-card__count">{slice.count}</span>
-              <span className="payment-summary-card__amount">
-                {formatAmount(slice.amount)}
-              </span>
+              <div className="payment-summary-card__meta">
+                <span className="payment-summary-card__name">{slice.label}</span>
+                <span className="payment-summary-card__figures">
+                  <span className="payment-summary-card__count" dir="ltr">
+                    {slice.count}
+                  </span>
+                  <span className="payment-summary-card__amount" dir="ltr">
+                    {formatAmount(slice.amount)}
+                  </span>
+                </span>
+              </div>
             </li>
           ))}
         </ul>

@@ -2367,9 +2367,9 @@ body:has(.wizard-page) {
 
 .payment-summary-card__legend li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 0.45rem 0.55rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem 0.65rem;
   font-size: 0.88rem;
 }
 
@@ -2377,6 +2377,14 @@ body:has(.wizard-page) {
   width: 0.7rem;
   height: 0.7rem;
   border-radius: 50%;
+  margin-top: 0.35rem;
+}
+
+.payment-summary-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
 }
 
 .payment-summary-card__name {
@@ -2384,18 +2392,25 @@ body:has(.wizard-page) {
   color: var(--navy-800);
 }
 
+.payment-summary-card__figures {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.85rem;
+}
+
 .payment-summary-card__count {
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   font-weight: 700;
+  unicode-bidi: isolate;
 }
 
 .payment-summary-card__amount {
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   color: var(--navy-900);
-  min-width: 4.5rem;
-  text-align: end;
+  unicode-bidi: isolate;
 }
 
 .payment-summary-card__chart {
@@ -3417,6 +3432,86 @@ body:has(.wizard-page) {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.95rem;
+}
+
+.report-payment-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.report-payment-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.9rem 1rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.report-payment-stat::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 0.28rem;
+}
+
+.report-payment-stat--pending::before {
+  background: var(--pending);
+}
+
+.report-payment-stat--paid::before {
+  background: var(--accent-green);
+}
+
+.report-payment-stat--cancelled::before {
+  background: var(--danger);
+}
+
+.report-payment-stat__status {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--navy-900);
+}
+
+.report-payment-stat__count {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.report-payment-stat__count strong {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--navy-900);
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+.report-payment-stat__amount {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--navy-800);
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+@media (max-width: 720px) {
+  .report-payment-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 .reports-kpi-grid {

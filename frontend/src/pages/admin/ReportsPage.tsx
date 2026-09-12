@@ -442,30 +442,41 @@ export function ReportsPage() {
               </Link>
             </div>
 
-            <div className="dashboard-payment-row">
-              <div className="dashboard-payment-pill dashboard-payment-pill--pending">
-                <span>{t('reports.pending')}</span>
-                <strong>
-                  {report.payments.pendingCount}
-                  <small>{formatAmount(report.payments.pendingAmount)}</small>
-                </strong>
-              </div>
-              <div className="dashboard-payment-pill dashboard-payment-pill--paid">
-                <span>{t('reports.paid')}</span>
-                <strong>
-                  {report.payments.paidCount}
-                  <small>{formatAmount(report.payments.paidAmount)}</small>
-                </strong>
-              </div>
-              <div className="dashboard-payment-pill dashboard-payment-pill--cancelled">
-                <span>{t('reports.cancelled')}</span>
-                <strong>
-                  {report.payments.cancelledCount}
-                  <small>
-                    {formatAmount(report.payments.cancelledAmount)}
-                  </small>
-                </strong>
-              </div>
+            <div className="report-payment-stats">
+              <article className="report-payment-stat report-payment-stat--pending">
+                <p className="report-payment-stat__status">
+                  {t('reports.pending')}
+                </p>
+                <p className="report-payment-stat__count">
+                  <strong dir="ltr">{report.payments.pendingCount}</strong>
+                  <span>{t('reports.paymentCountLabel')}</span>
+                </p>
+                <p className="report-payment-stat__amount" dir="ltr">
+                  {formatAmount(report.payments.pendingAmount)}
+                </p>
+              </article>
+              <article className="report-payment-stat report-payment-stat--paid">
+                <p className="report-payment-stat__status">{t('reports.paid')}</p>
+                <p className="report-payment-stat__count">
+                  <strong dir="ltr">{report.payments.paidCount}</strong>
+                  <span>{t('reports.paymentCountLabel')}</span>
+                </p>
+                <p className="report-payment-stat__amount" dir="ltr">
+                  {formatAmount(report.payments.paidAmount)}
+                </p>
+              </article>
+              <article className="report-payment-stat report-payment-stat--cancelled">
+                <p className="report-payment-stat__status">
+                  {t('reports.cancelled')}
+                </p>
+                <p className="report-payment-stat__count">
+                  <strong dir="ltr">{report.payments.cancelledCount}</strong>
+                  <span>{t('reports.paymentCountLabel')}</span>
+                </p>
+                <p className="report-payment-stat__amount" dir="ltr">
+                  {formatAmount(report.payments.cancelledAmount)}
+                </p>
+              </article>
             </div>
 
             <div className="admin-table-wrap admin-table-wrap--scroll">

@@ -317,6 +317,7 @@ export const he = {
     approved: 'מאושר',
     cancelled: 'מבוטל',
     paid: 'שולם',
+    paymentCountLabel: 'חיובים',
     activeStudents: 'תלמידים פעילים',
     totalOrders: 'סה״כ הזמנות',
     ordersRequiringPayment: 'דורשות תשלום',
