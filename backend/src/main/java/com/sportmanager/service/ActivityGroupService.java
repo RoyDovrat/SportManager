@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -100,7 +101,9 @@ public class ActivityGroupService {
         );
         replaceTrainingSessions(group, request.getActivityType(), request.getTrainingSessions());
 
-        return toResponse(activityGroupRepository.save(group));
+        ActivityGroup saved = activityGroupRepository.save(group);
+        autoAssignMatchingRegistrations(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -161,12 +164,13 @@ public class ActivityGroupService {
         );
         replaceTrainingSessions(group, activityType, request.getTrainingSessions());
 
-        ActivityGroupResponse response = toResponse(activityGroupRepository.save(group));
+        ActivityGroup saved = activityGroupRepository.save(group);
         if (activityType == ActivityType.SWIMMING) {
             paymentServiceProvider.getObject()
-                    .recalculatePendingMonthlyPaymentsForGroup(group);
+                    .recalculatePendingMonthlyPaymentsForGroup(saved);
         }
-        return response;
+        autoAssignMatchingRegistrations(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -249,6 +253,50 @@ public class ActivityGroupService {
         return registrationService.toResponse(saved);
     }
 
+    /**
+     * Places unassigned (pending or approved) matching registrations into an active group
+     * until capacity is reached. Swimming payments are created only for approved members.
+     */
+    private void autoAssignMatchingRegistrations(ActivityGroup group) {
+        if (!Boolean.TRUE.equals(group.getIsActive()) || group.getId() == null) {
+            return;
+        }
+
+        List<Registration> candidates = registrationRepository
+                .findBySeasonId(group.getSeason().getId())
+                .stream()
+                .filter(registration -> !Objects.equals(registration.getStatus(), RegistrationStatus.CANCELLED))
+                .filter(registration -> Objects.equals(
+                        registration.getActivity().getId(), group.getActivity().getId()))
+                .filter(registration -> registration.getActivityGroup() == null)
+                .filter(registration -> isEligibleForGroup(registration, group))
+                .sorted(Comparator.comparing(Registration::getId, Comparator.nullsLast(Long::compareTo)))
+                .toList();
+
+        for (Registration registration : candidates) {
+            if (!hasRemainingCapacity(group)) {
+                break;
+            }
+            registration.setActivityGroup(group);
+            Registration saved = registrationRepository.save(registration);
+            if (group.getActivity().getActivityType() == ActivityType.SWIMMING
+                    && saved.getStatus() == RegistrationStatus.APPROVED) {
+                paymentServiceProvider.getObject().ensureOrUpdatePendingMonthlyPayment(saved);
+            }
+        }
+    }
+
+    private boolean hasRemainingCapacity(ActivityGroup group) {
+        Integer maxCapacity = resolveMaxCapacity(
+                group.getActivity().getActivityType(),
+                group.getSwimmingLessonType()
+        );
+        if (maxCapacity == null) {
+            return true;
+        }
+        return registrationRepository.findByActivityGroupId(group.getId()).size() < maxCapacity;
+    }
+
     @Transactional
     public RegistrationResponse unassignRegistrationFromGroup(Long registrationId) {
         Registration registration = registrationService.getRegistrationEntity(registrationId);
@@ -285,7 +333,9 @@ public class ActivityGroupService {
             validateSwimmingTrainingSessions(true, group.getWeeklySessions(), sessionRequests);
         }
         group.setIsActive(true);
-        return toResponse(activityGroupRepository.save(group));
+        ActivityGroup saved = activityGroupRepository.save(group);
+        autoAssignMatchingRegistrations(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -345,23 +395,30 @@ public class ActivityGroupService {
         }
 
         if (activityType == ActivityType.SWIMMING) {
-            // Show every approved, unassigned swimming registration for this season/activity.
-            // Admin chooses the group; capacity is still enforced on assign.
-            // (Do not match on pricing.weeklySessions — that field is the unit-price key = 1.)
-            return true;
+            Set<AgeGroup> allowed = group.getAgeGroups();
+            if (allowed == null || !allowed.contains(registration.getStudent().getAgeGroup())) {
+                return false;
+            }
+            if (group.getSwimmingLessonType() == null
+                    || group.getSwimmingLessonType() != registration.getSwimmingLessonType()) {
+                return false;
+            }
+            if (group.getWaterAdaptationLevel() == null
+                    || group.getWaterAdaptationLevel() != registration.getWaterAdaptationLevel()) {
+                return false;
+            }
+            return Objects.equals(group.getWeeklySessions(), registration.getWeeklySessions());
         }
 
         return false;
     }
 
     private void validateHasCapacity(ActivityGroup group) {
-        Integer maxCapacity = resolveMaxCapacity(group.getActivity().getActivityType(),
-                group.getSwimmingLessonType());
-        if (maxCapacity == null) {
-            return;
-        }
-        int memberCount = registrationRepository.findByActivityGroupId(group.getId()).size();
-        if (memberCount >= maxCapacity) {
+        if (!hasRemainingCapacity(group)) {
+            Integer maxCapacity = resolveMaxCapacity(
+                    group.getActivity().getActivityType(),
+                    group.getSwimmingLessonType()
+            );
             throw new BusinessRuleException("השיעור מלא (מקסימום " + maxCapacity + " משתתפים)");
         }
     }
