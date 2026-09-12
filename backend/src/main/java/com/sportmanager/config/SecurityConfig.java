@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/seasons/active").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/seasons/active", "/api/seasons/active/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/activities/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/football-catalog").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/swimming-catalog").permitAll()
