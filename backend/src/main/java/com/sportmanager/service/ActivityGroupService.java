@@ -61,7 +61,10 @@ public class ActivityGroupService {
                 request.getActivityType(),
                 request.getAgeGroups(),
                 request.getSwimmingLessonType(),
-                request.getWaterAdaptationLevel(),
+                resolveWaterAdaptationLevels(
+                        request.getWaterAdaptationLevels(),
+                        request.getWaterAdaptationLevel()
+                ),
                 weeklySessions
         );
         validateNameAvailable(season, activity, request.getName(), null);
@@ -96,7 +99,10 @@ public class ActivityGroupService {
                 request.getActivityType(),
                 request.getAgeGroups(),
                 request.getSwimmingLessonType(),
-                request.getWaterAdaptationLevel(),
+                resolveWaterAdaptationLevels(
+                        request.getWaterAdaptationLevels(),
+                        request.getWaterAdaptationLevel()
+                ),
                 weeklySessions
         );
         replaceTrainingSessions(group, request.getActivityType(), request.getTrainingSessions());
@@ -122,7 +128,10 @@ public class ActivityGroupService {
                 activityType,
                 request.getAgeGroups(),
                 request.getSwimmingLessonType(),
-                request.getWaterAdaptationLevel(),
+                resolveWaterAdaptationLevels(
+                        request.getWaterAdaptationLevels(),
+                        request.getWaterAdaptationLevel()
+                ),
                 weeklySessions
         );
         validateNameAvailable(
@@ -159,7 +168,10 @@ public class ActivityGroupService {
                 activityType,
                 request.getAgeGroups(),
                 request.getSwimmingLessonType(),
-                request.getWaterAdaptationLevel(),
+                resolveWaterAdaptationLevels(
+                        request.getWaterAdaptationLevels(),
+                        request.getWaterAdaptationLevel()
+                ),
                 weeklySessions
         );
         replaceTrainingSessions(group, activityType, request.getTrainingSessions());
@@ -232,7 +244,9 @@ public class ActivityGroupService {
                 .stream()
                 .filter(registration -> Objects.equals(registration.getActivity().getId(), activityId))
                 .filter(registration -> registration.getActivityGroup() == null)
-                .filter(registration -> isEligibleForGroup(registration, group))
+                .filter(registration ->
+                        group.getActivity().getActivityType() != ActivityType.FOOTBALL
+                                || isEligibleForGroup(registration, group))
                 .map(registrationService::toResponse)
                 .toList();
     }
@@ -254,11 +268,14 @@ public class ActivityGroupService {
     }
 
     /**
-     * Places unassigned (pending or approved) matching registrations into an active group
-     * until capacity is reached. Swimming payments are created only for approved members.
+     * Places unassigned football registrations into an active group until capacity is reached.
+     * Swimming groups are filled only by the administrator.
      */
     private void autoAssignMatchingRegistrations(ActivityGroup group) {
         if (!Boolean.TRUE.equals(group.getIsActive()) || group.getId() == null) {
+            return;
+        }
+        if (group.getActivity().getActivityType() == ActivityType.SWIMMING) {
             return;
         }
 
@@ -378,7 +395,8 @@ public class ActivityGroupService {
         if (!Objects.equals(registration.getActivity().getId(), group.getActivity().getId())) {
             throw new BusinessRuleException("החוג בהרשמה חייב להתאים לחוג של הקבוצה");
         }
-        if (!isEligibleForGroup(registration, group)) {
+        if (group.getActivity().getActivityType() == ActivityType.FOOTBALL
+                && !isEligibleForGroup(registration, group)) {
             throw new BusinessRuleException("ההרשמה אינה תואמת את כללי הקבוצה");
         }
     }
@@ -392,22 +410,6 @@ public class ActivityGroupService {
                 return false;
             }
             return allowed.contains(registration.getStudent().getAgeGroup());
-        }
-
-        if (activityType == ActivityType.SWIMMING) {
-            Set<AgeGroup> allowed = group.getAgeGroups();
-            if (allowed == null || !allowed.contains(registration.getStudent().getAgeGroup())) {
-                return false;
-            }
-            if (group.getSwimmingLessonType() == null
-                    || group.getSwimmingLessonType() != registration.getSwimmingLessonType()) {
-                return false;
-            }
-            if (group.getWaterAdaptationLevel() == null
-                    || group.getWaterAdaptationLevel() != registration.getWaterAdaptationLevel()) {
-                return false;
-            }
-            return Objects.equals(group.getWeeklySessions(), registration.getWeeklySessions());
         }
 
         return false;
@@ -438,7 +440,7 @@ public class ActivityGroupService {
             ActivityType activityType,
             Set<AgeGroup> ageGroups,
             SwimmingLessonType swimmingLessonType,
-            WaterAdaptationLevel waterAdaptationLevel,
+            Set<WaterAdaptationLevel> waterAdaptationLevels,
             Integer weeklySessions
     ) {
         Set<AgeGroup> normalizedAgeGroups = normalizeAgeGroups(ageGroups);
@@ -447,7 +449,8 @@ public class ActivityGroupService {
             if (normalizedAgeGroups.isEmpty()) {
                 throw new BusinessRuleException("יש לבחור לפחות קבוצת גיל אחת לקבוצת כדורגל");
             }
-            if (swimmingLessonType != null || waterAdaptationLevel != null) {
+            if (swimmingLessonType != null
+                    || (waterAdaptationLevels != null && !waterAdaptationLevels.isEmpty())) {
                 throw new BusinessRuleException("לא ניתן להזין מאפייני שחייה לקבוצת כדורגל");
             }
             if (weeklySessions == null || (weeklySessions != 1 && weeklySessions != 2)) {
@@ -463,8 +466,8 @@ public class ActivityGroupService {
             if (normalizedAgeGroups.isEmpty()) {
                 throw new BusinessRuleException("יש לבחור לפחות קבוצת גיל אחת לקבוצת שחייה");
             }
-            if (waterAdaptationLevel == null) {
-                throw new BusinessRuleException("יש לבחור רמת הסתגלות למים לקבוצת שחייה");
+            if (waterAdaptationLevels == null || waterAdaptationLevels.isEmpty()) {
+                throw new BusinessRuleException("יש לבחור לפחות רמת הסתגלות אחת לקבוצת שחייה");
             }
             if (weeklySessions == null || weeklySessions < 1 || weeklySessions > 6) {
                 throw new BusinessRuleException("לקבוצת שחייה נדרשים בין מפגש אחד לשישה מפגשים בשבוע");
@@ -480,7 +483,7 @@ public class ActivityGroupService {
             ActivityType activityType,
             Set<AgeGroup> ageGroups,
             SwimmingLessonType swimmingLessonType,
-            WaterAdaptationLevel waterAdaptationLevel,
+            Set<WaterAdaptationLevel> waterAdaptationLevels,
             Integer weeklySessions
     ) {
         Set<AgeGroup> normalizedAgeGroups = normalizeAgeGroups(ageGroups);
@@ -488,14 +491,36 @@ public class ActivityGroupService {
         if (activityType == ActivityType.FOOTBALL) {
             group.setAgeGroups(normalizedAgeGroups);
             group.setSwimmingLessonType(null);
-            group.setWaterAdaptationLevel(null);
+            group.setWaterAdaptationLevels(new HashSet<>());
             group.setWeeklySessions(weeklySessions);
         } else {
             group.setAgeGroups(normalizedAgeGroups);
             group.setSwimmingLessonType(swimmingLessonType);
-            group.setWaterAdaptationLevel(waterAdaptationLevel);
+            group.setWaterAdaptationLevels(normalizeWaterAdaptationLevels(waterAdaptationLevels));
             group.setWeeklySessions(weeklySessions);
         }
+    }
+
+    private Set<WaterAdaptationLevel> resolveWaterAdaptationLevels(
+            Set<WaterAdaptationLevel> waterAdaptationLevels,
+            WaterAdaptationLevel waterAdaptationLevel
+    ) {
+        if (waterAdaptationLevels != null && !waterAdaptationLevels.isEmpty()) {
+            return waterAdaptationLevels;
+        }
+        if (waterAdaptationLevel != null) {
+            return Set.of(waterAdaptationLevel);
+        }
+        return Set.of();
+    }
+
+    private Set<WaterAdaptationLevel> normalizeWaterAdaptationLevels(
+            Set<WaterAdaptationLevel> waterAdaptationLevels
+    ) {
+        if (waterAdaptationLevels == null || waterAdaptationLevels.isEmpty()) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(waterAdaptationLevels);
     }
 
     private Set<AgeGroup> normalizeAgeGroups(Set<AgeGroup> ageGroups) {
@@ -768,7 +793,9 @@ public class ActivityGroupService {
                         ? Set.of()
                         : Set.copyOf(group.getAgeGroups()))
                 .swimmingLessonType(group.getSwimmingLessonType())
-                .waterAdaptationLevel(group.getWaterAdaptationLevel())
+                .waterAdaptationLevels(group.getWaterAdaptationLevels() == null
+                        ? Set.of()
+                        : Set.copyOf(group.getWaterAdaptationLevels()))
                 .weeklySessions(resolveDisplayedWeeklySessions(activityType, group))
                 .isActive(group.getIsActive())
                 .memberCount(memberCount)

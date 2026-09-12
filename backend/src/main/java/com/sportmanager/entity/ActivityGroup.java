@@ -53,9 +53,14 @@ public class ActivityGroup {
     @Column(name = "swimming_lesson_type")
     private SwimmingLessonType swimmingLessonType;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "activity_group_water_adaptation_levels",
+            joinColumns = @JoinColumn(name = "group_id")
+    )
     @Enumerated(EnumType.STRING)
-    @Column(name = "water_adaptation_level")
-    private WaterAdaptationLevel waterAdaptationLevel;
+    @Column(name = "water_adaptation_level", nullable = false)
+    private Set<WaterAdaptationLevel> waterAdaptationLevels = new HashSet<>();
 
     @Column(name = "weekly_sessions")
     private Integer weeklySessions;

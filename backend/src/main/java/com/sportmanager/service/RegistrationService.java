@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -124,20 +123,6 @@ public class RegistrationService {
         }
 
         registration.setStatus(RegistrationStatus.APPROVED);
-        if (registration.getActivityGroup() == null
-                && registration.getActivity().getActivityType() == ActivityType.SWIMMING) {
-            ActivityGroup matched = resolveSwimmingGroup(
-                    registration.getSeason(),
-                    registration.getActivity(),
-                    registration.getStudent().getAgeGroup(),
-                    registration.getSwimmingLessonType(),
-                    registration.getWaterAdaptationLevel(),
-                    registration.getWeeklySessions()
-            );
-            if (matched != null) {
-                registration.setActivityGroup(matched);
-            }
-        }
         Registration saved = registrationRepository.save(registration);
         paymentServiceProvider.getObject().ensureSeasonMonthlyPayments(saved);
         return toResponse(saved);
@@ -233,18 +218,9 @@ public class RegistrationService {
             registration.setSwimmingLessonType(request.getSwimmingLessonType());
             registration.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
             registration.setWeeklySessions(weeklySessions);
-            registration.setActivityGroup(
-                    registration.getStatus() == RegistrationStatus.CANCELLED
-                            ? null
-                            : resolveSwimmingGroup(
-                                    season,
-                                    activity,
-                                    request.getAgeGroup(),
-                                    request.getSwimmingLessonType(),
-                                    request.getWaterAdaptationLevel(),
-                                    weeklySessions
-                            )
-            );
+            if (registration.getStatus() == RegistrationStatus.CANCELLED) {
+                registration.setActivityGroup(null);
+            }
             registration.setActivityPricing(
                     activityPricingRepository
                             .findBySeasonAndActivityAndSwimmingLessonTypeAndWeeklySessions(
@@ -455,86 +431,6 @@ public class RegistrationService {
         return group;
     }
 
-    /**
-     * Best matching active swimming group with remaining capacity, or null if none.
-     * Does not fail the registration when no group exists yet.
-     */
-    private ActivityGroup resolveSwimmingGroup(
-            Season season,
-            Activity activity,
-            AgeGroup ageGroup,
-            SwimmingLessonType lessonType,
-            WaterAdaptationLevel waterLevel,
-            Integer weeklySessions
-    ) {
-        return activityGroupRepository
-                .findBySeasonIdAndActivityId(season.getId(), activity.getId())
-                .stream()
-                .filter(group -> Boolean.TRUE.equals(group.getIsActive()))
-                .filter(group -> matchesSwimmingGroup(
-                        group, ageGroup, lessonType, waterLevel, weeklySessions))
-                .filter(this::hasSwimmingCapacity)
-                .sorted(Comparator
-                        .comparingInt(this::swimmingRemainingCapacity)
-                        .reversed()
-                        .thenComparing(ActivityGroup::getId, Comparator.nullsLast(Long::compareTo)))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private boolean matchesSwimmingGroup(
-            ActivityGroup group,
-            AgeGroup ageGroup,
-            SwimmingLessonType lessonType,
-            WaterAdaptationLevel waterLevel,
-            Integer weeklySessions
-    ) {
-        if (group.getAgeGroups() == null || !group.getAgeGroups().contains(ageGroup)) {
-            return false;
-        }
-        if (group.getSwimmingLessonType() != lessonType) {
-            return false;
-        }
-        if (group.getWaterAdaptationLevel() != waterLevel) {
-            return false;
-        }
-        return Objects.equals(group.getWeeklySessions(), weeklySessions);
-    }
-
-    private boolean hasSwimmingCapacity(ActivityGroup group) {
-        Integer max = swimmingMaxCapacity(group.getSwimmingLessonType());
-        if (max == null) {
-            return true;
-        }
-        return swimmingMemberCount(group) < max;
-    }
-
-    private int swimmingRemainingCapacity(ActivityGroup group) {
-        Integer max = swimmingMaxCapacity(group.getSwimmingLessonType());
-        if (max == null) {
-            return Integer.MAX_VALUE;
-        }
-        return Math.max(0, max - swimmingMemberCount(group));
-    }
-
-    private int swimmingMemberCount(ActivityGroup group) {
-        if (group.getId() == null) {
-            return 0;
-        }
-        return registrationRepository.findByActivityGroupId(group.getId()).size();
-    }
-
-    private Integer swimmingMaxCapacity(SwimmingLessonType lessonType) {
-        if (lessonType == null) {
-            return null;
-        }
-        return switch (lessonType) {
-            case PRIVATE -> 1;
-            case PAIR -> 2;
-            case GROUP -> 5;
-        };
-    }
-
     private ActivityPricing resolveFootballPricing(
             Season season,
             Activity activity,
@@ -636,14 +532,7 @@ public class RegistrationService {
             registration.setWaterAdaptationLevel(request.getWaterAdaptationLevel());
             int weeklySessions = resolveSwimmingWeeklySessions(request, season);
             registration.setWeeklySessions(weeklySessions);
-            registration.setActivityGroup(resolveSwimmingGroup(
-                    season,
-                    activity,
-                    request.getAgeGroup(),
-                    request.getSwimmingLessonType(),
-                    request.getWaterAdaptationLevel(),
-                    weeklySessions
-            ));
+            registration.setActivityGroup(null);
         } else {
             registration.setSwimmingLessonType(null);
             registration.setWaterAdaptationLevel(null);

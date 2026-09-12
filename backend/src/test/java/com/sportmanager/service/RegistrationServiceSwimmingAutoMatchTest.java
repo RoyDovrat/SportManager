@@ -2,7 +2,6 @@ package com.sportmanager.service;
 
 import com.sportmanager.dto.request.RegistrationRequest;
 import com.sportmanager.entity.Activity;
-import com.sportmanager.entity.ActivityGroup;
 import com.sportmanager.entity.ActivityPricing;
 import com.sportmanager.entity.Parent;
 import com.sportmanager.entity.Registration;
@@ -31,9 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -97,23 +94,8 @@ class RegistrationServiceSwimmingAutoMatchTest {
     }
 
     @Test
-    void create_assignsMatchingActiveSwimmingGroup() {
+    void create_doesNotAssignSwimmingGroup() {
         stubCreateCommon();
-        ActivityGroup matched = swimmingGroup(11L, AgeGroup.GRADE_1, SwimmingLessonType.PRIVATE, 2);
-        when(activityGroupRepository.findBySeasonIdAndActivityId(1L, 3L)).thenReturn(List.of(matched));
-        when(registrationRepository.findByActivityGroupId(11L)).thenReturn(List.of());
-
-        registrationService.createRegistration(baseRequest());
-
-        ArgumentCaptor<Registration> captor = ArgumentCaptor.forClass(Registration.class);
-        verify(registrationRepository).save(captor.capture());
-        assertThat(captor.getValue().getActivityGroup()).isSameAs(matched);
-    }
-
-    @Test
-    void create_leavesUnassignedWhenNoMatchingGroup() {
-        stubCreateCommon();
-        when(activityGroupRepository.findBySeasonIdAndActivityId(1L, 3L)).thenReturn(List.of());
 
         registrationService.createRegistration(baseRequest());
 
@@ -123,32 +105,15 @@ class RegistrationServiceSwimmingAutoMatchTest {
     }
 
     @Test
-    void create_skipsFullPrivateGroup() {
-        stubCreateCommon();
-        ActivityGroup matched = swimmingGroup(11L, AgeGroup.GRADE_1, SwimmingLessonType.PRIVATE, 2);
-        when(activityGroupRepository.findBySeasonIdAndActivityId(1L, 3L)).thenReturn(List.of(matched));
-        when(registrationRepository.findByActivityGroupId(11L)).thenReturn(List.of(new Registration()));
-
-        registrationService.createRegistration(baseRequest());
-
-        ArgumentCaptor<Registration> captor = ArgumentCaptor.forClass(Registration.class);
-        verify(registrationRepository).save(captor.capture());
-        assertThat(captor.getValue().getActivityGroup()).isNull();
-    }
-
-    @Test
-    void approve_assignsMatchingGroupBeforePayments() {
+    void approve_doesNotAssignSwimmingGroup() {
         Registration registration = pendingSwimmingRegistration();
         registration.setActivityPricing(pricing);
-        ActivityGroup matched = swimmingGroup(11L, AgeGroup.GRADE_1, SwimmingLessonType.PRIVATE, 2);
         when(registrationRepository.findById(50L)).thenReturn(Optional.of(registration));
-        when(activityGroupRepository.findBySeasonIdAndActivityId(1L, 3L)).thenReturn(List.of(matched));
-        when(registrationRepository.findByActivityGroupId(11L)).thenReturn(List.of());
         when(registrationRepository.save(any(Registration.class))).thenAnswer(inv -> inv.getArgument(0));
 
         registrationService.approveRegistration(50L);
 
-        assertThat(registration.getActivityGroup()).isSameAs(matched);
+        assertThat(registration.getActivityGroup()).isNull();
         verify(paymentService).ensureSeasonMonthlyPayments(registration);
     }
 
@@ -198,25 +163,6 @@ class RegistrationServiceSwimmingAutoMatchTest {
         registration.setWaterAdaptationLevel(WaterAdaptationLevel.NOT_INDEPENDENT);
         registration.setWeeklySessions(2);
         return registration;
-    }
-
-    private ActivityGroup swimmingGroup(
-            Long id,
-            AgeGroup ageGroup,
-            SwimmingLessonType lessonType,
-            int weeklySessions
-    ) {
-        ActivityGroup group = new ActivityGroup();
-        group.setId(id);
-        group.setName("שחייה");
-        group.setSeason(season);
-        group.setActivity(swimming);
-        group.setAgeGroups(Set.of(ageGroup));
-        group.setSwimmingLessonType(lessonType);
-        group.setWaterAdaptationLevel(WaterAdaptationLevel.NOT_INDEPENDENT);
-        group.setWeeklySessions(weeklySessions);
-        group.setIsActive(true);
-        return group;
     }
 
     private static RegistrationRequest baseRequest() {

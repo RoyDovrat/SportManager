@@ -22,7 +22,7 @@ public class ActivityGroupResponse {
     private ActivityType activityType;
     private Set<AgeGroup> ageGroups;
     private SwimmingLessonType swimmingLessonType;
-    private WaterAdaptationLevel waterAdaptationLevel;
+    private Set<WaterAdaptationLevel> waterAdaptationLevels;
     private Integer weeklySessions;
     private Boolean isActive;
     private int memberCount;

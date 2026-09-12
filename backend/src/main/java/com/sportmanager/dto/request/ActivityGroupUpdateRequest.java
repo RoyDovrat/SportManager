@@ -23,6 +23,9 @@ public class ActivityGroupUpdateRequest {
 
     private SwimmingLessonType swimmingLessonType;
 
+    private Set<WaterAdaptationLevel> waterAdaptationLevels;
+
+    /** Accepted so older clients that still send a single value keep working. */
     private WaterAdaptationLevel waterAdaptationLevel;
 
     private Integer weeklySessions;

@@ -54,4 +54,27 @@ class PaymentServiceSwimmingScheduleBillingTest {
         // Feb 2026: 4 Tuesdays + 4 Thursdays = 8
         assertThat(count).isEqualTo(8);
     }
+
+    @Test
+    void skipsSessionsBeforeRegistrationDate() {
+        // Sep 2026 Sundays: 6, 13, 20, 27. Registered 12 Sep → 13, 20, 27.
+        int september = PaymentService.countSessionOccurrences(
+                List.of(DayOfWeek.SUNDAY),
+                YearMonth.of(2026, 9),
+                LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 10, 30),
+                LocalDate.of(2026, 9, 12)
+        );
+        assertThat(september).isEqualTo(3);
+
+        // Later months are unchanged: Oct 2026 Sundays 4, 11, 18, 25.
+        int october = PaymentService.countSessionOccurrences(
+                List.of(DayOfWeek.SUNDAY),
+                YearMonth.of(2026, 10),
+                LocalDate.of(2026, 9, 1),
+                LocalDate.of(2026, 10, 30),
+                LocalDate.of(2026, 9, 12)
+        );
+        assertThat(october).isEqualTo(4);
+    }
 }

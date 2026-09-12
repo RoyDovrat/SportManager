@@ -151,6 +151,7 @@ public class PaymentService {
                 continue;
             }
             if (hasActiveMonthlyPayment(registration, chargeMonth)) {
+                refreshPendingMonthlyAmount(registration, chargeMonth);
                 skipped++;
                 continue;
             }
@@ -159,6 +160,10 @@ public class PaymentService {
                     .orElseGet(Payment::new);
 
             BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                skipped++;
+                continue;
+            }
             populateMonthlyPayment(payment, registration, chargeMonth, amount);
             created.add(toResponse(paymentRepository.save(payment)));
         }
@@ -245,23 +250,7 @@ public class PaymentService {
         validateRegistrationApproved(registration);
 
         LocalDate chargeMonth = LocalDate.now().withDayOfMonth(1);
-        if (!seasonCoversMonth(registration.getSeason(), chargeMonth)) {
-            return 0;
-        }
-        if (!canCreateMonthlyPayment(registration)) {
-            return 0;
-        }
-        if (hasActiveMonthlyPayment(registration, chargeMonth)) {
-            return 0;
-        }
-
-        Payment payment = findCancelledMonthlyPayment(registration, chargeMonth)
-                .orElseGet(Payment::new);
-
-        BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
-        populateMonthlyPayment(payment, registration, chargeMonth, amount);
-        paymentRepository.save(payment);
-        return 1;
+        return upsertPendingMonthlyPayment(registration, chargeMonth);
     }
 
     /**
@@ -272,8 +261,10 @@ public class PaymentService {
     @Transactional
     public int ensureOrUpdatePendingMonthlyPayment(Registration registration) {
         validateRegistrationApproved(registration);
+        return upsertPendingMonthlyPayment(registration, LocalDate.now().withDayOfMonth(1));
+    }
 
-        LocalDate chargeMonth = LocalDate.now().withDayOfMonth(1);
+    private int upsertPendingMonthlyPayment(Registration registration, LocalDate chargeMonth) {
         if (!seasonCoversMonth(registration.getSeason(), chargeMonth)) {
             return 0;
         }
@@ -282,6 +273,9 @@ public class PaymentService {
         }
 
         BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0;
+        }
 
         java.util.Optional<Payment> existing = paymentRepository
                 .findByRegistrationAndChargeMonthAndPaymentType(
@@ -300,7 +294,6 @@ public class PaymentService {
                 paymentRepository.save(payment);
                 return 1;
             }
-            // CANCELLED — reuse
             populateMonthlyPayment(payment, registration, chargeMonth, amount);
             paymentRepository.save(payment);
             return 1;
@@ -352,6 +345,7 @@ public class PaymentService {
                 continue;
             }
             if (hasActiveMonthlyPayment(registration, chargeMonth)) {
+                refreshPendingMonthlyAmount(registration, chargeMonth);
                 skipped++;
                 continue;
             }
@@ -360,6 +354,10 @@ public class PaymentService {
                     .orElseGet(Payment::new);
 
             BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                skipped++;
+                continue;
+            }
             populateMonthlyPayment(payment, registration, chargeMonth, amount);
             created.add(toResponse(paymentRepository.save(payment)));
         }
@@ -369,6 +367,24 @@ public class PaymentService {
                 .skippedCount(skipped)
                 .createdPayments(created)
                 .build();
+    }
+
+    private void refreshPendingMonthlyAmount(Registration registration, LocalDate chargeMonth) {
+        paymentRepository
+                .findByRegistrationAndChargeMonthAndPaymentType(
+                        registration,
+                        chargeMonth,
+                        PaymentType.MONTHLY_ACTIVITY
+                )
+                .filter(payment -> payment.getStatus() == PaymentStatus.PENDING)
+                .ifPresent(payment -> {
+                    BigDecimal amount = resolveMonthlyAmount(registration, chargeMonth);
+                    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        return;
+                    }
+                    payment.setAmount(amount);
+                    paymentRepository.save(payment);
+                });
     }
 
     private boolean seasonCoversMonth(Season season, LocalDate chargeMonth) {
@@ -474,7 +490,7 @@ public class PaymentService {
         return toResponse(getPaymentEntity(paymentId));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<PaymentResponse> getPayments(
             Long registrationId,
             PaymentStatus status,
@@ -491,15 +507,29 @@ public class PaymentService {
                 .filter(payment -> chargeMonth == null
                         || (payment.getChargeMonth() != null
                         && payment.getChargeMonth().equals(chargeMonth.withDayOfMonth(1))))
+                .peek(this::refreshPendingSwimmingMonthlyIfNeeded)
                 .map(this::toResponse)
                 .toList();
+    }
+
+    private void refreshPendingSwimmingMonthlyIfNeeded(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.PENDING
+                || payment.getPaymentType() != PaymentType.MONTHLY_ACTIVITY
+                || payment.getChargeMonth() == null) {
+            return;
+        }
+        Registration registration = payment.getRegistration();
+        if (registration.getActivity().getActivityType() != ActivityType.SWIMMING) {
+            return;
+        }
+        refreshPendingMonthlyAmount(registration, payment.getChargeMonth());
     }
 
     /**
      * Football: the configured price for the group's session count (1 or 2) is the
      * monthly fee as-is — no week multiplication.
      * Swimming: lesson-type unit price × scheduled session occurrences in the
-     * charge month (clipped to the swimming season date range).
+     * charge month (clipped to the swimming season date range and the registration date).
      */
     private BigDecimal resolveMonthlyAmount(Registration registration, LocalDate chargeMonth) {
         BigDecimal configuredPrice = registration.getActivityPricing().getMonthlyPrice();
@@ -527,7 +557,8 @@ public class PaymentService {
                 activeDays,
                 YearMonth.from(chargeMonth),
                 season.getStartDate(),
-                season.getEndDate()
+                season.getEndDate(),
+                registration.getRegistrationDate()
         );
         return configuredPrice.multiply(BigDecimal.valueOf(occurrences));
     }
@@ -553,7 +584,7 @@ public class PaymentService {
 
     /**
      * Counts how many times the group's training weekdays occur in the month,
-     * clipped to the season date range.
+     * clipped to the season date range and not before the registration date.
      */
     static int countSessionOccurrences(
             List<DayOfWeek> activeDays,
@@ -561,17 +592,32 @@ public class PaymentService {
             LocalDate seasonStart,
             LocalDate seasonEnd
     ) {
+        return countSessionOccurrences(activeDays, yearMonth, seasonStart, seasonEnd, null);
+    }
+
+    static int countSessionOccurrences(
+            List<DayOfWeek> activeDays,
+            YearMonth yearMonth,
+            LocalDate seasonStart,
+            LocalDate seasonEnd,
+            LocalDate registrationDate
+    ) {
         if (activeDays == null || activeDays.isEmpty()) {
             return 0;
         }
         java.util.Set<DayOfWeek> days = java.util.EnumSet.copyOf(activeDays);
+        LocalDate startBound = seasonStart;
+        if (registrationDate != null
+                && (startBound == null || registrationDate.isAfter(startBound))) {
+            startBound = registrationDate;
+        }
         LocalDate day = yearMonth.atDay(1);
         LocalDate end = yearMonth.atEndOfMonth();
         int count = 0;
         while (!day.isAfter(end)) {
-            boolean inSeason = (seasonStart == null || !day.isBefore(seasonStart))
+            boolean inRange = (startBound == null || !day.isBefore(startBound))
                     && (seasonEnd == null || !day.isAfter(seasonEnd));
-            if (inSeason && days.contains(day.getDayOfWeek())) {
+            if (inRange && days.contains(day.getDayOfWeek())) {
                 count++;
             }
             day = day.plusDays(1);
