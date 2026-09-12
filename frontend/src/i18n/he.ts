@@ -478,7 +478,7 @@ export const he = {
   payments: {
     title: 'תשלומים',
     intro:
-      'עם אישור הרשמה נוצרים אוטומטית חיובים חודשיים לכל חודשי העונה (ניתנים לעריכה). ניתן גם ליצור חיוב ביגוד ולסנן לפי סטטוס.',
+      'עם אישור הרשמה נוצרים אוטומטית חיובים חודשיים. הזמנת ביגוד יוצרת חיוב ביגוד אוטומטית — ניתן לערוך, לבטל או לסמן כשולם, ולסנן לפי סטטוס.',
     kibbutzExportLink: 'ייצוא Excel לקיבוץ',
     filterTitle: 'סינון תשלומים',
     resetFilters: 'ניקוי סינון',
@@ -540,10 +540,10 @@ export const he = {
     generateMonthRequired: 'יש לבחור חודש חיוב.',
     generateResult: 'נוצרו {created} חיובים, דולגו {skipped}.',
     clothingPaymentTitle: 'חיוב ביגוד',
-    clothingPaymentHint: 'צרו חיוב לפי מזהה הזמנת ביגוד שאינה מסומנת כ״יש כבר ציוד״.',
+    clothingPaymentHint: 'חיוב ביגוד נוצר אוטומטית עם הזמנת הביגוד.',
     clothingPaymentSubmit: 'יצירת חיוב ביגוד',
     clothingOrderIdRequired: 'יש להזין מזהה הזמנת ביגוד תקין.',
-    clothingPaymentCreated: 'נוצר חיוב ביגוד מספר {id}.',
+    clothingPaymentCreated: 'נוצר חיוב ביגוד.',
   },
 
   clothingOrders: {
@@ -577,8 +577,12 @@ export const he = {
     view: 'צפייה',
     edit: 'עריכה',
     viewDetails: 'פרטים',
+    openPayment: 'לצפייה בחיוב הביגוד',
+    payment: 'חיוב ביגוד',
     createPayment: 'יצירת חיוב ביגוד',
     createTitle: 'הזמנה חדשה',
+    newOrder: 'הזמנה חדשה',
+    closeCreate: 'סגירה',
     createHint: 'נדרשת הרשמת כדורגל מאושרת בעונה שנבחרה.',
     selectSeason: 'בחרו עונה',
     create: 'יצירת הזמנה',

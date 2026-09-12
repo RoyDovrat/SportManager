@@ -43,6 +43,7 @@ export type ClothingOrderResponse = {
   hoodieSize: ClothingSize | null
   shirtNumber: number | null
   clothingPaymentRequired: boolean
+  clothingPaymentId: number | null
 }
 
 export type ListClothingOrdersParams = {

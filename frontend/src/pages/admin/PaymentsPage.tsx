@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import {
-  createClothingPayment,
   generateMonthlyPayments,
   syncSeasonMonthlyPayments,
   listPayments,
@@ -73,9 +72,6 @@ export function PaymentsPage() {
   const [generateSeasonId, setGenerateSeasonId] = useState('')
   const [generating, setGenerating] = useState(false)
   const [syncingSeason, setSyncingSeason] = useState(false)
-
-  const [clothingOrderId, setClothingOrderId] = useState('')
-  const [creatingClothing, setCreatingClothing] = useState(false)
 
   useEffect(() => {
     async function loadSeasons() {
@@ -175,30 +171,6 @@ export function PaymentsPage() {
     }
   }
 
-  async function handleClothingPayment(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const orderId = Number(clothingOrderId)
-    if (!Number.isFinite(orderId) || orderId <= 0) {
-      setError(t('payments.clothingOrderIdRequired'))
-      return
-    }
-
-    setCreatingClothing(true)
-    setError(null)
-    setMessage(null)
-
-    try {
-      const created = await createClothingPayment({ clothingOrderId: orderId })
-      setMessage(t('payments.clothingPaymentCreated', { id: created.id }))
-      setClothingOrderId('')
-      await loadRows()
-    } catch (err) {
-      setError(formatApiError(err))
-    } finally {
-      setCreatingClothing(false)
-    }
-  }
-
   const filtersActive =
     status !== FILTER_DEFAULTS.status ||
     paymentType !== ALL ||
@@ -231,38 +203,6 @@ export function PaymentsPage() {
       {message && <p className="admin-page__ok">{message}</p>}
 
       <div className="payments-actions">
-        <form className="payments-action-card" onSubmit={handleClothingPayment}>
-          <div className="seasons-card-head">
-            <span className="seasons-card-icon" aria-hidden="true">
-              <NavIcon name="clothing" />
-            </span>
-            <div>
-              <h2>{t('payments.clothingPaymentTitle')}</h2>
-              <p>{t('payments.clothingPaymentHint')}</p>
-            </div>
-          </div>
-
-          <label className="admin-form__field">
-            <span>{t('payments.clothingOrderId')}</span>
-            <input
-              type="number"
-              min={1}
-              value={clothingOrderId}
-              onChange={(event) => setClothingOrderId(event.target.value)}
-              required
-              disabled={creatingClothing}
-            />
-          </label>
-
-          <div className="admin-form__actions">
-            <button type="submit" disabled={creatingClothing}>
-              {creatingClothing
-                ? t('common.saving')
-                : t('payments.clothingPaymentSubmit')}
-            </button>
-          </div>
-        </form>
-
         <form className="payments-action-card" onSubmit={handleGenerate}>
           <div className="seasons-card-head">
             <span className="seasons-card-icon" aria-hidden="true">

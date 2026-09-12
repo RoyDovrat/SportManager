@@ -7,7 +7,6 @@ import {
   type ClothingOrderUpdateRequest,
 } from '../../api/clothingOrders'
 import { formatApiError } from '../../api/formatApiError'
-import { createClothingPayment } from '../../api/payments'
 import { AdminBackLink } from '../../components/admin/AdminBackLink'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
@@ -91,7 +90,6 @@ export function ClothingOrderDetailPage() {
   const [form, setForm] = useState<EditFormState | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [creatingPayment, setCreatingPayment] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -140,25 +138,6 @@ export function ClothingOrderDetailPage() {
       cancelled = true
     }
   }, [orderId])
-
-  async function handleCreateClothingPayment() {
-    if (!order) {
-      return
-    }
-
-    setCreatingPayment(true)
-    setError(null)
-    setMessage(null)
-
-    try {
-      const payment = await createClothingPayment({ clothingOrderId: order.id })
-      setMessage(t('payments.clothingPaymentCreated', { id: payment.id }))
-    } catch (err) {
-      setError(formatApiError(err))
-    } finally {
-      setCreatingPayment(false)
-    }
-  }
 
   async function handleSave(event: FormEvent) {
     event.preventDefault()
@@ -257,8 +236,6 @@ export function ClothingOrderDetailPage() {
                 {editing
                   ? t('clothingOrders.editTitle')
                   : t('clothingOrders.detailTitle')}
-                <span aria-hidden="true"> · </span>
-                {t('common.id')} #{order.id}
               </p>
               <h1>
                 {order.studentFirstName} {order.studentLastName}
@@ -282,17 +259,13 @@ export function ClothingOrderDetailPage() {
                 {t('clothingOrders.edit')}
               </button>
             )}
-            {!editing && order.clothingPaymentRequired && (
-              <button
-                type="button"
+            {!editing && order.clothingPaymentId != null && (
+              <Link
+                to={`/admin/payments/${order.clothingPaymentId}`}
                 className="reg-action reg-action--approve"
-                onClick={() => void handleCreateClothingPayment()}
-                disabled={creatingPayment}
               >
-                {creatingPayment
-                  ? t('common.saving')
-                  : t('clothingOrders.createPayment')}
-              </button>
+                {t('clothingOrders.openPayment')}
+              </Link>
             )}
           </div>
 
@@ -391,11 +364,6 @@ export function ClothingOrderDetailPage() {
           ) : (
             <div className="admin-detail clothing-order-detail__panels">
               <DetailSection title={t('clothingOrders.summarySection')}>
-                <DetailRow label={t('common.id')} value={order.id} />
-                <DetailRow
-                  label={t('clothingOrders.registrationId')}
-                  value={order.registrationId}
-                />
                 <DetailRow
                   label={t('clothingOrders.season')}
                   value={order.seasonName}

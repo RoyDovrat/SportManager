@@ -4287,6 +4287,13 @@ body:has(.wizard-page) {
   white-space: nowrap;
 }
 
+.clothing-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
 .clothing-order-form {
   max-width: none;
   gap: 1rem;

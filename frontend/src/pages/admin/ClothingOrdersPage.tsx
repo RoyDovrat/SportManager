@@ -102,6 +102,7 @@ export function ClothingOrdersPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState<CreateFormState>(emptyCreateForm)
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     async function loadSeasons() {
@@ -234,6 +235,7 @@ export function ClothingOrdersPage() {
           : t('clothingOrders.createdOrder'),
       )
       resetCreateForm()
+      setCreating(false)
       await loadRows()
     } catch (err) {
       setError(formatApiError(err))
@@ -249,16 +251,31 @@ export function ClothingOrdersPage() {
           <h1>{t('clothingOrders.title')}</h1>
           <p className="admin-page__lede">{t('clothingOrders.intro')}</p>
         </div>
-        {!loading && (
-          <p className="clothing-hero__count">
-            {t('clothingOrders.resultCount', { count: rows.length })}
-          </p>
-        )}
+        <div className="clothing-hero__actions">
+          {!loading && (
+            <p className="clothing-hero__count">
+              {t('clothingOrders.resultCount', { count: rows.length })}
+            </p>
+          )}
+          <button
+            type="button"
+            className="reg-action reg-action--approve"
+            onClick={() => {
+              setCreating((open) => !open)
+              setMessage(null)
+            }}
+          >
+            {creating
+              ? t('clothingOrders.closeCreate')
+              : t('clothingOrders.newOrder')}
+          </button>
+        </div>
       </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
+      {creating && (
       <form className="admin-form clothing-order-form" onSubmit={handleCreate}>
         <h2>{t('clothingOrders.createTitle')}</h2>
         <p className="clothing-order-form__hint">{t('clothingOrders.createHint')}</p>
@@ -384,6 +401,7 @@ export function ClothingOrdersPage() {
           </button>
         </div>
       </form>
+      )}
 
       <div className="admin-filters clothing-orders-filters">
         <label className="admin-form__field">
@@ -479,6 +497,14 @@ export function ClothingOrdersPage() {
                     >
                       {t('clothingOrders.edit')}
                     </Link>
+                    {row.clothingPaymentId != null && (
+                      <Link
+                        to={`/admin/payments/${row.clothingPaymentId}`}
+                        className="reg-action reg-action--approve"
+                      >
+                        {t('clothingOrders.openPayment')}
+                      </Link>
+                    )}
                   </td>
                 </tr>
               ))}
