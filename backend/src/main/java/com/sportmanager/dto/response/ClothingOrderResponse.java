@@ -25,4 +25,5 @@ public class ClothingOrderResponse {
     private ClothingSize hoodieSize;
     private Integer shirtNumber;
     private boolean clothingPaymentRequired;
+    private Long clothingPaymentId;
 }

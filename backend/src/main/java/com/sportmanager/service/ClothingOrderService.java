@@ -3,6 +3,7 @@ package com.sportmanager.service;
 import com.sportmanager.dto.request.ClothingOrderRequest;
 import com.sportmanager.dto.request.ClothingOrderUpdateRequest;
 import com.sportmanager.dto.response.ClothingOrderResponse;
+import com.sportmanager.dto.response.PaymentResponse;
 import com.sportmanager.entity.Activity;
 import com.sportmanager.entity.ClothingOrder;
 import com.sportmanager.entity.ClothingPricing;
@@ -40,6 +41,7 @@ public class ClothingOrderService {
     private final ActivityRepository activityRepository;
     private final SeasonRepository seasonRepository;
     private final ClothingPricingRepository clothingPricingRepository;
+    private final PaymentService paymentService;
 
     @Transactional
     public ClothingOrderResponse createClothingOrder(ClothingOrderRequest request) {
@@ -85,7 +87,7 @@ public class ClothingOrderService {
         ClothingOrder saved = clothingOrderRepository.save(
                 buildClothingOrder(request, registration, alreadyHasClothing)
         );
-        return toResponse(saved);
+        return finishOrder(saved);
     }
 
     @Transactional
@@ -136,12 +138,12 @@ public class ClothingOrderService {
             order.setShirtNumber(request.getShirtNumber());
         }
 
-        return toResponse(clothingOrderRepository.save(order));
+        return finishOrder(clothingOrderRepository.save(order));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ClothingOrderResponse getClothingOrderById(Long orderId) {
-        return toResponse(getOrderEntity(orderId));
+        return finishOrder(getOrderEntity(orderId));
     }
 
     @Transactional(readOnly = true)
@@ -371,7 +373,28 @@ public class ClothingOrderService {
         return clothingOrder;
     }
 
+    private ClothingOrderResponse finishOrder(ClothingOrder order) {
+        PaymentResponse payment = syncClothingPayment(order);
+        Long paymentId = payment != null
+                ? payment.getId()
+                : (order.getPayment() != null ? order.getPayment().getId() : null);
+        return toResponse(order, paymentId);
+    }
+
+    private PaymentResponse syncClothingPayment(ClothingOrder order) {
+        if (Boolean.TRUE.equals(order.getAlreadyHasClothing())) {
+            paymentService.cancelPendingClothingPayment(order);
+            return null;
+        }
+        return paymentService.ensureClothingPayment(order);
+    }
+
     public ClothingOrderResponse toResponse(ClothingOrder order) {
+        Long paymentId = order.getPayment() != null ? order.getPayment().getId() : null;
+        return toResponse(order, paymentId);
+    }
+
+    private ClothingOrderResponse toResponse(ClothingOrder order, Long clothingPaymentId) {
         Registration registration = order.getRegistration();
         Student student = registration.getStudent();
         Season season = registration.getSeason();
@@ -395,6 +418,7 @@ public class ClothingOrderService {
                 .hoodieSize(order.getHoodieSize())
                 .shirtNumber(order.getShirtNumber())
                 .clothingPaymentRequired(!alreadyHas)
+                .clothingPaymentId(clothingPaymentId)
                 .build();
     }
 

@@ -80,36 +80,67 @@ public class PaymentService {
     @Transactional
     public PaymentResponse createClothingPayment(ClothingPaymentRequest request) {
         ClothingOrder clothingOrder = getClothingOrder(request.getClothingOrderId());
-        Registration registration = clothingOrder.getRegistration();
-        validateRegistrationApproved(registration);
-
-        if (Boolean.TRUE.equals(clothingOrder.getAlreadyHasClothing())) {
+        PaymentResponse response = ensureClothingPayment(clothingOrder);
+        if (response == null) {
             throw new BusinessRuleException(
                     "Clothing payment is not required when the student already has clothing"
             );
         }
+        return response;
+    }
 
-        if (hasActiveClothingPayment(clothingOrder)) {
-            throw new ConflictException("Payment already exists for this clothing order");
+    /**
+     * Creates a PENDING clothing charge when an order is placed, or refreshes
+     * the amount on an existing PENDING row. Never changes a PAID amount.
+     * Returns null when the student already has clothing (no charge needed).
+     */
+    @Transactional
+    public PaymentResponse ensureClothingPayment(ClothingOrder clothingOrder) {
+        if (Boolean.TRUE.equals(clothingOrder.getAlreadyHasClothing())) {
+            return null;
+        }
+
+        Registration registration = clothingOrder.getRegistration();
+        validateRegistrationApproved(registration);
+
+        Payment existing = paymentRepository.findByClothingOrder(clothingOrder).orElse(null);
+        if (existing != null && existing.getStatus() == PaymentStatus.PAID) {
+            return toResponse(existing);
         }
 
         ClothingPricing clothingPricing = getClothingPricing(registration);
         BigDecimal amount = calculateClothingAmount(clothingOrder, clothingPricing);
 
-        Payment payment = paymentRepository.findByClothingOrder(clothingOrder)
-                .filter(existing -> existing.getStatus() == PaymentStatus.CANCELLED)
-                .orElseGet(Payment::new);
-
+        Payment payment = existing != null ? existing : new Payment();
         payment.setRegistration(registration);
         payment.setAmount(amount);
-        payment.setChargeMonth(LocalDate.now().withDayOfMonth(1));
+        if (existing == null || existing.getStatus() == PaymentStatus.CANCELLED) {
+            payment.setChargeMonth(LocalDate.now().withDayOfMonth(1));
+        }
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaymentDate(null);
         payment.setPaymentMethod(determineDefaultPaymentMethod(registration));
         payment.setPaymentType(PaymentType.CLOTHING);
         payment.setClothingOrder(clothingOrder);
 
-        return toResponse(paymentRepository.save(payment));
+        Payment saved = paymentRepository.save(payment);
+        clothingOrder.setPayment(saved);
+        return toResponse(saved);
+    }
+
+    /**
+     * Cancels a PENDING clothing charge when the order is marked as already has clothing.
+     * Leaves PAID charges unchanged.
+     */
+    @Transactional
+    public void cancelPendingClothingPayment(ClothingOrder clothingOrder) {
+        paymentRepository.findByClothingOrder(clothingOrder)
+                .filter(payment -> payment.getStatus() == PaymentStatus.PENDING)
+                .ifPresent(payment -> {
+                    payment.setStatus(PaymentStatus.CANCELLED);
+                    payment.setPaymentDate(null);
+                    paymentRepository.save(payment);
+                });
     }
 
     @Transactional
@@ -679,13 +710,6 @@ public class PaymentService {
                         PaymentType.MONTHLY_ACTIVITY
                 )
                 .filter(payment -> payment.getStatus() == PaymentStatus.CANCELLED);
-    }
-
-    private boolean hasActiveClothingPayment(ClothingOrder clothingOrder) {
-        return paymentRepository.findByClothingOrder(clothingOrder)
-                .map(payment -> payment.getStatus() == PaymentStatus.PENDING
-                        || payment.getStatus() == PaymentStatus.PAID)
-                .orElse(false);
     }
 
     private Registration getApprovedRegistration(Long registrationId) {
