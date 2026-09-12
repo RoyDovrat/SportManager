@@ -126,8 +126,10 @@ export function RegistrationDetailPage() {
 
   const canApprove =
     registration?.status === 'PENDING' || registration?.status === 'CANCELLED'
-  const canCancel = registration?.status === 'APPROVED'
+  const canCancel =
+    registration?.status === 'PENDING' || registration?.status === 'APPROVED'
   const isSwimming = registration?.activityType === 'SWIMMING'
+  const statusActionsDisabled = acting || saving
 
   const approveLabel = useMemo(() => {
     if (registration?.status === 'CANCELLED') {
@@ -266,8 +268,6 @@ export function RegistrationDetailPage() {
                 {editing
                   ? t('registrations.editTitle')
                   : t('registrations.detailTitle')}
-                <span aria-hidden="true"> · </span>
-                {t('common.id')} #{registration.id}
               </p>
               <h1>
                 {registration.studentFirstName} {registration.studentLastName}
@@ -311,7 +311,7 @@ export function RegistrationDetailPage() {
                     : 'reg-action reg-action--approve'
                 }
                 onClick={() => void handleApprove()}
-                disabled={acting || editing}
+                disabled={statusActionsDisabled}
               >
                 {acting ? t('registrations.working') : approveLabel}
               </button>
@@ -321,7 +321,7 @@ export function RegistrationDetailPage() {
                 type="button"
                 className="reg-action reg-action--cancel"
                 onClick={() => void handleCancel()}
-                disabled={acting || editing}
+                disabled={statusActionsDisabled}
               >
                 {acting
                   ? t('registrations.working')
@@ -332,6 +332,7 @@ export function RegistrationDetailPage() {
 
           {editing ? (
             <form className="admin-form registrations-edit-form" onSubmit={handleSave}>
+              <div className="registrations-edit-form__sections">
               <fieldset className="registrations-edit-form__fieldset">
                 <legend>{t('registration.student')}</legend>
                 <div className="registrations-edit-form__grid">
@@ -553,7 +554,13 @@ export function RegistrationDetailPage() {
                 </fieldset>
               )}
 
-              <fieldset className="registrations-edit-form__fieldset">
+              <fieldset
+                className={
+                  isSwimming
+                    ? 'registrations-edit-form__fieldset'
+                    : 'registrations-edit-form__fieldset registrations-edit-form__fieldset--wide'
+                }
+              >
                 <legend>{t('registration.healthNotes')}</legend>
                 <label className="admin-form__checkbox">
                   <input
@@ -568,11 +575,17 @@ export function RegistrationDetailPage() {
                   />
                   <span>{t('registration.hasMedicalLimitation')}</span>
                 </label>
-                <div className="registrations-edit-form__grid registrations-edit-form__grid--stack">
+                <div
+                  className={
+                    isSwimming
+                      ? 'registrations-edit-form__grid registrations-edit-form__grid--stack'
+                      : 'registrations-edit-form__grid'
+                  }
+                >
                   <label className="admin-form__field">
                     <span>{t('registrations.medicalNotes')}</span>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={form.medicalNotes ?? ''}
                       onChange={(e) =>
                         setForm({ ...form, medicalNotes: e.target.value })
@@ -582,7 +595,7 @@ export function RegistrationDetailPage() {
                   <label className="admin-form__field">
                     <span>{t('registrations.specialRequests')}</span>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={form.specialRequests ?? ''}
                       onChange={(e) =>
                         setForm({ ...form, specialRequests: e.target.value })
@@ -591,9 +604,40 @@ export function RegistrationDetailPage() {
                   </label>
                 </div>
               </fieldset>
+              </div>
 
               <div className="registrations-edit-form__actions">
-                <button type="submit" className="reg-action reg-action--approve" disabled={saving}>
+                {canApprove && (
+                  <button
+                    type="button"
+                    className={
+                      registration.status === 'CANCELLED'
+                        ? 'reg-action reg-action--restore'
+                        : 'reg-action reg-action--approve'
+                    }
+                    onClick={() => void handleApprove()}
+                    disabled={statusActionsDisabled}
+                  >
+                    {acting ? t('registrations.working') : approveLabel}
+                  </button>
+                )}
+                {canCancel && (
+                  <button
+                    type="button"
+                    className="reg-action reg-action--cancel"
+                    onClick={() => void handleCancel()}
+                    disabled={statusActionsDisabled}
+                  >
+                    {acting
+                      ? t('registrations.working')
+                      : t('registrations.cancelAction')}
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="reg-action reg-action--edit"
+                  disabled={saving}
+                >
                   {saving ? t('common.saving') : t('common.save')}
                 </button>
                 <button

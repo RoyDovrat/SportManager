@@ -268,7 +268,8 @@ export function RegistrationsPage() {
               const busy = actingId === row.id
               const canApprove =
                 row.status === 'PENDING' || row.status === 'CANCELLED'
-              const canCancel = row.status === 'APPROVED'
+              const canCancel =
+                row.status === 'PENDING' || row.status === 'APPROVED'
               return (
                 <li
                   key={row.id}
@@ -381,9 +382,6 @@ export function RegistrationsPage() {
                   </div>
 
                   <footer className="registrations-card__footer">
-                    <span className="registrations-card__id">
-                      {t('common.id')} #{row.id}
-                    </span>
                     <div className="registrations-card__actions">
                       <Link
                         to={`/admin/registrations/${row.id}`}
