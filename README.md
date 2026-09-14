@@ -148,7 +148,6 @@ Registrations are created as **PENDING** until an admin approves them. Clothing 
 - Dashboard (home): `/admin` — season stats, open charges, recent registrations, quick links
 - Season reports: `/admin/reports` — full-season summary (registrations / payments / clothing)
 - Seasons: `/admin/seasons`
-- Activities: `/admin/activities`
 - Activity pricing: `/admin/activity-pricing`
 - Clothing pricing: `/admin/clothing-pricing`
 - Registrations list: `/admin/registrations` (filter by season + status; defaults to active season + `PENDING`; supports `?status=` / `?seasonId=`)
