@@ -72,6 +72,7 @@ export function PaymentsPage() {
   const [generateSeasonId, setGenerateSeasonId] = useState('')
   const [generating, setGenerating] = useState(false)
   const [syncingSeason, setSyncingSeason] = useState(false)
+  const [chargeActionsOpen, setChargeActionsOpen] = useState(false)
 
   useEffect(() => {
     async function loadSeasons() {
@@ -196,77 +197,89 @@ export function PaymentsPage() {
             <NavIcon name="export" />
             {t('payments.kibbutzExportLink')}
           </Link>
+          <button
+            type="button"
+            className="reg-action reg-action--approve"
+            aria-expanded={chargeActionsOpen}
+            onClick={() => setChargeActionsOpen((open) => !open)}
+          >
+            {chargeActionsOpen
+              ? t('payments.closeChargeActions')
+              : t('payments.chargeActions')}
+          </button>
         </div>
       </header>
 
       {error && <p className="admin-page__error">{error}</p>}
       {message && <p className="admin-page__ok">{message}</p>}
 
-      <div className="payments-actions">
-        <form className="payments-action-card" onSubmit={handleGenerate}>
-          <div className="seasons-card-head">
-            <span className="seasons-card-icon" aria-hidden="true">
-              <NavIcon name="seasons" />
-            </span>
-            <div>
-              <h2>{t('payments.generateTitle')}</h2>
-              <p>{t('payments.generateHint')}</p>
+      {chargeActionsOpen && (
+        <div className="payments-actions">
+          <form className="payments-action-card" onSubmit={handleGenerate}>
+            <div className="seasons-card-head">
+              <span className="seasons-card-icon" aria-hidden="true">
+                <NavIcon name="seasons" />
+              </span>
+              <div>
+                <h2>{t('payments.generateTitle')}</h2>
+                <p>{t('payments.generateHint')}</p>
+              </div>
             </div>
-          </div>
 
-          <div className="payments-action-card__grid">
-            <label className="admin-form__field">
-              <span>{t('payments.generateSeason')}</span>
-              <select
-                value={generateSeasonId}
-                onChange={(event) => setGenerateSeasonId(event.target.value)}
+            <div className="payments-action-card__grid">
+              <label className="admin-form__field">
+                <span>{t('payments.generateSeason')}</span>
+                <select
+                  value={generateSeasonId}
+                  onChange={(event) => setGenerateSeasonId(event.target.value)}
+                  disabled={generating || syncingSeason}
+                >
+                  <option value="">{t('payments.activeSeasonDefault')}</option>
+                  {seasons.map((season) => (
+                    <option key={season.id} value={season.id}>
+                      {season.name}
+                      {season.isActive ? ` (${t('common.active')})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="admin-form__field">
+                <span>{t('payments.generateMonth')}</span>
+                <input
+                  type="month"
+                  value={generateMonth}
+                  onChange={(event) => setGenerateMonth(event.target.value)}
+                  required
+                  disabled={generating || syncingSeason}
+                />
+              </label>
+            </div>
+
+            <p className="payments-action-card__hint">
+              {t('payments.syncSeasonHint')}
+            </p>
+
+            <div className="admin-form__actions">
+              <button type="submit" disabled={generating || syncingSeason}>
+                {generating
+                  ? t('payments.generating')
+                  : t('payments.generateSubmit')}
+              </button>
+              <button
+                type="button"
+                className="reg-action reg-action--approve"
                 disabled={generating || syncingSeason}
+                onClick={() => void handleSyncSeason()}
               >
-                <option value="">{t('payments.activeSeasonDefault')}</option>
-                {seasons.map((season) => (
-                  <option key={season.id} value={season.id}>
-                    {season.name}
-                    {season.isActive ? ` (${t('common.active')})` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="admin-form__field">
-              <span>{t('payments.generateMonth')}</span>
-              <input
-                type="month"
-                value={generateMonth}
-                onChange={(event) => setGenerateMonth(event.target.value)}
-                required
-                disabled={generating || syncingSeason}
-              />
-            </label>
-          </div>
-
-          <p className="payments-action-card__hint">
-            {t('payments.syncSeasonHint')}
-          </p>
-
-          <div className="admin-form__actions">
-            <button type="submit" disabled={generating || syncingSeason}>
-              {generating
-                ? t('payments.generating')
-                : t('payments.generateSubmit')}
-            </button>
-            <button
-              type="button"
-              className="reg-action reg-action--approve"
-              disabled={generating || syncingSeason}
-              onClick={() => void handleSyncSeason()}
-            >
-              {syncingSeason
-                ? t('payments.syncingSeason')
-                : t('payments.syncSeasonSubmit')}
-            </button>
-          </div>
-        </form>
-      </div>
+                {syncingSeason
+                  ? t('payments.syncingSeason')
+                  : t('payments.syncSeasonSubmit')}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="admin-filters payments-filters">
         <p className="payments-filters__title">

@@ -2528,7 +2528,7 @@ body:has(.wizard-page) {
 
 .payments-actions {
   display: grid;
-  grid-template-columns: minmax(16rem, 0.9fr) minmax(0, 1.3fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
   align-items: stretch;
 }
