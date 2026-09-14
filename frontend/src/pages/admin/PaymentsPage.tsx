@@ -29,8 +29,10 @@ import {
 } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import {
+  ACTIVITY_TYPES,
   PAYMENT_STATUSES,
   PAYMENT_TYPES,
+  type ActivityType,
   type PaymentStatus,
   type PaymentType,
 } from '../../types/enums'
@@ -41,6 +43,12 @@ const FILTER_DEFAULTS = {
   status: 'PENDING',
   paymentType: ALL,
   chargeMonth: ALL,
+  activityType: ALL,
+  seasonId: ALL,
+}
+
+function isActivityType(value: string): value is ActivityType {
+  return value === 'FOOTBALL' || value === 'SWIMMING'
 }
 
 /** Convert `<input type="month">` value `YYYY-MM` → `YYYY-MM-01`. */
@@ -128,7 +136,7 @@ function SeasonField({
 
 export function PaymentsPage() {
   const { filters, setFilter, setFilters } = useUrlFilters(FILTER_DEFAULTS)
-  const { status, paymentType, chargeMonth } = filters
+  const { status, paymentType, chargeMonth, activityType, seasonId } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [rows, setRows] = useState<PaymentResponse[]>([])
@@ -377,11 +385,40 @@ export function PaymentsPage() {
   const filtersActive =
     status !== FILTER_DEFAULTS.status ||
     paymentType !== ALL ||
-    chargeMonth !== ALL
+    chargeMonth !== ALL ||
+    activityType !== ALL ||
+    seasonId !== ALL
 
   function resetFilters() {
     setFilters({ ...FILTER_DEFAULTS })
   }
+
+  function handleActivityTypeFilterChange(nextValue: string) {
+    const nextType = isActivityType(nextValue) ? nextValue : ALL
+    const selectedSeason = seasons.find((season) => String(season.id) === seasonId)
+    const seasonStillValid =
+      nextType === ALL || selectedSeason?.activityType === nextType
+    setFilters({
+      activityType: nextType,
+      seasonId: seasonStillValid ? seasonId : ALL,
+    })
+  }
+
+  const seasonsForFilter = isActivityType(activityType)
+    ? seasons.filter((season) => season.activityType === activityType)
+    : seasons
+
+  const visibleRows = useMemo(() => {
+    return rows.filter((row) => {
+      if (isActivityType(activityType) && row.activityType !== activityType) {
+        return false
+      }
+      if (seasonId !== ALL && String(row.seasonId) !== seasonId) {
+        return false
+      }
+      return true
+    })
+  }, [rows, activityType, seasonId])
 
   const exportHref = chargeMonth
     ? `/admin/exports/kibbutz?month=${encodeURIComponent(chargeMonth)}`
@@ -704,6 +741,42 @@ export function PaymentsPage() {
         </label>
 
         <label className="admin-form__field">
+          <span>{t('payments.filterActivity')}</span>
+          <select
+            value={activityType}
+            onChange={(event) =>
+              handleActivityTypeFilterChange(event.target.value)
+            }
+          >
+            <option value={ALL}>{t('payments.allActivities')}</option>
+            {ACTIVITY_TYPES.map((value) => (
+              <option key={value} value={value}>
+                {activityTypeLabel(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="admin-form__field">
+          <span>{t('payments.filterSeason')}</span>
+          <select
+            value={seasonId}
+            onChange={(event) => setFilter('seasonId', event.target.value)}
+          >
+            <option value={ALL}>{t('payments.allSeasons')}</option>
+            {seasonsForFilter.map((season) => (
+              <option key={season.id} value={season.id}>
+                {season.name}
+                {isActivityType(activityType)
+                  ? ''
+                  : ` · ${activityTypeLabel(season.activityType)}`}
+                {season.isActive ? ` (${t('common.active')})` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="admin-form__field">
           <span>{t('payments.filterType')}</span>
           <select
             value={paymentType}
@@ -741,7 +814,7 @@ export function PaymentsPage() {
         </div>
         {loading ? (
           <p className="admin-page__loading">{t('common.loading')}</p>
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <div className="registrations-empty">
             <span className="registrations-empty__icon" aria-hidden="true">
               <NavIcon name="payments" />
@@ -757,6 +830,8 @@ export function PaymentsPage() {
               <tr>
                 <th>{t('common.id')}</th>
                 <th>{t('payments.student')}</th>
+                <th>{t('payments.activity')}</th>
+                <th>{t('payments.season')}</th>
                 <th>{t('payments.amount')}</th>
                 <th>{t('payments.chargeMonth')}</th>
                 <th>{t('payments.type')}</th>
@@ -767,12 +842,14 @@ export function PaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <tr key={row.id}>
                   <td>{row.id}</td>
                   <td>
                     {row.studentFirstName} {row.studentLastName}
                   </td>
+                  <td>{activityTypeLabel(row.activityType)}</td>
+                  <td>{row.seasonName}</td>
                   <td>{formatAmount(row.amount)}</td>
                   <td>
                     <DateText value={row.chargeMonth} />

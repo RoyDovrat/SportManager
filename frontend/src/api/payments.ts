@@ -1,5 +1,6 @@
 import { apiRequest } from './client'
 import type {
+  ActivityType,
   PaymentMethod,
   PaymentStatus,
   PaymentType,
@@ -14,6 +15,9 @@ export type PaymentResponse = {
   parentId: number
   parentFirstName: string
   parentLastName: string
+  activityType: ActivityType
+  seasonId: number
+  seasonName: string
   isKibbutzMember: boolean
   amount: number
   chargeMonth: string | null

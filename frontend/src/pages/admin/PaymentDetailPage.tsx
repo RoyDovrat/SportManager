@@ -15,6 +15,7 @@ import {
   paymentStatusTone,
 } from '../../components/ui/StatusBadge'
 import {
+  activityTypeLabel,
   paymentMethodLabel,
   paymentStatusLabel,
   paymentTypeLabel,
@@ -361,6 +362,14 @@ export function PaymentDetailPage() {
               <DetailRow
                 label={t('payments.paymentDate')}
                 value={<DateText value={payment.paymentDate} />}
+              />
+              <DetailRow
+                label={t('payments.activity')}
+                value={activityTypeLabel(payment.activityType)}
+              />
+              <DetailRow
+                label={t('payments.season')}
+                value={payment.seasonName}
               />
               <DetailRow
                 label={t('payments.registrationId')}
