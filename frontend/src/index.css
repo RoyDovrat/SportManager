@@ -2575,6 +2575,40 @@ body:has(.wizard-page) {
   color: var(--page-accent);
 }
 
+.payments-action-card--manual {
+  grid-column: 1 / -1;
+  background: linear-gradient(180deg, var(--navy-100) 0%, #fff 48%);
+  border-color: color-mix(in srgb, var(--navy-700) 22%, var(--border));
+}
+
+.payments-action-card--manual .seasons-card-icon {
+  background: var(--navy-100);
+  color: var(--navy-700);
+}
+
+.payments-manual-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.payments-manual-selected,
+.payments-action-card__note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.payments-manual-selected {
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--navy-800);
+}
+
 .payments-action-card__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

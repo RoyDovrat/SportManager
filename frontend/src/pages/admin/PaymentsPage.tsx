@@ -1,12 +1,17 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { formatApiError } from '../../api/formatApiError'
 import {
+  createManualPayment,
   generateMonthlyPayments,
   syncSeasonMonthlyPayments,
   listPayments,
   type PaymentResponse,
 } from '../../api/payments'
+import {
+  listRegistrations,
+  type RegistrationResponse,
+} from '../../api/registrations'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { DateText } from '../../components/ui/DateText'
@@ -17,6 +22,7 @@ import {
 } from '../../components/ui/StatusBadge'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
+  activityTypeLabel,
   paymentMethodLabel,
   paymentStatusLabel,
   paymentTypeLabel,
@@ -56,6 +62,37 @@ function currentMonthValue(): string {
   const now = new Date()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   return `${now.getFullYear()}-${month}`
+}
+
+function parseAmount(value: string): number | null {
+  const amount = Number(value.replace(',', '.'))
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null
+  }
+  return amount
+}
+
+function registrationOptionLabel(row: RegistrationResponse): string {
+  return [
+    `${row.studentFirstName} ${row.studentLastName}`,
+    row.studentIdentityNumber,
+    row.seasonName,
+    activityTypeLabel(row.activityType),
+  ].join(' · ')
+}
+
+function formatManualPaymentError(error: unknown): string {
+  const message = formatApiError(error)
+  if (message.includes('approved registration')) {
+    return t('payments.manualNotApproved')
+  }
+  if (message.includes('Registration was not found')) {
+    return t('payments.manualRegistrationMissing')
+  }
+  if (/uk_monthly_payment|constraint|duplicate/i.test(message)) {
+    return t('payments.manualDuplicate')
+  }
+  return message
 }
 
 function SeasonField({
@@ -104,6 +141,16 @@ export function PaymentsPage() {
   const [generating, setGenerating] = useState(false)
   const [syncingSeason, setSyncingSeason] = useState(false)
   const [chargeActionsOpen, setChargeActionsOpen] = useState(false)
+  const [manualFormOpen, setManualFormOpen] = useState(false)
+  const [manualSeasonId, setManualSeasonId] = useState('')
+  const [registrationSearch, setRegistrationSearch] = useState('')
+  const [selectedRegistrationId, setSelectedRegistrationId] = useState('')
+  const [manualAmount, setManualAmount] = useState('')
+  const [creatingManual, setCreatingManual] = useState(false)
+  const [approvedRegistrations, setApprovedRegistrations] = useState<
+    RegistrationResponse[]
+  >([])
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false)
 
   useEffect(() => {
     async function loadSeasons() {
@@ -112,9 +159,13 @@ export function PaymentsPage() {
         setSeasons(data)
         const active = data.find((season) => season.isActive)
         if (active) {
-          setGenerateSeasonId(String(active.id))
+          const activeId = String(active.id)
+          setGenerateSeasonId(activeId)
+          setManualSeasonId(activeId)
         } else if (data.length > 0) {
-          setGenerateSeasonId(String(data[0].id))
+          const firstId = String(data[0].id)
+          setGenerateSeasonId(firstId)
+          setManualSeasonId(firstId)
         }
       } catch (err) {
         setError(formatApiError(err))
@@ -147,6 +198,91 @@ export function PaymentsPage() {
     void loadRows()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when filters change
   }, [status, paymentType, chargeMonth])
+
+  useEffect(() => {
+    if (!chargeActionsOpen || !manualFormOpen) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadApproved() {
+      setLoadingRegistrations(true)
+      try {
+        const data = await listRegistrations({
+          status: 'APPROVED',
+          seasonId: manualSeasonId === '' ? null : Number(manualSeasonId),
+        })
+        if (cancelled) {
+          return
+        }
+        setApprovedRegistrations(data)
+        setSelectedRegistrationId((prev) =>
+          data.some((row) => String(row.id) === prev) ? prev : '',
+        )
+      } catch (err) {
+        if (!cancelled) {
+          setError(formatApiError(err))
+          setApprovedRegistrations([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingRegistrations(false)
+        }
+      }
+    }
+
+    void loadApproved()
+    return () => {
+      cancelled = true
+    }
+  }, [chargeActionsOpen, manualFormOpen, manualSeasonId])
+
+  const visibleRegistrations = useMemo(() => {
+    const query = registrationSearch.trim()
+    const filtered =
+      query === ''
+        ? approvedRegistrations
+        : approvedRegistrations.filter((row) => {
+            const haystack = [
+              row.studentFirstName,
+              row.studentLastName,
+              row.studentIdentityNumber,
+              row.parentFirstName,
+              row.parentLastName,
+              row.seasonName,
+            ]
+              .join(' ')
+              .toLowerCase()
+            return haystack.includes(query.toLowerCase())
+          })
+
+    if (
+      selectedRegistrationId &&
+      !filtered.some((row) => String(row.id) === selectedRegistrationId)
+    ) {
+      const selected = approvedRegistrations.find(
+        (row) => String(row.id) === selectedRegistrationId,
+      )
+      if (selected) {
+        return [selected, ...filtered]
+      }
+    }
+
+    return filtered
+  }, [approvedRegistrations, registrationSearch, selectedRegistrationId])
+
+  const selectedRegistration = approvedRegistrations.find(
+    (row) => String(row.id) === selectedRegistrationId,
+  )
+
+  const actionsBusy = generating || syncingSeason || creatingManual
+
+  function resetManualForm() {
+    setRegistrationSearch('')
+    setSelectedRegistrationId('')
+    setManualAmount('')
+  }
 
   async function handleSyncSeason(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -204,6 +340,40 @@ export function PaymentsPage() {
     }
   }
 
+  async function handleCreateManual(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setMessage(null)
+
+    if (!selectedRegistrationId) {
+      setError(t('payments.manualRegistrationRequired'))
+      return
+    }
+
+    const amount = parseAmount(manualAmount)
+    if (amount == null) {
+      setError(t('payments.amountInvalid'))
+      return
+    }
+
+    setCreatingManual(true)
+
+    try {
+      await createManualPayment({
+        registrationId: Number(selectedRegistrationId),
+        amount,
+      })
+      setMessage(t('payments.manualCreated'))
+      resetManualForm()
+      setManualFormOpen(false)
+      await loadRows()
+    } catch (err) {
+      setError(formatManualPaymentError(err))
+    } finally {
+      setCreatingManual(false)
+    }
+  }
+
   const filtersActive =
     status !== FILTER_DEFAULTS.status ||
     paymentType !== ALL ||
@@ -233,7 +403,13 @@ export function PaymentsPage() {
             type="button"
             className="reg-action reg-action--approve"
             aria-expanded={chargeActionsOpen}
-            onClick={() => setChargeActionsOpen((open) => !open)}
+            onClick={() => {
+              const nextOpen = !chargeActionsOpen
+              setChargeActionsOpen(nextOpen)
+              if (!nextOpen) {
+                setManualFormOpen(false)
+              }
+            }}
           >
             {chargeActionsOpen
               ? t('payments.closeChargeActions')
@@ -273,7 +449,7 @@ export function PaymentsPage() {
             <SeasonField
               value={generateSeasonId}
               seasons={seasons}
-              disabled={generating || syncingSeason}
+              disabled={actionsBusy}
               onChange={setGenerateSeasonId}
             />
 
@@ -281,7 +457,7 @@ export function PaymentsPage() {
               <button
                 type="submit"
                 className="reg-action reg-action--approve"
-                disabled={generating || syncingSeason}
+                disabled={actionsBusy}
               >
                 {syncingSeason
                   ? t('payments.currentMonthWorking')
@@ -318,7 +494,7 @@ export function PaymentsPage() {
               <SeasonField
                 value={generateSeasonId}
                 seasons={seasons}
-                disabled={generating || syncingSeason}
+                disabled={actionsBusy}
                 onChange={setGenerateSeasonId}
               />
 
@@ -329,19 +505,181 @@ export function PaymentsPage() {
                   value={generateMonth}
                   onChange={(event) => setGenerateMonth(event.target.value)}
                   required
-                  disabled={generating || syncingSeason}
+                  disabled={actionsBusy}
                 />
               </label>
             </div>
 
             <div className="admin-form__actions">
-              <button type="submit" disabled={generating || syncingSeason}>
+              <button type="submit" disabled={actionsBusy}>
                 {generating
                   ? t('payments.pastMonthWorking')
                   : t('payments.pastMonthSubmit')}
               </button>
             </div>
           </form>
+
+          <div className="payments-action-card payments-action-card--manual">
+            <div className="seasons-card-head">
+              <span className="seasons-card-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+              <div>
+                <h2>{t('payments.manualTitle')}</h2>
+                <p>{t('payments.manualHint')}</p>
+              </div>
+            </div>
+
+            {!manualFormOpen ? (
+              <div className="admin-form__actions">
+                <button
+                  type="button"
+                  className="reg-action reg-action--restore"
+                  onClick={() => setManualFormOpen(true)}
+                  disabled={actionsBusy}
+                >
+                  {t('payments.manualOpenForm')}
+                </button>
+              </div>
+            ) : (
+              <form className="payments-manual-form" onSubmit={handleCreateManual}>
+                <div className="payments-action-card__grid">
+                  <label className="admin-form__field">
+                    <span>{t('payments.manualSeason')}</span>
+                    <select
+                      value={manualSeasonId}
+                      onChange={(event) => setManualSeasonId(event.target.value)}
+                      disabled={actionsBusy || loadingRegistrations}
+                    >
+                      <option value="">{t('payments.manualAllSeasons')}</option>
+                      {seasons.map((season) => (
+                        <option key={season.id} value={season.id}>
+                          {season.name}
+                          {season.isActive ? ` (${t('common.active')})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="admin-form__field">
+                    <span>{t('payments.manualSearch')}</span>
+                    <input
+                      value={registrationSearch}
+                      onChange={(event) =>
+                        setRegistrationSearch(event.target.value)
+                      }
+                      placeholder={t('payments.manualSearchPlaceholder')}
+                      disabled={actionsBusy}
+                    />
+                  </label>
+                </div>
+
+                <label className="admin-form__field">
+                  <span>{t('payments.manualRegistration')}</span>
+                  <select
+                    value={selectedRegistrationId}
+                    onChange={(event) =>
+                      setSelectedRegistrationId(event.target.value)
+                    }
+                    disabled={actionsBusy || loadingRegistrations}
+                    required
+                  >
+                    <option value="">
+                      {loadingRegistrations
+                        ? t('common.loading')
+                        : t('payments.manualRegistrationPlaceholder')}
+                    </option>
+                    {visibleRegistrations.map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {registrationOptionLabel(row)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {!loadingRegistrations && visibleRegistrations.length === 0 && (
+                  <p className="payments-action-card__note">
+                    {t('payments.manualNoRegistrations')}
+                  </p>
+                )}
+
+                {selectedRegistration && (
+                  <p className="payments-manual-selected">
+                    {t('payments.manualSelectedMeta', {
+                      parent: `${selectedRegistration.parentFirstName} ${selectedRegistration.parentLastName}`,
+                      activity: activityTypeLabel(
+                        selectedRegistration.activityType,
+                      ),
+                      id: selectedRegistration.id,
+                    })}
+                    {' · '}
+                    {t('payments.kibbutz')}:{' '}
+                    {selectedRegistration.isKibbutzMember
+                      ? t('common.yes')
+                      : t('common.no')}
+                  </p>
+                )}
+
+                <div className="payments-action-card__grid">
+                  <label className="admin-form__field">
+                    <span>{t('payments.amount')}</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step="0.01"
+                      inputMode="decimal"
+                      value={manualAmount}
+                      onChange={(event) => setManualAmount(event.target.value)}
+                      required
+                      disabled={actionsBusy}
+                    />
+                  </label>
+
+                  <label className="admin-form__field">
+                    <span>{t('payments.chargeMonth')}</span>
+                    <input
+                      type="month"
+                      value={currentMonthValue()}
+                      disabled
+                    />
+                  </label>
+                </div>
+
+                <p className="payments-action-card__note">
+                  {t('payments.manualChargeMonthHint')}{' '}
+                  {t('payments.manualTypeHint')}
+                </p>
+
+                <div className="admin-form__actions">
+                  <button type="submit" disabled={actionsBusy}>
+                    {creatingManual
+                      ? t('payments.manualWorking')
+                      : t('payments.manualSubmit')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--secondary"
+                    onClick={() => {
+                      resetManualForm()
+                      setManualFormOpen(false)
+                    }}
+                    disabled={actionsBusy}
+                  >
+                    {t('payments.manualCloseForm')}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
 

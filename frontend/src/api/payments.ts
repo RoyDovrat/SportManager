@@ -148,3 +148,17 @@ export function createClothingPayment(
     body: request,
   })
 }
+
+export type ManualPaymentRequest = {
+  registrationId: number
+  amount: number
+}
+
+export function createManualPayment(
+  request: ManualPaymentRequest,
+): Promise<PaymentResponse> {
+  return apiRequest<PaymentResponse>('/api/payments/manual', {
+    method: 'POST',
+    body: request,
+  })
+}
