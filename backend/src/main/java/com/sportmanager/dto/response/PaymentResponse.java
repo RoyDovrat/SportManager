@@ -1,5 +1,6 @@
 package com.sportmanager.dto.response;
 
+import com.sportmanager.enums.ActivityType;
 import com.sportmanager.enums.PaymentMethod;
 import com.sportmanager.enums.PaymentStatus;
 import com.sportmanager.enums.PaymentType;
@@ -21,6 +22,9 @@ public class PaymentResponse {
     private Long parentId;
     private String parentFirstName;
     private String parentLastName;
+    private ActivityType activityType;
+    private Long seasonId;
+    private String seasonName;
     private Boolean isKibbutzMember;
     private BigDecimal amount;
     private LocalDate chargeMonth;
