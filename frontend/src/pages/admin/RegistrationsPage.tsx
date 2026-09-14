@@ -14,6 +14,7 @@ import {
   StatusBadge,
   registrationStatusTone,
 } from '../../components/ui/StatusBadge'
+import { pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -37,7 +38,9 @@ const FILTER_DEFAULTS = {
 }
 
 export function RegistrationsPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+    FILTER_DEFAULTS,
+  )
   const { seasonId, status, activityType } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
@@ -56,9 +59,11 @@ export function RegistrationsPage() {
         const data = await listSeasons()
         setSeasons(data)
         if (!hasParam('seasonId')) {
-          const active = data.find((season) => season.isActive)
-          if (active) {
-            setFilter('seasonId', String(active.id))
+          const defaultId = pickDefaultSeasonId(data, {
+            fallbackToFirst: false,
+          })
+          if (defaultId != null) {
+            setFilter('seasonId', String(defaultId))
           }
         }
         setFiltersReady(true)
@@ -199,7 +204,7 @@ export function RegistrationsPage() {
           <span>{t('registrations.filterSeason')}</span>
           <select
             value={seasonId}
-            onChange={(event) => setFilter('seasonId', event.target.value)}
+            onChange={(event) => setSeasonId(event.target.value)}
             disabled={!filtersReady}
           >
             <option value={ALL}>{t('registrations.allSeasons')}</option>

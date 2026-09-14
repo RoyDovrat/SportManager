@@ -23,6 +23,11 @@ import {
 } from '../../components/admin/TrainingSessionsEditor'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import {
+  getLastSeasonId,
+  pickDefaultSeasonId,
+  rememberLastSeasonId,
+} from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -55,10 +60,20 @@ function pickSeasonForType(
   seasonData: SeasonResponse[],
   activityType: ActivityType,
 ): SeasonResponse | undefined {
+  const lastId = getLastSeasonId()
+  const lastMatch =
+    lastId == null
+      ? undefined
+      : seasonData.find(
+          (season) =>
+            String(season.id) === lastId && season.activityType === activityType,
+        )
   return (
+    lastMatch ??
     seasonData.find(
       (season) => season.isActive && season.activityType === activityType,
-    ) ?? seasonData.find((season) => season.activityType === activityType)
+    ) ??
+    seasonData.find((season) => season.activityType === activityType)
   )
 }
 
@@ -94,7 +109,8 @@ function formatSessions(row: ActivityGroupResponse): string {
 }
 
 export function ActivityGroupsPage() {
-  const { filters, setFilter, setFilters, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setFilters, setSeasonId, hasParam } =
+    useUrlFilters(FILTER_DEFAULTS)
   const {
     seasonId,
     activityId: activityFilterId,
@@ -129,12 +145,11 @@ export function ActivityGroupsPage() {
         const typedFilter = isActivityType(filters.activityType)
           ? filters.activityType
           : null
-        const typedSeason = typedFilter
-          ? pickSeasonForType(seasonData, typedFilter)
-          : undefined
-        const active = seasonData.find((season) => season.isActive)
+        const candidates = typedFilter
+          ? seasonData.filter((season) => season.activityType === typedFilter)
+          : seasonData
         const defaultSeasonId =
-          typedSeason?.id ?? active?.id ?? seasonData[0]?.id
+          pickDefaultSeasonId(candidates) ?? pickDefaultSeasonId(seasonData)
 
         if (!hasParam('seasonId') && defaultSeasonId != null) {
           setFilter('seasonId', String(defaultSeasonId))
@@ -223,6 +238,7 @@ export function ActivityGroupsPage() {
       activityId: '',
       seasonId: nextSeasonId,
     })
+    rememberLastSeasonId(nextSeasonId)
 
     if (nextType !== '') {
       setCreateForm((prev) => ({
@@ -234,13 +250,15 @@ export function ActivityGroupsPage() {
   }
 
   function resetFilters() {
-    const active = seasons.find((season) => season.isActive) ?? seasons[0]
+    const defaultId = pickDefaultSeasonId(seasons)
+    const nextSeasonId = defaultId != null ? String(defaultId) : ''
     setFilters({
       activityType: '',
       activityId: '',
       activeOnly: '',
-      seasonId: active ? String(active.id) : '',
+      seasonId: nextSeasonId,
     })
+    rememberLastSeasonId(nextSeasonId)
     setSearch('')
   }
 
@@ -404,7 +422,7 @@ export function ActivityGroupsPage() {
           <span>{t('activityGroups.filterSeason')}</span>
           <select
             value={seasonId}
-            onChange={(event) => setFilter('seasonId', event.target.value)}
+            onChange={(event) => setSeasonId(event.target.value)}
             disabled={!filtersReady}
           >
             {seasonsForFilter.map((season) => (

@@ -10,6 +10,7 @@ import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -51,7 +52,9 @@ function formatPrice(amount: number): string {
 }
 
 export function ActivityPricingPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+    FILTER_DEFAULTS,
+  )
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
   const formRef = useRef<HTMLDivElement>(null)
@@ -80,11 +83,9 @@ export function ActivityPricingPage() {
       const data = await listSeasons()
       setSeasons(data)
       if (!hasParam('seasonId')) {
-        const active = data.find((season) => season.isActive)
-        if (active) {
-          setFilter('seasonId', String(active.id))
-        } else if (data.length > 0) {
-          setFilter('seasonId', String(data[0].id))
+        const defaultId = pickDefaultSeasonId(data)
+        if (defaultId != null) {
+          setFilter('seasonId', String(defaultId))
         }
       }
     } catch (err) {
@@ -181,7 +182,7 @@ export function ActivityPricingPage() {
         (season) => season.isActive && season.activityType === nextType,
       ) ?? seasons.find((season) => season.activityType === nextType)
     if (matching) {
-      setFilter('seasonId', String(matching.id))
+      setSeasonId(String(matching.id))
       setEditingId(null)
     }
   }
@@ -312,7 +313,7 @@ export function ActivityPricingPage() {
                 className="pricing-season-picker__select"
                 value={filters.seasonId}
                 onChange={(event) => {
-                  setFilter('seasonId', event.target.value)
+                  setSeasonId(event.target.value)
                   closeForm()
                 }}
                 disabled={loadingSeasons || seasons.length === 0}

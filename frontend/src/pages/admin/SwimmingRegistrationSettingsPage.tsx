@@ -12,6 +12,7 @@ import {
 import { NavIcon } from '../../components/ui/NavIcon'
 import { MarkdownView } from '../../components/ui/MarkdownView'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { t } from '../../i18n/t'
 
@@ -20,7 +21,9 @@ const FILTER_DEFAULTS = {
 }
 
 export function SwimmingRegistrationSettingsPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+    FILTER_DEFAULTS,
+  )
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
 
@@ -58,11 +61,9 @@ export function SwimmingRegistrationSettingsPage() {
       setAllSettings(settingsData)
 
       if (!hasParam('seasonId')) {
-        const active = swimmingSeasons.find((season) => season.isActive)
-        if (active) {
-          setFilter('seasonId', String(active.id))
-        } else if (swimmingSeasons.length > 0) {
-          setFilter('seasonId', String(swimmingSeasons[0].id))
+        const defaultId = pickDefaultSeasonId(swimmingSeasons)
+        if (defaultId != null) {
+          setFilter('seasonId', String(defaultId))
         }
       }
     } catch (err) {
@@ -191,7 +192,7 @@ export function SwimmingRegistrationSettingsPage() {
               <select
                 className="pricing-season-picker__select"
                 value={filters.seasonId}
-                onChange={(event) => setFilter('seasonId', event.target.value)}
+                onChange={(event) => setSeasonId(event.target.value)}
                 disabled={loadingSeasons || seasons.length === 0}
               >
                 {seasons.length === 0 ? (
@@ -360,7 +361,7 @@ export function SwimmingRegistrationSettingsPage() {
                           ? 'swim-settings-list__item is-selected'
                           : 'swim-settings-list__item'
                       }
-                      onClick={() => setFilter('seasonId', String(row.seasonId))}
+                      onClick={() => setSeasonId(String(row.seasonId))}
                     >
                       <strong>{row.seasonName}</strong>
                       <span>

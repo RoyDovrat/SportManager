@@ -14,6 +14,7 @@ import {
   paymentStatusTone,
   registrationStatusTone,
 } from '../../components/ui/StatusBadge'
+import { pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -51,7 +52,9 @@ function countByActivity(report: SeasonReportResponse): {
 }
 
 export function ReportsPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+    FILTER_DEFAULTS,
+  )
   const { seasonId } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
@@ -67,8 +70,7 @@ export function ReportsPage() {
         const data = await listSeasons()
         setSeasons(data)
         if (!hasParam('seasonId')) {
-          const active = data.find((season) => season.isActive)
-          const defaultId = active?.id ?? data[0]?.id
+          const defaultId = pickDefaultSeasonId(data)
           if (defaultId != null) {
             setFilter('seasonId', String(defaultId))
           }
@@ -142,7 +144,7 @@ export function ReportsPage() {
               <select
                 className="pricing-season-picker__select"
                 value={seasonId}
-                onChange={(event) => setFilter('seasonId', event.target.value)}
+                onChange={(event) => setSeasonId(event.target.value)}
                 disabled={!catalogReady || seasons.length === 0}
               >
                 {seasons.length === 0 ? (

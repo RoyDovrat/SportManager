@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { rememberLastSeasonId } from './lastSeason'
 
 type FilterMap = Record<string, string>
 
@@ -10,16 +11,19 @@ type FilterMap = Record<string, string>
  * - Keys present in the URL win over defaults (including empty string = "all").
  * - Missing keys use defaults (e.g. first visit → PENDING).
  * - Updates use replace: true so filter tweaks don't spam history.
+ * - A seasonId already in the URL is remembered for other admin screens.
  */
 export function useUrlFilters<T extends FilterMap>(defaults: T): {
   filters: T
   setFilter: (key: keyof T & string, value: string) => void
   setFilters: (patch: Partial<T>) => void
+  setSeasonId: (value: string) => void
   hasParam: (key: keyof T & string) => boolean
 } {
   const [searchParams, setSearchParams] = useSearchParams()
   const defaultsRef = useRef(defaults)
   defaultsRef.current = defaults
+  const initialSearchRef = useRef(searchParams)
 
   const defaultKeys = Object.keys(defaults).join('|')
 
@@ -64,10 +68,31 @@ export function useUrlFilters<T extends FilterMap>(defaults: T): {
     [applyPatch],
   )
 
+  const setSeasonId = useCallback(
+    (value: string) => {
+      rememberLastSeasonId(value)
+      applyPatch({ seasonId: value } as unknown as Partial<T>)
+    },
+    [applyPatch],
+  )
+
   const hasParam = useCallback(
     (key: keyof T & string) => searchParams.has(key),
     [searchParams],
   )
 
-  return { filters, setFilter, setFilters: applyPatch, hasParam }
+  useEffect(() => {
+    const initialSeasonId = initialSearchRef.current.get('seasonId')
+    if (initialSeasonId) {
+      rememberLastSeasonId(initialSeasonId)
+    }
+  }, [])
+
+  return {
+    filters,
+    setFilter,
+    setFilters: applyPatch,
+    setSeasonId,
+    hasParam,
+  }
 }

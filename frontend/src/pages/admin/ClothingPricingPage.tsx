@@ -12,6 +12,7 @@ import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
+import { pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { t } from '../../i18n/t'
 
@@ -64,7 +65,9 @@ function formFromPricing(pricing: ClothingPricingResponse): PriceForm {
 }
 
 export function ClothingPricingPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+    FILTER_DEFAULTS,
+  )
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
 
@@ -100,11 +103,9 @@ export function ClothingPricingPage() {
       setAllPricing(pricingData)
 
       if (!hasParam('seasonId')) {
-        const active = footballSeasons.find((season) => season.isActive)
-        if (active) {
-          setFilter('seasonId', String(active.id))
-        } else if (footballSeasons.length > 0) {
-          setFilter('seasonId', String(footballSeasons[0].id))
+        const defaultId = pickDefaultSeasonId(footballSeasons)
+        if (defaultId != null) {
+          setFilter('seasonId', String(defaultId))
         }
       }
     } catch (err) {
@@ -152,7 +153,7 @@ export function ClothingPricingPage() {
   }
 
   function editPricingRow(row: ClothingPricingResponse) {
-    setFilter('seasonId', String(row.seasonId))
+    setSeasonId(String(row.seasonId))
     setFormOpen(true)
     setMessage(null)
     setError(null)
@@ -287,7 +288,7 @@ export function ClothingPricingPage() {
                 className="pricing-season-picker__select"
                 value={filters.seasonId}
                 onChange={(event) => {
-                  setFilter('seasonId', event.target.value)
+                  setSeasonId(event.target.value)
                   closeForm()
                 }}
                 disabled={loadingSeasons || seasons.length === 0}

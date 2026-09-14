@@ -9,6 +9,7 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
+import { pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
@@ -90,7 +91,9 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
 }
 
 export function ClothingOrdersPage() {
-  const { filters, setFilter, hasParam } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+    FILTER_DEFAULTS,
+  )
   const { seasonId, identity: identityFilter } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
@@ -111,22 +114,29 @@ export function ClothingOrdersPage() {
       try {
         const data = await listSeasons()
         setSeasons(data)
-        const active =
-          data.find(
-            (season) => season.isActive && season.activityType === 'FOOTBALL',
-          ) ?? data.find((season) => season.isActive)
-        if (!hasParam('seasonId') && active) {
-          setFilter('seasonId', String(active.id))
-          setCreateForm((prev) => ({ ...prev, seasonId: String(active.id) }))
+        const footballSeasons = data.filter(
+          (season) => season.activityType === 'FOOTBALL',
+        )
+        const defaultId =
+          pickDefaultSeasonId(footballSeasons, { fallbackToFirst: false }) ??
+          pickDefaultSeasonId(data, { fallbackToFirst: false })
+        const defaultSeasonId =
+          defaultId != null
+            ? String(defaultId)
+            : data[0] != null
+              ? String(data[0].id)
+              : ''
+
+        if (!hasParam('seasonId') && defaultId != null) {
+          setFilter('seasonId', String(defaultId))
+          setCreateForm((prev) => ({ ...prev, seasonId: String(defaultId) }))
         } else if (filters.seasonId) {
           setCreateForm((prev) => ({
             ...prev,
             seasonId: filters.seasonId,
           }))
-        } else if (active) {
-          setCreateForm((prev) => ({ ...prev, seasonId: String(active.id) }))
-        } else if (data.length > 0) {
-          setCreateForm((prev) => ({ ...prev, seasonId: String(data[0].id) }))
+        } else if (defaultSeasonId) {
+          setCreateForm((prev) => ({ ...prev, seasonId: defaultSeasonId }))
         }
         setFiltersReady(true)
       } catch (err) {
@@ -408,7 +418,7 @@ export function ClothingOrdersPage() {
           <span>{t('clothingOrders.filterSeason')}</span>
           <select
             value={seasonId}
-            onChange={(event) => setFilter('seasonId', event.target.value)}
+            onChange={(event) => setSeasonId(event.target.value)}
             disabled={!filtersReady}
           >
             <option value={ALL}>{t('clothingOrders.allSeasons')}</option>
