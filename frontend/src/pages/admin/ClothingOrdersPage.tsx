@@ -93,7 +93,7 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
 export function ClothingOrdersPage() {
   const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
-    { storageKey: 'clothingOrders' },
+    { storageKey: 'clothingOrders', omitFromStorage: ['identity'] },
   )
   const { seasonId, identity: identityFilter } = filters
 

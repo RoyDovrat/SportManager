@@ -663,7 +663,7 @@ export function ActivityGroupDetailPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>{t('common.id')}</th>
+                    <th className="admin-table__num">{t('common.rowNumber')}</th>
                     <th>{t('activityGroups.student')}</th>
                     <th>{t('activityGroups.ageGroup')}</th>
                     {group.activityType === 'SWIMMING' && (
@@ -678,9 +678,9 @@ export function ActivityGroupDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {members.map((member) => (
+                  {members.map((member, index) => (
                     <tr key={member.id}>
-                      <td dir="ltr">{member.id}</td>
+                      <td className="admin-table__num">{index + 1}</td>
                       <td>{studentLabel(member)}</td>
                       <td>{ageGroupLabel(member.studentAgeGroup)}</td>
                       {group.activityType === 'SWIMMING' && (

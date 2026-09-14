@@ -170,6 +170,15 @@ export function ActivityGroupsPage() {
           }
         }
 
+        if (
+          filters.activityId &&
+          !activityData.some(
+            (activity) => String(activity.id) === filters.activityId,
+          )
+        ) {
+          setFilter('activityId', '')
+        }
+
         const resolvedSeasonId =
           (hasParam('seasonId') && filters.seasonId) ||
           (defaultSeasonId != null ? String(defaultSeasonId) : '')

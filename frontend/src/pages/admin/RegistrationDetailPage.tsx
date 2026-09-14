@@ -653,7 +653,6 @@ export function RegistrationDetailPage() {
           ) : (
             <div className="admin-detail registrations-detail__panels">
               <DetailSection title={t('registrations.summarySection')}>
-                <DetailRow label={t('common.id')} value={registration.id} />
                 <DetailRow
                   label={t('registrations.date')}
                   value={<DateText value={registration.registrationDate} />}

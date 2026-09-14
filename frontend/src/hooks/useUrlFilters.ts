@@ -8,10 +8,19 @@ type FilterMap = Record<string, string>
 type UrlFilterOptions = {
   /** Page-specific localStorage key so each admin screen remembers its own filters. */
   storageKey?: string
+  /** Search/temporary fields that stay in the URL but are not remembered. */
+  omitFromStorage?: readonly string[]
 }
 
 function storedHasKey(stored: FilterMap | null, key: string): boolean {
   return stored != null && Object.prototype.hasOwnProperty.call(stored, key)
+}
+
+function isPersistableKey(
+  key: string,
+  omitFromStorage: readonly string[] | undefined,
+): boolean {
+  return omitFromStorage == null || !omitFromStorage.includes(key)
 }
 
 /**
@@ -36,6 +45,8 @@ export function useUrlFilters<T extends FilterMap>(
   hasParam: (key: keyof T & string) => boolean
 } {
   const storageKey = options?.storageKey
+  const omitRef = useRef(options?.omitFromStorage)
+  omitRef.current = options?.omitFromStorage
   const [searchParams, setSearchParams] = useSearchParams()
   const defaultsRef = useRef(defaults)
   defaultsRef.current = defaults
@@ -53,7 +64,10 @@ export function useUrlFilters<T extends FilterMap>(
     for (const key of Object.keys(base) as Array<keyof T & string>) {
       if (searchParams.has(key)) {
         next[key] = (searchParams.get(key) ?? '') as T[typeof key]
-      } else if (storedHasKey(stored, key)) {
+      } else if (
+        isPersistableKey(key, omitRef.current) &&
+        storedHasKey(stored, key)
+      ) {
         next[key] = stored![key] as T[typeof key]
       }
     }
@@ -70,8 +84,13 @@ export function useUrlFilters<T extends FilterMap>(
       if (!storageKey) {
         return
       }
-      const snapshot = { ...defaultsRef.current }
-      for (const key of Object.keys(snapshot) as Array<keyof T & string>) {
+      const snapshot: FilterMap = {}
+      for (const key of Object.keys(defaultsRef.current) as Array<
+        keyof T & string
+      >) {
+        if (!isPersistableKey(key, omitRef.current)) {
+          continue
+        }
         snapshot[key] = next[key] ?? ''
       }
       storedRef.current = snapshot
@@ -82,7 +101,7 @@ export function useUrlFilters<T extends FilterMap>(
 
   const applyPatch = useCallback(
     (patch: Partial<T>) => {
-      const next = { ...filtersRef.current }
+      const next: FilterMap = { ...filtersRef.current }
       for (const [key, value] of Object.entries(patch)) {
         if (value == null) {
           next[key] = defaultsRef.current[key] ?? ''
@@ -90,7 +109,7 @@ export function useUrlFilters<T extends FilterMap>(
           next[key] = String(value)
         }
       }
-      persist(next)
+      persist(next as T)
 
       setSearchParams(
         (prev) => {
@@ -128,7 +147,9 @@ export function useUrlFilters<T extends FilterMap>(
 
   const hasParam = useCallback(
     (key: keyof T & string) =>
-      searchParams.has(key) || storedHasKey(storedRef.current, key),
+      searchParams.has(key) ||
+      (isPersistableKey(key, omitRef.current) &&
+        storedHasKey(storedRef.current, key)),
     [searchParams],
   )
 

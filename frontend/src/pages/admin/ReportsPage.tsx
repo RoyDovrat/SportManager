@@ -385,7 +385,7 @@ export function ReportsPage() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>{t('common.id')}</th>
+                      <th className="admin-table__num">{t('common.rowNumber')}</th>
                       <th>{t('reports.student')}</th>
                       <th>{t('reports.activity')}</th>
                       <th>{t('common.status')}</th>
@@ -394,9 +394,9 @@ export function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {report.registrations.items.map((row) => (
+                    {report.registrations.items.map((row, index) => (
                       <tr key={row.id}>
-                        <td>{row.id}</td>
+                        <td className="admin-table__num">{index + 1}</td>
                         <td>
                           {row.studentFirstName} {row.studentLastName}
                         </td>
@@ -492,7 +492,7 @@ export function ReportsPage() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>{t('common.id')}</th>
+                      <th className="admin-table__num">{t('common.rowNumber')}</th>
                       <th>{t('reports.student')}</th>
                       <th>{t('reports.amount')}</th>
                       <th>{t('reports.type')}</th>
@@ -501,9 +501,9 @@ export function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {report.payments.items.map((row) => (
+                    {report.payments.items.map((row, index) => (
                       <tr key={row.id}>
-                        <td>{row.id}</td>
+                        <td className="admin-table__num">{index + 1}</td>
                         <td>
                           {row.studentFirstName} {row.studentLastName}
                         </td>
@@ -585,7 +585,7 @@ export function ReportsPage() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>{t('common.id')}</th>
+                      <th className="admin-table__num">{t('common.rowNumber')}</th>
                       <th>{t('reports.student')}</th>
                       <th>{t('reports.alreadyHas')}</th>
                       <th>{t('reports.paymentRequired')}</th>
@@ -593,9 +593,9 @@ export function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {report.clothing.items.map((row) => (
+                    {report.clothing.items.map((row, index) => (
                       <tr key={row.id}>
-                        <td>{row.id}</td>
+                        <td className="admin-table__num">{index + 1}</td>
                         <td>
                           {row.studentFirstName} {row.studentLastName}
                         </td>

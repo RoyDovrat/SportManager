@@ -330,7 +330,6 @@ export function PaymentDetailPage() {
 
           <div className="admin-detail">
             <DetailSection title={t('payments.summarySection')}>
-              <DetailRow label={t('common.id')} value={payment.id} />
               <DetailRow
                 label={t('common.status')}
                 value={
