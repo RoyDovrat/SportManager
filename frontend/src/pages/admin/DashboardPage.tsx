@@ -14,7 +14,7 @@ import {
   registrationStatusTone,
 } from '../../components/ui/StatusBadge'
 import { formatIsoDate } from '../../utils/formatDate'
-import { pickDefaultSeasonId } from '../../hooks/lastSeason'
+import { isKnownSeasonId, pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -94,6 +94,7 @@ function MiniIcon({
 export function DashboardPage() {
   const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
+    { storageKey: 'dashboard' },
   )
   const { seasonId } = filters
 
@@ -109,7 +110,10 @@ export function DashboardPage() {
       try {
         const data = await listSeasons()
         setSeasons(data)
-        if (!hasParam('seasonId')) {
+        if (filters.seasonId && !isKnownSeasonId(data, filters.seasonId)) {
+          const defaultId = pickDefaultSeasonId(data)
+          setFilter('seasonId', defaultId != null ? String(defaultId) : '')
+        } else if (!hasParam('seasonId')) {
           const defaultId = pickDefaultSeasonId(data)
           if (defaultId != null) {
             setFilter('seasonId', String(defaultId))

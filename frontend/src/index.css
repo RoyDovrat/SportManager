@@ -2909,6 +2909,14 @@ body:has(.wizard-page) {
   white-space: nowrap;
 }
 
+.admin-table__num {
+  width: 1%;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 .admin-table tbody tr:hover {
   background: #f8fbff;
 }

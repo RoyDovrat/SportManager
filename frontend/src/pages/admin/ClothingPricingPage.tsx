@@ -12,7 +12,7 @@ import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { pickDefaultSeasonId } from '../../hooks/lastSeason'
+import { isKnownSeasonId, pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { t } from '../../i18n/t'
 
@@ -67,6 +67,7 @@ function formFromPricing(pricing: ClothingPricingResponse): PriceForm {
 export function ClothingPricingPage() {
   const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
+    { storageKey: 'clothingPricing' },
   )
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
@@ -102,7 +103,10 @@ export function ClothingPricingPage() {
       setSeasons(footballSeasons)
       setAllPricing(pricingData)
 
-      if (!hasParam('seasonId')) {
+      if (filters.seasonId && !isKnownSeasonId(footballSeasons, filters.seasonId)) {
+        const defaultId = pickDefaultSeasonId(footballSeasons)
+        setFilter('seasonId', defaultId != null ? String(defaultId) : '')
+      } else if (!hasParam('seasonId')) {
         const defaultId = pickDefaultSeasonId(footballSeasons)
         if (defaultId != null) {
           setFilter('seasonId', String(defaultId))
@@ -564,7 +568,7 @@ export function ClothingPricingPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t('common.id')}</th>
+                <th className="admin-table__num">{t('common.rowNumber')}</th>
                 <th>{t('clothingPricing.season')}</th>
                 <th>{t('clothingPricing.shortKit')}</th>
                 <th>{t('clothingPricing.longKit')}</th>
@@ -574,7 +578,7 @@ export function ClothingPricingPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map((row) => (
+              {visibleRows.map((row, index) => (
                 <tr
                   key={row.id}
                   className={
@@ -583,7 +587,7 @@ export function ClothingPricingPage() {
                       : undefined
                   }
                 >
-                  <td>{row.id}</td>
+                  <td className="admin-table__num">{index + 1}</td>
                   <td>{row.seasonName}</td>
                   <td>{formatPrice(row.shortKitPrice)}</td>
                   <td>

@@ -14,7 +14,7 @@ import {
   StatusBadge,
   registrationStatusTone,
 } from '../../components/ui/StatusBadge'
-import { pickDefaultSeasonId } from '../../hooks/lastSeason'
+import { isKnownSeasonId, pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -40,6 +40,7 @@ const FILTER_DEFAULTS = {
 export function RegistrationsPage() {
   const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
+    { storageKey: 'registrations' },
   )
   const { seasonId, status, activityType } = filters
 
@@ -58,7 +59,12 @@ export function RegistrationsPage() {
       try {
         const data = await listSeasons()
         setSeasons(data)
-        if (!hasParam('seasonId')) {
+        if (filters.seasonId && !isKnownSeasonId(data, filters.seasonId)) {
+          const defaultId = pickDefaultSeasonId(data, {
+            fallbackToFirst: false,
+          })
+          setFilter('seasonId', defaultId != null ? String(defaultId) : '')
+        } else if (!hasParam('seasonId')) {
           const defaultId = pickDefaultSeasonId(data, {
             fallbackToFirst: false,
           })

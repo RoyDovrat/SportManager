@@ -20,6 +20,7 @@ import {
   StatusBadge,
   paymentStatusTone,
 } from '../../components/ui/StatusBadge'
+import { isKnownSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -135,7 +136,9 @@ function SeasonField({
 }
 
 export function PaymentsPage() {
-  const { filters, setFilter, setFilters } = useUrlFilters(FILTER_DEFAULTS)
+  const { filters, setFilter, setFilters } = useUrlFilters(FILTER_DEFAULTS, {
+    storageKey: 'payments',
+  })
   const { status, paymentType, chargeMonth, activityType, seasonId } = filters
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
@@ -165,6 +168,9 @@ export function PaymentsPage() {
       try {
         const data = await listSeasons()
         setSeasons(data)
+        if (seasonId && !isKnownSeasonId(data, seasonId)) {
+          setFilter('seasonId', ALL)
+        }
         const active = data.find((season) => season.isActive)
         if (active) {
           const activeId = String(active.id)
@@ -828,7 +834,7 @@ export function PaymentsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t('common.id')}</th>
+                <th className="admin-table__num">{t('common.rowNumber')}</th>
                 <th>{t('payments.student')}</th>
                 <th>{t('payments.activity')}</th>
                 <th>{t('payments.season')}</th>
@@ -842,9 +848,9 @@ export function PaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map((row) => (
+              {visibleRows.map((row, index) => (
                 <tr key={row.id}>
-                  <td>{row.id}</td>
+                  <td className="admin-table__num">{index + 1}</td>
                   <td>
                     {row.studentFirstName} {row.studentLastName}
                   </td>

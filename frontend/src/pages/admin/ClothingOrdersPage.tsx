@@ -9,7 +9,7 @@ import {
 import { formatApiError } from '../../api/formatApiError'
 import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
-import { pickDefaultSeasonId } from '../../hooks/lastSeason'
+import { isKnownSeasonId, pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { clothingSizeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
@@ -93,6 +93,7 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
 export function ClothingOrdersPage() {
   const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
+    { storageKey: 'clothingOrders' },
   )
   const { seasonId, identity: identityFilter } = filters
 
@@ -127,7 +128,17 @@ export function ClothingOrdersPage() {
               ? String(data[0].id)
               : ''
 
-        if (!hasParam('seasonId') && defaultId != null) {
+        if (filters.seasonId && !isKnownSeasonId(data, filters.seasonId)) {
+          const defaultId = pickDefaultSeasonId(footballSeasons, {
+            fallbackToFirst: false,
+          }) ?? pickDefaultSeasonId(data, { fallbackToFirst: false })
+          if (defaultId != null) {
+            setFilter('seasonId', String(defaultId))
+            setCreateForm((prev) => ({ ...prev, seasonId: String(defaultId) }))
+          } else {
+            setFilter('seasonId', ALL)
+          }
+        } else if (!hasParam('seasonId') && defaultId != null) {
           setFilter('seasonId', String(defaultId))
           setCreateForm((prev) => ({ ...prev, seasonId: String(defaultId) }))
         } else if (filters.seasonId) {
@@ -468,7 +479,7 @@ export function ClothingOrdersPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t('common.id')}</th>
+                <th className="admin-table__num">{t('common.rowNumber')}</th>
                 <th>{t('clothingOrders.student')}</th>
                 <th>{t('clothingOrders.identity')}</th>
                 <th>{t('clothingOrders.season')}</th>
@@ -478,9 +489,9 @@ export function ClothingOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
+              {rows.map((row, index) => (
                 <tr key={row.id}>
-                  <td>{row.id}</td>
+                  <td className="admin-table__num">{index + 1}</td>
                   <td>
                     {row.studentFirstName} {row.studentLastName}
                   </td>

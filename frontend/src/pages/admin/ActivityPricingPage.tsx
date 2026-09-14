@@ -10,7 +10,7 @@ import { listSeasons, type SeasonResponse } from '../../api/seasons'
 import { NavIcon } from '../../components/ui/NavIcon'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { pickDefaultSeasonId } from '../../hooks/lastSeason'
+import { isKnownSeasonId, pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   activityTypeLabel,
@@ -28,6 +28,8 @@ const FOOTBALL_WEEKLY_OPTIONS = [1, 2] as const
 
 const FILTER_DEFAULTS = {
   seasonId: '',
+  activityType: '',
+  weekly: '',
 }
 
 type FormState = {
@@ -52,11 +54,14 @@ function formatPrice(amount: number): string {
 }
 
 export function ActivityPricingPage() {
-  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+  const { filters, setFilter, setFilters, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
+    { storageKey: 'activityPricing' },
   )
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
+  const activityTypeFilter = filters.activityType
+  const weeklyFilter = filters.weekly
   const formRef = useRef<HTMLDivElement>(null)
 
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
@@ -70,8 +75,6 @@ export function ActivityPricingPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [activityTypeFilter, setActivityTypeFilter] = useState('')
-  const [weeklyFilter, setWeeklyFilter] = useState('')
 
   const formOpen = creating || editingId !== null
   const isFootball = form.activityType === 'FOOTBALL'
@@ -82,7 +85,10 @@ export function ActivityPricingPage() {
     try {
       const data = await listSeasons()
       setSeasons(data)
-      if (!hasParam('seasonId')) {
+      if (filters.seasonId && !isKnownSeasonId(data, filters.seasonId)) {
+        const defaultId = pickDefaultSeasonId(data)
+        setFilter('seasonId', defaultId != null ? String(defaultId) : '')
+      } else if (!hasParam('seasonId')) {
         const defaultId = pickDefaultSeasonId(data)
         if (defaultId != null) {
           setFilter('seasonId', String(defaultId))
@@ -167,8 +173,7 @@ export function ActivityPricingPage() {
 
   function resetFilters() {
     setSearch('')
-    setActivityTypeFilter('')
-    setWeeklyFilter('')
+    setFilters({ activityType: '', weekly: '' })
   }
 
   function handleActivityTypeChange(nextType: ActivityType) {
@@ -527,7 +532,7 @@ export function ActivityPricingPage() {
           <span>{t('seasons.activityType')}</span>
           <select
             value={activityTypeFilter}
-            onChange={(event) => setActivityTypeFilter(event.target.value)}
+            onChange={(event) => setFilter('activityType', event.target.value)}
           >
             <option value="">{t('activityPricing.allActivityTypes')}</option>
             {ACTIVITY_TYPES.map((type) => (
@@ -542,7 +547,7 @@ export function ActivityPricingPage() {
           <span>{t('activityPricing.weeklySessions')}</span>
           <select
             value={weeklyFilter}
-            onChange={(event) => setWeeklyFilter(event.target.value)}
+            onChange={(event) => setFilter('weekly', event.target.value)}
           >
             <option value="">{t('activityPricing.allWeeklySessions')}</option>
             {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
@@ -585,7 +590,7 @@ export function ActivityPricingPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t('common.id')}</th>
+                <th className="admin-table__num">{t('common.rowNumber')}</th>
                 <th>{t('seasons.activityType')}</th>
                 <th>{t('activityPricing.lessonType')}</th>
                 <th>{t('activityPricing.weeklySessions')}</th>
@@ -594,14 +599,14 @@ export function ActivityPricingPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map((row) => (
+              {visibleRows.map((row, index) => (
                 <tr
                   key={row.id}
                   className={
                     editingId === row.id ? 'seasons-row--editing' : undefined
                   }
                 >
-                  <td>{row.id}</td>
+                  <td className="admin-table__num">{index + 1}</td>
                   <td>{activityTypeLabel(row.activityType)}</td>
                   <td>
                     {row.swimmingLessonType

@@ -710,6 +710,7 @@ export const he = {
     deactivate: 'כיבוי',
     open: 'פתיחה',
     id: 'מזהה',
+    rowNumber: 'מס׳',
     name: 'שם',
     start: 'התחלה',
     end: 'סיום',

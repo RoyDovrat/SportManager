@@ -25,6 +25,7 @@ import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import {
   getLastSeasonId,
+  isKnownSeasonId,
   pickDefaultSeasonId,
   rememberLastSeasonId,
 } from '../../hooks/lastSeason'
@@ -110,7 +111,7 @@ function formatSessions(row: ActivityGroupResponse): string {
 
 export function ActivityGroupsPage() {
   const { filters, setFilter, setFilters, setSeasonId, hasParam } =
-    useUrlFilters(FILTER_DEFAULTS)
+    useUrlFilters(FILTER_DEFAULTS, { storageKey: 'activityGroups' })
   const {
     seasonId,
     activityId: activityFilterId,
@@ -151,8 +152,22 @@ export function ActivityGroupsPage() {
         const defaultSeasonId =
           pickDefaultSeasonId(candidates) ?? pickDefaultSeasonId(seasonData)
 
-        if (!hasParam('seasonId') && defaultSeasonId != null) {
-          setFilter('seasonId', String(defaultSeasonId))
+        if (
+          (hasParam('seasonId') &&
+            filters.seasonId &&
+            !isKnownSeasonId(seasonData, filters.seasonId)) ||
+          (!hasParam('seasonId') && defaultSeasonId != null)
+        ) {
+          const nextSeasonId =
+            hasParam('seasonId') &&
+            filters.seasonId &&
+            !isKnownSeasonId(seasonData, filters.seasonId)
+              ? (pickDefaultSeasonId(candidates) ??
+                pickDefaultSeasonId(seasonData))
+              : defaultSeasonId
+          if (nextSeasonId != null) {
+            setFilter('seasonId', String(nextSeasonId))
+          }
         }
 
         const resolvedSeasonId =
@@ -480,7 +495,7 @@ export function ActivityGroupsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t('common.id')}</th>
+                <th className="admin-table__num">{t('common.rowNumber')}</th>
                 <th>{t('common.name')}</th>
                 <th>{t('activityGroups.activityType')}</th>
                 <th>{t('activityGroups.attributes')}</th>
@@ -491,9 +506,9 @@ export function ActivityGroupsPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleRows.map((row) => (
+              {visibleRows.map((row, index) => (
                 <tr key={row.id}>
-                  <td>{row.id}</td>
+                  <td className="admin-table__num">{index + 1}</td>
                   <td>{row.name}</td>
                   <td>{activityTypeLabel(row.activityType)}</td>
                   <td>{formatAttributes(row)}</td>

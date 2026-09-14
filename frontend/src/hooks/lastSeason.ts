@@ -56,3 +56,10 @@ export function pickDefaultSeasonId(
 
   return seasons[0]?.id
 }
+
+export function isKnownSeasonId(
+  seasons: ReadonlyArray<{ id: number }>,
+  seasonId: string,
+): boolean {
+  return seasons.some((season) => String(season.id) === seasonId)
+}

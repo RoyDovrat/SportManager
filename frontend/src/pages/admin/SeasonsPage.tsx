@@ -13,6 +13,7 @@ import { NavIcon } from '../../components/ui/NavIcon'
 import { FilterClearButton } from '../../components/ui/FilterClearButton'
 import { StatusBadge } from '../../components/ui/StatusBadge'
 import { DateText } from '../../components/ui/DateText'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { activityTypeLabel } from '../../i18n/labels'
 import { t } from '../../i18n/t'
 import { ACTIVITY_TYPES, type ActivityType } from '../../types/enums'
@@ -25,7 +26,17 @@ const emptyForm: SeasonRequest = {
   isActive: false,
 }
 
+const FILTER_DEFAULTS = {
+  activityType: '',
+  activeOnly: '',
+}
+
 export function SeasonsPage() {
+  const { filters, setFilter, setFilters } = useUrlFilters(FILTER_DEFAULTS, {
+    storageKey: 'seasons',
+  })
+  const activityTypeFilter = filters.activityType
+  const activeOnly = filters.activeOnly === '1'
   const formRef = useRef<HTMLDivElement>(null)
   const [seasons, setSeasons] = useState<SeasonResponse[]>([])
   const [form, setForm] = useState<SeasonRequest>(emptyForm)
@@ -36,8 +47,6 @@ export function SeasonsPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [activityTypeFilter, setActivityTypeFilter] = useState('')
-  const [activeOnly, setActiveOnly] = useState(false)
 
   const formOpen = creating || editingId !== null
 
@@ -107,8 +116,7 @@ export function SeasonsPage() {
 
   function resetFilters() {
     setSearch('')
-    setActivityTypeFilter('')
-    setActiveOnly(false)
+    setFilters({ activityType: '', activeOnly: '' })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -383,7 +391,7 @@ export function SeasonsPage() {
           <span>{t('seasons.activityType')}</span>
           <select
             value={activityTypeFilter}
-            onChange={(event) => setActivityTypeFilter(event.target.value)}
+            onChange={(event) => setFilter('activityType', event.target.value)}
           >
             <option value="">{t('seasons.allActivityTypes')}</option>
             {ACTIVITY_TYPES.map((type) => (
@@ -398,7 +406,9 @@ export function SeasonsPage() {
           <input
             type="checkbox"
             checked={activeOnly}
-            onChange={(event) => setActiveOnly(event.target.checked)}
+            onChange={(event) =>
+              setFilter('activeOnly', event.target.checked ? '1' : '')
+            }
           />
           <span>{t('seasons.activeOnly')}</span>
         </label>
@@ -433,7 +443,7 @@ export function SeasonsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t('common.id')}</th>
+                <th className="admin-table__num">{t('common.rowNumber')}</th>
                 <th>{t('common.name')}</th>
                 <th>{t('seasons.activityType')}</th>
                 <th>{t('common.start')}</th>
@@ -443,14 +453,14 @@ export function SeasonsPage() {
               </tr>
             </thead>
             <tbody>
-              {visibleSeasons.map((season) => (
+              {visibleSeasons.map((season, index) => (
                 <tr
                   key={season.id}
                   className={
                     editingId === season.id ? 'seasons-row--editing' : undefined
                   }
                 >
-                  <td>{season.id}</td>
+                  <td className="admin-table__num">{index + 1}</td>
                   <td>{season.name}</td>
                   <td>{activityTypeLabel(season.activityType)}</td>
                   <td>

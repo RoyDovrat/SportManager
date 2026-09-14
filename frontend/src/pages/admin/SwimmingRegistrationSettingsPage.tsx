@@ -12,7 +12,7 @@ import {
 import { NavIcon } from '../../components/ui/NavIcon'
 import { MarkdownView } from '../../components/ui/MarkdownView'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import { pickDefaultSeasonId } from '../../hooks/lastSeason'
+import { isKnownSeasonId, pickDefaultSeasonId } from '../../hooks/lastSeason'
 import { useUrlFilters } from '../../hooks/useUrlFilters'
 import { t } from '../../i18n/t'
 
@@ -23,6 +23,7 @@ const FILTER_DEFAULTS = {
 export function SwimmingRegistrationSettingsPage() {
   const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
     FILTER_DEFAULTS,
+    { storageKey: 'swimmingSettings' },
   )
   const selectedSeasonId =
     filters.seasonId === '' ? '' : Number(filters.seasonId)
@@ -60,7 +61,10 @@ export function SwimmingRegistrationSettingsPage() {
       setSeasons(swimmingSeasons)
       setAllSettings(settingsData)
 
-      if (!hasParam('seasonId')) {
+      if (filters.seasonId && !isKnownSeasonId(swimmingSeasons, filters.seasonId)) {
+        const defaultId = pickDefaultSeasonId(swimmingSeasons)
+        setFilter('seasonId', defaultId != null ? String(defaultId) : '')
+      } else if (!hasParam('seasonId')) {
         const defaultId = pickDefaultSeasonId(swimmingSeasons)
         if (defaultId != null) {
           setFilter('seasonId', String(defaultId))
