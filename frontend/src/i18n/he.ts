@@ -526,21 +526,24 @@ export const he = {
     registrationId: 'מזהה הרשמה',
     clothingOrderId: 'מזהה הזמנת ביגוד',
     parent: 'הורה',
-    generateTitle: 'יצירת חיובים לחודש הנוכחי',
-    generateHint:
-      'בכל חודש נוצר אוטומטית חיוב לחודש הנוכחי לכל ההרשמות המאושרות. באישור הרשמה נוצר חיוב רק לחודש הנוכחי (אם העונה כוללת אותו).',
-    syncSeasonHint:
-      'לחצו כאן כדי ליצור עכשיו חיובים לחודש הנוכחי לכל ההרשמות המאושרות בעונה (מדלג על מי שכבר יש לו חיוב לחודש זה).',
-    syncSeasonSubmit: 'יצירת חיובים לחודש הנוכחי',
-    syncingSeason: 'יוצר…',
-    syncSeasonResult: 'נוצרו {created} חיובים; דולגו {skipped} שכבר היו קיימים לחודש זה.',
-    generateMonth: 'חודש חיוב (השלמה לחודש בודד)',
+    currentMonthTitle: 'יצירת חיובי החודש הנוכחי',
+    currentMonthHint:
+      'יוצר עכשיו חיובים חסרים לחודש הנוכחי. חיובים שכבר קיימים לא ייווצרו שוב.',
+    currentMonthSubmit: 'יצירת חיובים',
+    currentMonthWorking: 'יוצר…',
+    currentMonthResult:
+      'נוצרו {created} חיובים לחודש הנוכחי. {skipped} כבר היו קיימים ולא נוצרו שוב.',
+    pastMonthTitle: 'השלמת חיובים לחודש קודם',
+    pastMonthHint:
+      'מיועד להשלמת חיובים שחסרים לחודש מסוים. בחר עונה וחודש חיוב.',
+    pastMonthSubmit: 'השלמת חיובים',
+    pastMonthWorking: 'משלים…',
+    pastMonthMonth: 'חודש חיוב',
+    pastMonthMonthRequired: 'יש לבחור חודש חיוב.',
+    pastMonthResult:
+      'נוצרו {created} חיובים לחודש שנבחר. {skipped} כבר היו קיימים ולא נוצרו שוב.',
     generateSeason: 'עונה',
     activeSeasonDefault: 'עונה פעילה (ברירת מחדל)',
-    generateSubmit: 'הפקת חיובים',
-    generating: 'מפיק…',
-    generateMonthRequired: 'יש לבחור חודש חיוב.',
-    generateResult: 'נוצרו {created} חיובים, דולגו {skipped}.',
     clothingPaymentTitle: 'חיוב ביגוד',
     clothingPaymentHint: 'חיוב ביגוד נוצר אוטומטית עם הזמנת הביגוד.',
     clothingPaymentSubmit: 'יצירת חיוב ביגוד',

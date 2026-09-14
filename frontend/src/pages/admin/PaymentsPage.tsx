@@ -58,6 +58,37 @@ function currentMonthValue(): string {
   return `${now.getFullYear()}-${month}`
 }
 
+function SeasonField({
+  value,
+  seasons,
+  disabled,
+  onChange,
+}: {
+  value: string
+  seasons: SeasonResponse[]
+  disabled: boolean
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="admin-form__field">
+      <span>{t('payments.generateSeason')}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+      >
+        <option value="">{t('payments.activeSeasonDefault')}</option>
+        {seasons.map((season) => (
+          <option key={season.id} value={season.id}>
+            {season.name}
+            {season.isActive ? ` (${t('common.active')})` : ''}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 export function PaymentsPage() {
   const { filters, setFilter, setFilters } = useUrlFilters(FILTER_DEFAULTS)
   const { status, paymentType, chargeMonth } = filters
@@ -117,7 +148,8 @@ export function PaymentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when filters change
   }, [status, paymentType, chargeMonth])
 
-  async function handleSyncSeason() {
+  async function handleSyncSeason(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     setSyncingSeason(true)
     setError(null)
     setMessage(null)
@@ -127,7 +159,7 @@ export function PaymentsPage() {
         generateSeasonId === '' ? null : Number(generateSeasonId),
       )
       setMessage(
-        t('payments.syncSeasonResult', {
+        t('payments.currentMonthResult', {
           created: result.createdCount,
           skipped: result.skippedCount,
         }),
@@ -144,7 +176,7 @@ export function PaymentsPage() {
     event.preventDefault()
     const monthParam = toChargeMonthParam(generateMonth)
     if (!monthParam) {
-      setError(t('payments.generateMonthRequired'))
+      setError(t('payments.pastMonthMonthRequired'))
       return
     }
 
@@ -159,7 +191,7 @@ export function PaymentsPage() {
           generateSeasonId === '' ? null : Number(generateSeasonId),
       })
       setMessage(
-        t('payments.generateResult', {
+        t('payments.pastMonthResult', {
           created: result.createdCount,
           skipped: result.skippedCount,
         }),
@@ -215,37 +247,83 @@ export function PaymentsPage() {
 
       {chargeActionsOpen && (
         <div className="payments-actions">
-          <form className="payments-action-card" onSubmit={handleGenerate}>
+          <form
+            className="payments-action-card payments-action-card--current"
+            onSubmit={handleSyncSeason}
+          >
             <div className="seasons-card-head">
               <span className="seasons-card-icon" aria-hidden="true">
-                <NavIcon name="seasons" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M13 3 4 14h7l-1 7 9-11h-7l1-7Z" />
+                </svg>
               </span>
               <div>
-                <h2>{t('payments.generateTitle')}</h2>
-                <p>{t('payments.generateHint')}</p>
+                <h2>{t('payments.currentMonthTitle')}</h2>
+                <p>{t('payments.currentMonthHint')}</p>
+              </div>
+            </div>
+
+            <SeasonField
+              value={generateSeasonId}
+              seasons={seasons}
+              disabled={generating || syncingSeason}
+              onChange={setGenerateSeasonId}
+            />
+
+            <div className="admin-form__actions">
+              <button
+                type="submit"
+                className="reg-action reg-action--approve"
+                disabled={generating || syncingSeason}
+              >
+                {syncingSeason
+                  ? t('payments.currentMonthWorking')
+                  : t('payments.currentMonthSubmit')}
+              </button>
+            </div>
+          </form>
+
+          <form
+            className="payments-action-card payments-action-card--past"
+            onSubmit={handleGenerate}
+          >
+            <div className="seasons-card-head">
+              <span className="seasons-card-icon" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="5" width="18" height="16" rx="2" />
+                  <path d="M8 3v4M16 3v4M3 10h18" />
+                </svg>
+              </span>
+              <div>
+                <h2>{t('payments.pastMonthTitle')}</h2>
+                <p>{t('payments.pastMonthHint')}</p>
               </div>
             </div>
 
             <div className="payments-action-card__grid">
-              <label className="admin-form__field">
-                <span>{t('payments.generateSeason')}</span>
-                <select
-                  value={generateSeasonId}
-                  onChange={(event) => setGenerateSeasonId(event.target.value)}
-                  disabled={generating || syncingSeason}
-                >
-                  <option value="">{t('payments.activeSeasonDefault')}</option>
-                  {seasons.map((season) => (
-                    <option key={season.id} value={season.id}>
-                      {season.name}
-                      {season.isActive ? ` (${t('common.active')})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <SeasonField
+                value={generateSeasonId}
+                seasons={seasons}
+                disabled={generating || syncingSeason}
+                onChange={setGenerateSeasonId}
+              />
 
               <label className="admin-form__field">
-                <span>{t('payments.generateMonth')}</span>
+                <span>{t('payments.pastMonthMonth')}</span>
                 <input
                   type="month"
                   value={generateMonth}
@@ -256,25 +334,11 @@ export function PaymentsPage() {
               </label>
             </div>
 
-            <p className="payments-action-card__hint">
-              {t('payments.syncSeasonHint')}
-            </p>
-
             <div className="admin-form__actions">
               <button type="submit" disabled={generating || syncingSeason}>
                 {generating
-                  ? t('payments.generating')
-                  : t('payments.generateSubmit')}
-              </button>
-              <button
-                type="button"
-                className="reg-action reg-action--approve"
-                disabled={generating || syncingSeason}
-                onClick={() => void handleSyncSeason()}
-              >
-                {syncingSeason
-                  ? t('payments.syncingSeason')
-                  : t('payments.syncSeasonSubmit')}
+                  ? t('payments.pastMonthWorking')
+                  : t('payments.pastMonthSubmit')}
               </button>
             </div>
           </form>
