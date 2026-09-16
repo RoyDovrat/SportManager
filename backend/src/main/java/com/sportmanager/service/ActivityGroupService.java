@@ -641,7 +641,7 @@ public class ActivityGroupService {
                 if (otherAges.contains(ageGroup)) {
                     throw new BusinessRuleException(
                             "קבוצת הגיל «" + ageGroup.hebrewLabel()
-                                    + "» כבר בשימוש בקבוצת כדורגל פעילה אחרת בעונה זו"
+                                    + "» כבר משויכת לקבוצת כדורגל פעילה אחרת בעונה הזו"
                     );
                 }
             }
