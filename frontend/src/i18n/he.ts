@@ -388,6 +388,8 @@ export const he = {
     created: 'הקבוצה נוצרה.',
     season: 'עונה',
     selectSeason: 'בחרו עונה',
+    seasonTypeHint:
+      'מוצגות כל העונות. בחירת עונת שחייה מעבירה את הטופס לשחייה, ועונת כדורגל לכדורגל.',
     selectSeasonFirst: 'יש לבחור עונה להצגת קבוצות.',
     activityType: 'סוג חוג',
     ageGroup: 'קבוצת גיל',
@@ -399,7 +401,7 @@ export const he = {
     weeklySessionsFromSchedule:
       'מספר האימונים בשבוע (ולפי זה המחיר) נקבע לפי מספר האימונים הפעילים בלוח: {count}',
     weeklySessionsSwimming: 'מפגשים בשבוע (1–6)',
-    weeklySessionsShort: 'מפגשים/שבוע',
+    weeklySessionsShort: 'מספר מפגשים בשבוע',
     lessonType: 'סוג שיעור שחייה',
     selectLessonType: 'בחרו סוג שיעור',
     lessonTypeRequired: 'יש לבחור סוג שיעור לקבוצת שחייה.',
@@ -797,6 +799,8 @@ export const he = {
     created: 'מחירון החוג נוצר.',
     updated: 'מחירון החוג עודכן.',
     selectSeasonFirst: 'יש לבחור עונה תחילה.',
+    activityTypeFollowsSeason:
+      'סוג החוג נקבע לפי העונה שנבחרה למעלה במסך העונות.',
     seasonActivityMismatch:
       'לא ניתן לשמור מחירי {pricingSport} בעונת {seasonSport}. בחרו עונה מאותו סוג חוג (למשל מחירי שחייה רק בעונת שחייה).',
     instructionsTitle: 'כללי תמחור',

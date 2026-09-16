@@ -83,6 +83,36 @@ export function resolvedWeeklySessions(values: GroupFormValues): number {
   return values.trainingSessions.filter((session) => session.isActive).length
 }
 
+function seasonById(
+  seasons: SeasonResponse[] | undefined,
+  seasonId: string,
+): SeasonResponse | undefined {
+  return seasons?.find((season) => String(season.id) === String(seasonId))
+}
+
+function formForActivityType(
+  values: GroupFormValues,
+  activityType: ActivityType,
+  seasonId: string,
+): GroupFormValues {
+  if (values.activityType === activityType && values.seasonId === seasonId) {
+    return values
+  }
+  if (values.activityType === activityType) {
+    return { ...values, seasonId }
+  }
+  return {
+    ...values,
+    activityType,
+    seasonId,
+    ageGroups: [],
+    weeklySessions: '1',
+    swimmingLessonType: '',
+    waterAdaptationLevels: [],
+    trainingSessions: [newTrainingSessionDraft()],
+  }
+}
+
 type GroupFormFieldsProps = {
   values: GroupFormValues
   errors: GroupFormErrors
@@ -155,23 +185,21 @@ export function GroupFormFields({
               value={values.activityType}
               onChange={(event) => {
                 const nextType = event.target.value as ActivityType
-                const typedSeason = seasons?.find(
-                  (season) =>
-                    season.isActive && season.activityType === nextType,
-                ) ?? seasons?.find((season) => season.activityType === nextType)
-                onChange({
-                  ...values,
-                  activityType: nextType,
-                  seasonId:
+                const typedSeason =
+                  seasons?.find(
+                    (season) =>
+                      season.isActive && season.activityType === nextType,
+                  ) ??
+                  seasons?.find((season) => season.activityType === nextType)
+                onChange(
+                  formForActivityType(
+                    values,
+                    nextType,
                     typedSeason != null
                       ? String(typedSeason.id)
                       : values.seasonId,
-                  ageGroups: [],
-                  weeklySessions: '1',
-                  swimmingLessonType: '',
-                  waterAdaptationLevels: [],
-                  trainingSessions: [newTrainingSessionDraft()],
-                })
+                  ),
+                )
               }}
               disabled={disabled}
             >
@@ -189,24 +217,34 @@ export function GroupFormFields({
             <span>{t('activityGroups.season')}</span>
             <select
               value={values.seasonId}
-              onChange={(event) =>
-                onChange({ ...values, seasonId: event.target.value })
-              }
+              onChange={(event) => {
+                const nextSeasonId = event.target.value
+                const season = seasonById(seasons, nextSeasonId)
+                onChange(
+                  formForActivityType(
+                    values,
+                    season?.activityType ?? values.activityType,
+                    nextSeasonId,
+                  ),
+                )
+              }}
               required
               disabled={disabled}
             >
               <option value="" disabled>
                 {t('activityGroups.selectSeason')}
               </option>
-              {seasons
-                .filter((season) => season.activityType === values.activityType)
-                .map((season) => (
-                  <option key={season.id} value={season.id}>
-                    {season.name}
-                    {season.isActive ? ` (${t('common.active')})` : ''}
-                  </option>
-                ))}
+              {seasons.map((season) => (
+                <option key={season.id} value={season.id}>
+                  {season.name}
+                  {` · ${activityTypeLabel(season.activityType)}`}
+                  {season.isActive ? ` (${t('common.active')})` : ''}
+                </option>
+              ))}
             </select>
+            <p className="admin-form__hint">
+              {t('activityGroups.seasonTypeHint')}
+            </p>
           </label>
         )}
 

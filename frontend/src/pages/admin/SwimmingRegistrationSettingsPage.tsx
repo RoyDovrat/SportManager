@@ -21,7 +21,7 @@ const FILTER_DEFAULTS = {
 }
 
 export function SwimmingRegistrationSettingsPage() {
-  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+  const { filters, setFilter, setSeasonId } = useUrlFilters(
     FILTER_DEFAULTS,
     { storageKey: 'swimmingSettings' },
   )
@@ -64,7 +64,7 @@ export function SwimmingRegistrationSettingsPage() {
       if (filters.seasonId && !isKnownSeasonId(swimmingSeasons, filters.seasonId)) {
         const defaultId = pickDefaultSeasonId(swimmingSeasons)
         setFilter('seasonId', defaultId != null ? String(defaultId) : '')
-      } else if (!hasParam('seasonId')) {
+      } else if (!filters.seasonId) {
         const defaultId = pickDefaultSeasonId(swimmingSeasons)
         if (defaultId != null) {
           setFilter('seasonId', String(defaultId))

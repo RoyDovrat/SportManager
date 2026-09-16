@@ -182,11 +182,15 @@ export function ActivityGroupsPage() {
         const resolvedSeasonId =
           (hasParam('seasonId') && filters.seasonId) ||
           (defaultSeasonId != null ? String(defaultSeasonId) : '')
+        const resolvedSeason = seasonData.find(
+          (season) => String(season.id) === resolvedSeasonId,
+        )
 
         setCreateForm((prev) => ({
           ...prev,
           seasonId: resolvedSeasonId || prev.seasonId,
-          activityType: typedFilter ?? prev.activityType,
+          activityType:
+            typedFilter ?? resolvedSeason?.activityType ?? prev.activityType,
         }))
         setFiltersReady(true)
       } catch (err) {
@@ -234,12 +238,16 @@ export function ActivityGroupsPage() {
   }, [filtersReady, seasonId, activityFilterId, activeOnly])
 
   function resetCreateForm() {
+    const selectedId = seasonId || createForm.seasonId
+    const selectedSeason = seasons.find(
+      (season) => String(season.id) === selectedId,
+    )
     setCreateForm(
       emptyCreateForm(
-        seasonId || createForm.seasonId,
+        selectedId,
         isActivityType(activityTypeFilter)
           ? activityTypeFilter
-          : emptyCreateForm().activityType,
+          : (selectedSeason?.activityType ?? 'FOOTBALL'),
       ),
     )
     setFormErrors(emptyGroupFormErrors())

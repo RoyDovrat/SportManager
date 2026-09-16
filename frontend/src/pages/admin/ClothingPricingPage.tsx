@@ -65,7 +65,7 @@ function formFromPricing(pricing: ClothingPricingResponse): PriceForm {
 }
 
 export function ClothingPricingPage() {
-  const { filters, setFilter, setSeasonId, hasParam } = useUrlFilters(
+  const { filters, setFilter, setSeasonId } = useUrlFilters(
     FILTER_DEFAULTS,
     { storageKey: 'clothingPricing' },
   )
@@ -106,7 +106,7 @@ export function ClothingPricingPage() {
       if (filters.seasonId && !isKnownSeasonId(footballSeasons, filters.seasonId)) {
         const defaultId = pickDefaultSeasonId(footballSeasons)
         setFilter('seasonId', defaultId != null ? String(defaultId) : '')
-      } else if (!hasParam('seasonId')) {
+      } else if (!filters.seasonId) {
         const defaultId = pickDefaultSeasonId(footballSeasons)
         if (defaultId != null) {
           setFilter('seasonId', String(defaultId))
