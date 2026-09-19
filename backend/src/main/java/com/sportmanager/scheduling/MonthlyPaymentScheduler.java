@@ -14,11 +14,11 @@ public class MonthlyPaymentScheduler {
     private final PaymentService paymentService;
 
     /**
-     * Each day, ensure a PENDING monthly payment exists for the current calendar month
-     * for every approved registration in a season that covers this month.
-     * Safe to re-run: existing active payments are skipped.
+     * Each day at 01:15 Israel time, ensure a PENDING monthly payment exists for
+     * the current calendar month for every approved registration in a season that
+     * covers this month. Safe to re-run: existing active payments are skipped.
      */
-    @Scheduled(cron = "0 15 1 * * *")
+    @Scheduled(cron = "0 15 1 * * *", zone = "Asia/Jerusalem")
     public void createCurrentMonthPayments() {
         var result = paymentService.generateCurrentMonthPaymentsForCoveringSeasons();
         log.info(
