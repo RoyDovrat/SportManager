@@ -1,0 +1,29 @@
+# Copy to /etc/systemd/system/sportmanager.service
+# Env file: /etc/sportmanager/sportmanager.env (from sportmanager.env.example — not in Git)
+# JAR: /opt/sportmanager/sportmanager-backend.jar
+
+[Unit]
+Description=SportManager API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=sportmanager
+Group=sportmanager
+WorkingDirectory=/opt/sportmanager
+ExecStart=/usr/bin/java -jar /opt/sportmanager/sportmanager-backend.jar
+EnvironmentFile=/etc/sportmanager/sportmanager.env
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sportmanager
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

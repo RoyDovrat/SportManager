@@ -36,7 +36,9 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!.env.production
 **/application-local.properties
+deploy/sportmanager.env
 
 # Frontend
 **/node_modules/

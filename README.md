@@ -122,6 +122,8 @@ npm install
 
 `.env` sets `VITE_API_BASE_URL` (default `http://localhost:8080`). Do not commit `.env`.
 
+Production builds (`npm run build`) use `frontend/.env.production`. The API URL is empty on purpose: the browser calls `/api/...` on the same domain Nginx serves. That file overrides local `.env`, so a production bundle will not call `localhost:8080`.
+
 ### Run
 
 With the backend already running on port 8080:
@@ -169,3 +171,7 @@ Typical flow: create/activate a **season** → ensure **activities** and **prici
 ### CORS
 
 Backend allows `http://localhost:5173` and `http://localhost:3000` by default (`app.cors.allowed-origins` / `CORS_ALLOWED_ORIGINS`).
+
+## Production
+
+VPS templates (Nginx, systemd, env example, Postgres backup) live in `deploy/`. See `deploy/README.md`. Do not put production secrets in Git.
