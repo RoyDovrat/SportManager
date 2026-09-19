@@ -2,6 +2,8 @@
 
 These files match the one-VPS architecture. They are templates — they do not deploy anything by themselves.
 
+Full command list: [vps-setup.md](vps-setup.md). Run those commands on the Ubuntu VPS only after DNS points at it.
+
 | File | Install on the VPS as |
 |------|------------------------|
 | `nginx-sportmanager.conf` | `/etc/nginx/sites-available/sportmanager` |

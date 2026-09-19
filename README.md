@@ -174,4 +174,4 @@ Backend allows `http://localhost:5173` and `http://localhost:3000` by default (`
 
 ## Production
 
-VPS templates (Nginx, systemd, env example, Postgres backup) live in `deploy/`. See `deploy/README.md`. Do not put production secrets in Git.
+VPS templates (Nginx, systemd, env example, Postgres backup) live in `deploy/`. Command list: `deploy/vps-setup.md`. Do not put production secrets in Git.
