@@ -1,5 +1,6 @@
 HELP.md
 target/
+logs/
 
 # Local secrets (copy from application-local.properties.example)
 src/main/resources/application-local.properties
