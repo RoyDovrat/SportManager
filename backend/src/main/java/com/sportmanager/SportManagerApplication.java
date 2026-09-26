@@ -17,7 +17,7 @@ public class SportManagerApplication {
 	public static void main(String[] args) {
 		SpringApplication app = new SpringApplication(SportManagerApplication.class);
 		app.addListeners((ApplicationListener<ApplicationEnvironmentPreparedEvent>) event -> {
-			if (event.getEnvironment().matchesProfiles("prod")) {
+			if (event.getEnvironment().matchesProfiles("prod", "render")) {
 				TimeZone.setDefault(TimeZone.getTimeZone(PRODUCTION_TIME_ZONE));
 			}
 		});
