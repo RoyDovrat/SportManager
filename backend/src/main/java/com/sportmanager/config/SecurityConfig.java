@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/registrations").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/clothing-orders").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/internal/monthly-payments").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
