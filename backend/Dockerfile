@@ -12,6 +12,7 @@ COPY --from=build /app/target/sportmanager-backend-0.0.1-SNAPSHOT.jar app.jar
 RUN chown spring:spring app.jar
 USER spring
 ENV SPRING_PROFILES_ACTIVE=render
-ENV JAVA_OPTS="-Xms64m -Xmx256m"
+# 512 MB instance: SerialGC + IPv4 so Render's port scanner can see Tomcat.
+ENV JAVA_OPTS="-Xms32m -Xmx160m -XX:+UseSerialGC -Xss512k -XX:MaxMetaspaceSize=96m -Djava.net.preferIPv4Stack=true"
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
