@@ -1,5 +1,6 @@
 package com.sportmanager;
 
+import com.sportmanager.config.RenderPortPlaceholder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
@@ -15,6 +16,7 @@ public class SportManagerApplication {
 	private static final String PRODUCTION_TIME_ZONE = "Asia/Jerusalem";
 
 	public static void main(String[] args) {
+		RenderPortPlaceholder.startIfNeeded();
 		SpringApplication app = new SpringApplication(SportManagerApplication.class);
 		app.addListeners((ApplicationListener<ApplicationEnvironmentPreparedEvent>) event -> {
 			if (event.getEnvironment().matchesProfiles("prod", "render")) {
