@@ -1,0 +1,44 @@
+# Calls POST /api/internal/monthly-payments after Render free instances sleep.
+# GitHub cron is UTC. 22:15 UTC is 01:15 Israel in summer and 00:15 in winter.
+#
+# Repo secrets: CRON_SECRET (same value as Render CRON_SECRET)
+# Repo variables: API_BASE_URL (e.g. https://your-api.onrender.com, no trailing slash)
+name: Monthly payments
+
+on:
+  schedule:
+    - cron: "15 22 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  generate-monthly-payments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger monthly payment job
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          set -eu
+          if [ -z "${CRON_SECRET}" ] || [ -z "${API_BASE_URL}" ]; then
+            echo "Set repository secret CRON_SECRET and variable API_BASE_URL."
+            exit 1
+          fi
+          url="${API_BASE_URL%/}/api/internal/monthly-payments"
+          attempt=1
+          while [ "${attempt}" -le 5 ]; do
+            echo "Attempt ${attempt} of 5"
+            if curl -fsS --max-time 180 -X POST "${url}" \
+              -H "X-Cron-Secret: ${CRON_SECRET}" \
+              -H "Accept: application/json"; then
+              echo
+              exit 0
+            fi
+            attempt=$((attempt + 1))
+            sleep 20
+          done
+          echo "Monthly payment job failed after 5 attempts."
+          exit 1
