@@ -6,6 +6,7 @@ function resolveApiBaseUrl(): string {
   }
 
   // Production default: same origin (Nginx serves the UI and proxies /api).
+  // Render static builds must set VITE_API_BASE_URL at build time instead.
   if (import.meta.env.PROD) {
     return ''
   }
