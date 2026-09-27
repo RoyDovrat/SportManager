@@ -10,9 +10,11 @@ public class ClothingPricingResponse {
     private BigDecimal shortKitPrice;
     private BigDecimal longKitPrice;
     private BigDecimal hoodiePrice;
+    private BigDecimal socksPrice;
     private Boolean allowAlreadyHasClothingSkip;
     private Boolean longKitPublicEnabled;
     private Boolean hoodiePublicEnabled;
+    private Boolean socksPublicEnabled;
 
     public Long getId() {
         return id;
@@ -62,6 +64,14 @@ public class ClothingPricingResponse {
         this.hoodiePrice = hoodiePrice;
     }
 
+    public BigDecimal getSocksPrice() {
+        return socksPrice;
+    }
+
+    public void setSocksPrice(BigDecimal socksPrice) {
+        this.socksPrice = socksPrice;
+    }
+
     public Boolean getAllowAlreadyHasClothingSkip() {
         return allowAlreadyHasClothingSkip;
     }
@@ -84,5 +94,13 @@ public class ClothingPricingResponse {
 
     public void setHoodiePublicEnabled(Boolean hoodiePublicEnabled) {
         this.hoodiePublicEnabled = hoodiePublicEnabled;
+    }
+
+    public Boolean getSocksPublicEnabled() {
+        return socksPublicEnabled;
+    }
+
+    public void setSocksPublicEnabled(Boolean socksPublicEnabled) {
+        this.socksPublicEnabled = socksPublicEnabled;
     }
 }

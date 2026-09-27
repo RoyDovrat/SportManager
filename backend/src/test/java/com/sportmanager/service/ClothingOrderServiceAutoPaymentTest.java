@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -102,37 +103,58 @@ class ClothingOrderServiceAutoPaymentTest {
     }
 
     @Test
-    void createSkipOrder_doesNotCreateClothingPayment() {
+    void createAlreadyHasOrder_chargesShortKitAndSkipsLongKitAndSocks() {
         stubCreateLookups();
         when(clothingOrderRepository.save(any(ClothingOrder.class))).thenAnswer(invocation -> {
             ClothingOrder order = invocation.getArgument(0);
             order.setId(1L);
             return order;
         });
+        when(paymentService.ensureClothingPayment(any(ClothingOrder.class)))
+                .thenReturn(PaymentResponse.builder().id(8L).clothingOrderId(1L).build());
 
-        ClothingOrderRequest request = new ClothingOrderRequest();
-        request.setStudentIdentityNumber("100000017");
-        request.setSeasonId(2L);
+        ClothingOrderRequest request = realOrderRequest();
         request.setAlreadyHasClothing(true);
+        request.setLongKitQuantity(0);
+        request.setSocksQuantity(0);
 
         clothingOrderService.createClothingOrder(request);
 
-        verify(paymentService, never()).ensureClothingPayment(any());
+        verify(paymentService).ensureClothingPayment(any(ClothingOrder.class));
+        verify(paymentService, never()).cancelPendingClothingPayment(any());
     }
 
     @Test
-    void updateToAlreadyHas_cancelsPendingClothingPayment() {
+    void updateToAlreadyHas_keepsShortKitAndRefreshesPayment() {
         ClothingOrder order = existingOrder();
+        order.setLongKitQuantity(1);
+        order.setLongKitSize(ClothingSize.M);
+        order.setSocksQuantity(1);
+        order.setSocksSize(ClothingSize.S);
         when(clothingOrderRepository.findById(1L)).thenReturn(Optional.of(order));
         when(clothingOrderRepository.save(order)).thenReturn(order);
+        when(paymentService.ensureClothingPayment(order))
+                .thenReturn(PaymentResponse.builder().id(8L).clothingOrderId(1L).build());
 
         ClothingOrderUpdateRequest request = new ClothingOrderUpdateRequest();
         request.setAlreadyHasClothing(true);
+        request.setShortKitQuantity(1);
+        request.setShortKitSize(ClothingSize.M);
+        request.setLongKitQuantity(0);
+        request.setHoodieQuantity(0);
+        request.setSocksQuantity(0);
+        request.setShirtNumber(10);
 
         clothingOrderService.updateClothingOrder(1L, request);
 
-        verify(paymentService).cancelPendingClothingPayment(order);
-        verify(paymentService, never()).ensureClothingPayment(any());
+        assertThat(order.getAlreadyHasClothing()).isTrue();
+        assertThat(order.getShortKitQuantity()).isEqualTo(1);
+        assertThat(order.getLongKitQuantity()).isZero();
+        assertThat(order.getLongKitSize()).isNull();
+        assertThat(order.getSocksQuantity()).isZero();
+        assertThat(order.getSocksSize()).isNull();
+        verify(paymentService).ensureClothingPayment(order);
+        verify(paymentService, never()).cancelPendingClothingPayment(any());
     }
 
     @Test

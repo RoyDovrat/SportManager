@@ -7,9 +7,11 @@ export type ClothingPricingResponse = {
   shortKitPrice: number
   longKitPrice: number
   hoodiePrice: number
+  socksPrice: number
   allowAlreadyHasClothingSkip: boolean
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
+  socksPublicEnabled: boolean
 }
 
 export type ClothingPricingRequest = {
@@ -17,18 +19,22 @@ export type ClothingPricingRequest = {
   shortKitPrice: number
   longKitPrice: number
   hoodiePrice: number
+  socksPrice: number
   allowAlreadyHasClothingSkip: boolean
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
+  socksPublicEnabled: boolean
 }
 
 export type ClothingPricingUpdateRequest = {
   shortKitPrice: number
   longKitPrice: number
   hoodiePrice: number
+  socksPrice: number
   allowAlreadyHasClothingSkip: boolean
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
+  socksPublicEnabled: boolean
 }
 
 export function listClothingPricing(): Promise<ClothingPricingResponse[]> {

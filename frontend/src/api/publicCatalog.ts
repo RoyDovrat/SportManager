@@ -63,9 +63,11 @@ export type ClothingCatalogResponse = {
   shortKitPrice: number | null
   longKitPrice: number | null
   hoodiePrice: number | null
+  socksPrice: number | null
   allowAlreadyHasClothingSkip: boolean
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
+  socksPublicEnabled: boolean
 }
 
 export type ClothingEligibilityResponse = {

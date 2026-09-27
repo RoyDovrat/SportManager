@@ -21,6 +21,7 @@ const FIELD_LABELS: Record<string, string> = {
   shortKitSize: 'מידת חליפה קצרה',
   longKitSize: 'מידת חליפה ארוכה',
   hoodieSize: 'מידת קפוצ׳ון',
+  socksSize: 'מידת גרביים',
   shirtNumber: 'מספר חולצה',
 }
 
@@ -68,6 +69,9 @@ function translateBusinessMessage(message: string | undefined): string | null {
       t('publicClothing.printedNumberRequired'),
     'At least one clothing item must be ordered':
       t('wizard.clothing.itemsRequired'),
+    'Socks are not available for public order in this season':
+      t('publicClothing.socksUnavailable'),
+    'Short kit must be ordered': t('publicClothing.shortKitRequired'),
   }
 
   if (exact[message]) {

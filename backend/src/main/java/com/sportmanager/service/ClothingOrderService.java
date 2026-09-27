@@ -56,13 +56,15 @@ public class ClothingOrderService {
         boolean alreadyHasClothing = Boolean.TRUE.equals(request.getAlreadyHasClothing());
         if (alreadyHasClothing) {
             validateSkipAllowed(season);
-            validateSkipOrderHasNoItems(
+            validateAlreadyHasOrder(
                     request.getShortKitQuantity(),
                     request.getShortKitSize(),
                     request.getLongKitQuantity(),
                     request.getLongKitSize(),
                     request.getHoodieQuantity(),
                     request.getHoodieSize(),
+                    request.getSocksQuantity(),
+                    request.getSocksSize(),
                     request.getShirtNumber()
             );
         } else {
@@ -73,15 +75,25 @@ public class ClothingOrderService {
                     request.getLongKitSize(),
                     request.getHoodieQuantity(),
                     request.getHoodieSize(),
+                    request.getSocksQuantity(),
+                    request.getSocksSize(),
                     request.getShirtNumber()
             );
-            if (!isAuthenticatedAdmin()) {
-                validatePublicItemAvailability(
-                        season,
-                        request.getLongKitQuantity(),
-                        request.getHoodieQuantity()
-                );
-            }
+        }
+        if (!alreadyHasClothing && !isAuthenticatedAdmin()) {
+            validatePublicItemAvailability(
+                    season,
+                    request.getLongKitQuantity(),
+                    request.getHoodieQuantity(),
+                    request.getSocksQuantity()
+            );
+        } else if (alreadyHasClothing && !isAuthenticatedAdmin()) {
+            validatePublicItemAvailability(
+                    season,
+                    0,
+                    request.getHoodieQuantity(),
+                    0
+            );
         }
 
         ClothingOrder saved = clothingOrderRepository.save(
@@ -101,23 +113,17 @@ public class ClothingOrderService {
         boolean alreadyHasClothing = Boolean.TRUE.equals(request.getAlreadyHasClothing());
         if (alreadyHasClothing) {
             validateSkipAllowed(season);
-            validateSkipOrderHasNoItems(
+            validateAlreadyHasOrder(
                     request.getShortKitQuantity(),
                     request.getShortKitSize(),
                     request.getLongKitQuantity(),
                     request.getLongKitSize(),
                     request.getHoodieQuantity(),
                     request.getHoodieSize(),
+                    request.getSocksQuantity(),
+                    request.getSocksSize(),
                     request.getShirtNumber()
             );
-            order.setAlreadyHasClothing(true);
-            order.setShortKitQuantity(0);
-            order.setLongKitQuantity(0);
-            order.setHoodieQuantity(0);
-            order.setShortKitSize(null);
-            order.setLongKitSize(null);
-            order.setHoodieSize(null);
-            order.setShirtNumber(null);
         } else {
             validateOrderDetails(
                     request.getShortKitQuantity(),
@@ -126,17 +132,16 @@ public class ClothingOrderService {
                     request.getLongKitSize(),
                     request.getHoodieQuantity(),
                     request.getHoodieSize(),
+                    request.getSocksQuantity(),
+                    request.getSocksSize(),
                     request.getShirtNumber()
             );
-            order.setAlreadyHasClothing(false);
-            order.setShortKitQuantity(request.getShortKitQuantity());
-            order.setShortKitSize(request.getShortKitSize());
-            order.setLongKitQuantity(request.getLongKitQuantity());
-            order.setLongKitSize(request.getLongKitSize());
-            order.setHoodieQuantity(request.getHoodieQuantity());
-            order.setHoodieSize(request.getHoodieSize());
-            order.setShirtNumber(request.getShirtNumber());
         }
+        applyOrderItems(order, request.getShortKitQuantity(), request.getShortKitSize(),
+                request.getLongKitQuantity(), request.getLongKitSize(),
+                request.getHoodieQuantity(), request.getHoodieSize(),
+                request.getSocksQuantity(), request.getSocksSize(),
+                request.getShirtNumber(), alreadyHasClothing);
 
         return finishOrder(clothingOrderRepository.save(order));
     }
@@ -242,7 +247,8 @@ public class ClothingOrderService {
     private void validatePublicItemAvailability(
             Season season,
             Integer longKitQuantity,
-            Integer hoodieQuantity
+            Integer hoodieQuantity,
+            Integer socksQuantity
     ) {
         ClothingPricing pricing = clothingPricingRepository.findBySeasonId(season.getId())
                 .orElse(null);
@@ -252,6 +258,8 @@ public class ClothingOrderService {
         boolean hoodieEnabled = pricing == null
                 || pricing.getHoodiePublicEnabled() == null
                 || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled());
+        boolean socksEnabled = pricing != null
+                && Boolean.TRUE.equals(pricing.getSocksPublicEnabled());
 
         if (!longKitEnabled && safeQuantity(longKitQuantity) > 0) {
             throw new BusinessRuleException(
@@ -263,28 +271,46 @@ public class ClothingOrderService {
                     "Hoodie is not available for public order in this season"
             );
         }
+        if (!socksEnabled && safeQuantity(socksQuantity) > 0) {
+            throw new BusinessRuleException(
+                    "Socks are not available for public order in this season"
+            );
+        }
     }
 
-    private void validateSkipOrderHasNoItems(
+    /**
+     * "Already has gear" covers only the long kit and socks.
+     * The short kit stays mandatory. Hoodie stays an optional extra.
+     * Existing full-skip rows are left untouched until an admin saves them.
+     */
+    private void validateAlreadyHasOrder(
             Integer shortKitQuantity,
             ClothingSize shortKitSize,
             Integer longKitQuantity,
             ClothingSize longKitSize,
             Integer hoodieQuantity,
             ClothingSize hoodieSize,
+            Integer socksQuantity,
+            ClothingSize socksSize,
             Integer shirtNumber
     ) {
-        if (safeQuantity(shortKitQuantity) > 0
-                || safeQuantity(longKitQuantity) > 0
-                || safeQuantity(hoodieQuantity) > 0
-                || shortKitSize != null
+        if (safeQuantity(longKitQuantity) > 0
                 || longKitSize != null
-                || hoodieSize != null
-                || shirtNumber != null) {
+                || safeQuantity(socksQuantity) > 0
+                || socksSize != null) {
             throw new BusinessRuleException(
-                    "When alreadyHasClothing is true, no clothing items or shirt number may be provided"
+                    "Long kit and socks are not ordered when that gear is already owned"
             );
         }
+
+        int shortQty = requireNonNullQuantity(shortKitQuantity, "Short kit");
+        int hoodieQty = requireNonNullQuantity(hoodieQuantity, "Hoodie");
+        if (shortQty < 1) {
+            throw new BusinessRuleException("Short kit must be ordered");
+        }
+        validateQuantityAndSize(shortQty, shortKitSize, "Short kit");
+        validateQuantityAndSize(hoodieQty, hoodieSize, "Hoodie");
+        validateShirtNumber(shirtNumber);
     }
 
     private void validateOrderDetails(
@@ -294,21 +320,29 @@ public class ClothingOrderService {
             ClothingSize longKitSize,
             Integer hoodieQuantity,
             ClothingSize hoodieSize,
+            Integer socksQuantity,
+            ClothingSize socksSize,
             Integer shirtNumber
     ) {
         int shortQty = requireNonNullQuantity(shortKitQuantity, "Short kit");
         int longQty = requireNonNullQuantity(longKitQuantity, "Long kit");
         int hoodieQty = requireNonNullQuantity(hoodieQuantity, "Hoodie");
+        int socksQty = optionalQuantity(socksQuantity);
 
         validateQuantityAndSize(shortQty, shortKitSize, "Short kit");
         validateQuantityAndSize(longQty, longKitSize, "Long kit");
         validateQuantityAndSize(hoodieQty, hoodieSize, "Hoodie");
+        validateQuantityAndSize(socksQty, socksSize, "Socks");
 
-        if (shortQty + longQty + hoodieQty == 0) {
+        if (shortQty + longQty + hoodieQty + socksQty == 0) {
             throw new BusinessRuleException("At least one clothing item must be ordered");
         }
 
         validateShirtNumber(shirtNumber);
+    }
+
+    private int optionalQuantity(Integer quantity) {
+        return quantity == null ? 0 : quantity;
     }
 
     private int requireNonNullQuantity(Integer quantity, String itemName) {
@@ -350,27 +384,53 @@ public class ClothingOrderService {
     ) {
         ClothingOrder clothingOrder = new ClothingOrder();
         clothingOrder.setRegistration(registration);
-        clothingOrder.setAlreadyHasClothing(alreadyHasClothing);
-
-        if (alreadyHasClothing) {
-            clothingOrder.setShortKitQuantity(0);
-            clothingOrder.setLongKitQuantity(0);
-            clothingOrder.setHoodieQuantity(0);
-            clothingOrder.setShortKitSize(null);
-            clothingOrder.setLongKitSize(null);
-            clothingOrder.setHoodieSize(null);
-            clothingOrder.setShirtNumber(null);
-        } else {
-            clothingOrder.setShortKitQuantity(request.getShortKitQuantity());
-            clothingOrder.setShortKitSize(request.getShortKitSize());
-            clothingOrder.setLongKitQuantity(request.getLongKitQuantity());
-            clothingOrder.setLongKitSize(request.getLongKitSize());
-            clothingOrder.setHoodieQuantity(request.getHoodieQuantity());
-            clothingOrder.setHoodieSize(request.getHoodieSize());
-            clothingOrder.setShirtNumber(request.getShirtNumber());
-        }
+        applyOrderItems(
+                clothingOrder,
+                request.getShortKitQuantity(),
+                request.getShortKitSize(),
+                request.getLongKitQuantity(),
+                request.getLongKitSize(),
+                request.getHoodieQuantity(),
+                request.getHoodieSize(),
+                request.getSocksQuantity(),
+                request.getSocksSize(),
+                request.getShirtNumber(),
+                alreadyHasClothing
+        );
 
         return clothingOrder;
+    }
+
+    private void applyOrderItems(
+            ClothingOrder clothingOrder,
+            Integer shortKitQuantity,
+            ClothingSize shortKitSize,
+            Integer longKitQuantity,
+            ClothingSize longKitSize,
+            Integer hoodieQuantity,
+            ClothingSize hoodieSize,
+            Integer socksQuantity,
+            ClothingSize socksSize,
+            Integer shirtNumber,
+            boolean alreadyHasClothing
+    ) {
+        clothingOrder.setAlreadyHasClothing(alreadyHasClothing);
+        clothingOrder.setShortKitQuantity(shortKitQuantity);
+        clothingOrder.setShortKitSize(shortKitSize);
+        clothingOrder.setHoodieQuantity(hoodieQuantity);
+        clothingOrder.setHoodieSize(hoodieSize);
+        clothingOrder.setShirtNumber(shirtNumber);
+        if (alreadyHasClothing) {
+            clothingOrder.setLongKitQuantity(0);
+            clothingOrder.setLongKitSize(null);
+            clothingOrder.setSocksQuantity(0);
+            clothingOrder.setSocksSize(null);
+        } else {
+            clothingOrder.setLongKitQuantity(longKitQuantity);
+            clothingOrder.setLongKitSize(longKitSize);
+            clothingOrder.setSocksQuantity(optionalQuantity(socksQuantity));
+            clothingOrder.setSocksSize(socksSize);
+        }
     }
 
     private ClothingOrderResponse finishOrder(ClothingOrder order) {
@@ -382,11 +442,19 @@ public class ClothingOrderService {
     }
 
     private PaymentResponse syncClothingPayment(ClothingOrder order) {
-        if (Boolean.TRUE.equals(order.getAlreadyHasClothing())) {
+        // Older rows used this flag for a full skip with no items. Leave those charges alone.
+        if (Boolean.TRUE.equals(order.getAlreadyHasClothing()) && !hasOrderedItems(order)) {
             paymentService.cancelPendingClothingPayment(order);
             return null;
         }
         return paymentService.ensureClothingPayment(order);
+    }
+
+    private boolean hasOrderedItems(ClothingOrder order) {
+        return safeQuantity(order.getShortKitQuantity()) > 0
+                || safeQuantity(order.getLongKitQuantity()) > 0
+                || safeQuantity(order.getHoodieQuantity()) > 0
+                || safeQuantity(order.getSocksQuantity()) > 0;
     }
 
     public ClothingOrderResponse toResponse(ClothingOrder order) {
@@ -416,6 +484,8 @@ public class ClothingOrderService {
                 .longKitSize(order.getLongKitSize())
                 .hoodieQuantity(order.getHoodieQuantity())
                 .hoodieSize(order.getHoodieSize())
+                .socksQuantity(order.getSocksQuantity() == null ? 0 : order.getSocksQuantity())
+                .socksSize(order.getSocksSize())
                 .shirtNumber(order.getShirtNumber())
                 .clothingPaymentRequired(!alreadyHas)
                 .clothingPaymentId(clothingPaymentId)

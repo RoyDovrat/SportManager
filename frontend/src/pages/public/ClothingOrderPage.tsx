@@ -31,6 +31,8 @@ type FormState = {
   longKitSize: string
   hoodieQuantity: string
   hoodieSize: string
+  socksQuantity: string
+  socksSize: string
   shirtNumber: string
 }
 
@@ -43,6 +45,8 @@ const emptyForm: FormState = {
   longKitSize: '',
   hoodieQuantity: '0',
   hoodieSize: '',
+  socksQuantity: '0',
+  socksSize: '',
   shirtNumber: '',
 }
 
@@ -65,29 +69,25 @@ function buildRequest(
   const studentIdentityNumber = normalizeIsraeliId(form.studentIdentityNumber)
   const seasonId = catalog.seasonId
 
-  if (form.alreadyHasClothing) {
-    return {
-      studentIdentityNumber,
-      seasonId,
-      alreadyHasClothing: true,
-    }
-  }
-
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
   const longKitQuantity =
-    catalog.longKitPublicEnabled === false
+    form.alreadyHasClothing || catalog.longKitPublicEnabled === false
       ? 0
       : parseQuantity(form.longKitQuantity)
   const hoodieQuantity =
     catalog.hoodiePublicEnabled === false
       ? 0
       : parseQuantity(form.hoodieQuantity)
+  const socksQuantity =
+    form.alreadyHasClothing || catalog.socksPublicEnabled !== true
+      ? 0
+      : parseQuantity(form.socksQuantity)
   const shirtRaw = form.shirtNumber.trim()
 
   return {
     studentIdentityNumber,
     seasonId,
-    alreadyHasClothing: false,
+    alreadyHasClothing: form.alreadyHasClothing,
     shortKitQuantity,
     shortKitSize:
       shortKitQuantity > 0 ? (form.shortKitSize as ClothingSize) : null,
@@ -96,6 +96,8 @@ function buildRequest(
       longKitQuantity > 0 ? (form.longKitSize as ClothingSize) : null,
     hoodieQuantity,
     hoodieSize: hoodieQuantity > 0 ? (form.hoodieSize as ClothingSize) : null,
+    socksQuantity,
+    socksSize: socksQuantity > 0 ? (form.socksSize as ClothingSize) : null,
     shirtNumber: shirtRaw === '' ? null : Number(shirtRaw),
   }
 }
@@ -114,19 +116,23 @@ function validateItems(
   form: FormState,
   catalog: ClothingCatalogResponse,
 ): string | null {
-  if (form.alreadyHasClothing) {
-    return null
-  }
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
   const longKitQuantity =
-    catalog.longKitPublicEnabled === false
+    form.alreadyHasClothing || catalog.longKitPublicEnabled === false
       ? 0
       : parseQuantity(form.longKitQuantity)
   const hoodieQuantity =
     catalog.hoodiePublicEnabled === false
       ? 0
       : parseQuantity(form.hoodieQuantity)
-  const total = shortKitQuantity + longKitQuantity + hoodieQuantity
+  const socksQuantity =
+    form.alreadyHasClothing || catalog.socksPublicEnabled !== true
+      ? 0
+      : parseQuantity(form.socksQuantity)
+  if (form.alreadyHasClothing && shortKitQuantity < 1) {
+    return t('publicClothing.shortKitRequired')
+  }
+  const total = shortKitQuantity + longKitQuantity + hoodieQuantity + socksQuantity
   if (total < 1) {
     return t('wizard.clothing.itemsRequired')
   }
@@ -137,6 +143,9 @@ function validateItems(
     return t('wizard.clothing.sizeRequired')
   }
   if (hoodieQuantity > 0 && !form.hoodieSize) {
+    return t('wizard.clothing.sizeRequired')
+  }
+  if (socksQuantity > 0 && !form.socksSize) {
     return t('wizard.clothing.sizeRequired')
   }
   const shirtRaw = form.shirtNumber.trim()
@@ -264,12 +273,8 @@ export function ClothingOrderPage() {
         )
         setEligibleStudent(eligibility)
 
-        if (form.alreadyHasClothing) {
-          if (!catalog.allowAlreadyHasClothingSkip) {
-            setError(t('wizard.errors.clothingSkipDisabled'))
-            return
-          }
-          await submitOrder()
+        if (form.alreadyHasClothing && !catalog.allowAlreadyHasClothingSkip) {
+          setError(t('wizard.errors.clothingSkipDisabled'))
           return
         }
         setStep(2)
@@ -359,7 +364,7 @@ export function ClothingOrderPage() {
           </div>
           <h2>{t('wizard.successTitle')}</h2>
           <p>
-            {success.alreadyHasClothing
+            {success.alreadyHasClothing && !((success.shortKitQuantity ?? 0) > 0)
               ? t('publicClothing.successSkip')
               : t('publicClothing.successOrder')}
           </p>
@@ -377,9 +382,7 @@ export function ClothingOrderPage() {
   }
 
   const formDisabled = submitting || checkingEligibility
-  const showSubmit =
-    (currentStepId === 'identity' && form.alreadyHasClothing) ||
-    currentStepId === 'items'
+  const showSubmit = currentStepId === 'items'
 
   return (
     <WizardShell
@@ -464,6 +467,16 @@ export function ClothingOrderPage() {
                     </strong>
                   </li>
                 )}
+                {catalog.socksPublicEnabled === true && (
+                  <li>
+                    <span>{t('clothingOrders.socks')}</span>
+                    <strong>
+                      {t('publicClothing.priceAmount', {
+                        amount: catalog.socksPrice ?? '—',
+                      })}
+                    </strong>
+                  </li>
+                )}
               </ul>
             )}
           </section>
@@ -538,7 +551,7 @@ export function ClothingOrderPage() {
                   setForm({ ...form, shortKitSize: value })
                 }
               />
-              {catalog.longKitPublicEnabled !== false && (
+              {catalog.longKitPublicEnabled !== false && !form.alreadyHasClothing && (
                 <KitFields
                   title={t('clothingOrders.longKit')}
                   price={catalog.longKitPrice}
@@ -565,6 +578,21 @@ export function ClothingOrderPage() {
                   }
                   onSizeChange={(value) =>
                     setForm({ ...form, hoodieSize: value })
+                  }
+                />
+              )}
+              {catalog.socksPublicEnabled === true && !form.alreadyHasClothing && (
+                <KitFields
+                  title={t('clothingOrders.socks')}
+                  price={catalog.socksPrice}
+                  quantity={form.socksQuantity}
+                  size={form.socksSize}
+                  disabled={formDisabled}
+                  onQuantityChange={(value) =>
+                    setForm({ ...form, socksQuantity: value })
+                  }
+                  onSizeChange={(value) =>
+                    setForm({ ...form, socksSize: value })
                   }
                 />
               )}

@@ -52,6 +52,8 @@ public class ClothingCatalogService {
         boolean hoodieEnabled = pricing == null
                 || pricing.getHoodiePublicEnabled() == null
                 || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled());
+        boolean socksEnabled = pricing != null
+                && Boolean.TRUE.equals(pricing.getSocksPublicEnabled());
 
         return ClothingCatalogResponse.builder()
                 .seasonId(season.getId())
@@ -60,9 +62,11 @@ public class ClothingCatalogService {
                 .shortKitPrice(pricing != null ? pricing.getShortKitPrice() : null)
                 .longKitPrice(pricing != null ? pricing.getLongKitPrice() : null)
                 .hoodiePrice(pricing != null ? pricing.getHoodiePrice() : null)
+                .socksPrice(pricing != null ? pricing.getSocksPrice() : null)
                 .allowAlreadyHasClothingSkip(allowSkip)
                 .longKitPublicEnabled(longKitEnabled)
                 .hoodiePublicEnabled(hoodieEnabled)
+                .socksPublicEnabled(socksEnabled)
                 .build();
     }
 

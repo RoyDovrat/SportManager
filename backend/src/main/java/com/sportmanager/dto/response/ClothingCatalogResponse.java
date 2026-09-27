@@ -15,7 +15,9 @@ public class ClothingCatalogResponse {
     private BigDecimal shortKitPrice;
     private BigDecimal longKitPrice;
     private BigDecimal hoodiePrice;
+    private BigDecimal socksPrice;
     private boolean allowAlreadyHasClothingSkip;
     private boolean longKitPublicEnabled;
     private boolean hoodiePublicEnabled;
+    private boolean socksPublicEnabled;
 }

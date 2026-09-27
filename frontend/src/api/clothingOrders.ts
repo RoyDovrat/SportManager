@@ -11,6 +11,8 @@ export type ClothingOrderRequest = {
   longKitSize?: ClothingSize | null
   hoodieQuantity?: number | null
   hoodieSize?: ClothingSize | null
+  socksQuantity?: number | null
+  socksSize?: ClothingSize | null
   shirtNumber?: number | null
 }
 
@@ -22,6 +24,8 @@ export type ClothingOrderUpdateRequest = {
   longKitSize?: ClothingSize | null
   hoodieQuantity?: number | null
   hoodieSize?: ClothingSize | null
+  socksQuantity?: number | null
+  socksSize?: ClothingSize | null
   shirtNumber?: number | null
 }
 
@@ -41,6 +45,8 @@ export type ClothingOrderResponse = {
   longKitSize: ClothingSize | null
   hoodieQuantity: number | null
   hoodieSize: ClothingSize | null
+  socksQuantity: number | null
+  socksSize: ClothingSize | null
   shirtNumber: number | null
   clothingPaymentRequired: boolean
   clothingPaymentId: number | null

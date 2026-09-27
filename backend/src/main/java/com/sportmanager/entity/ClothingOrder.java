@@ -50,6 +50,16 @@ public class ClothingOrder {
     @Column(name = "hoodie_size")
     private ClothingSize hoodieSize;
 
+    /**
+     * Nullable so existing orders stay unchanged. Null is treated as zero.
+     */
+    @Column(name = "socks_quantity")
+    private Integer socksQuantity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "socks_size")
+    private ClothingSize socksSize;
+
     @Column(name = "shirt_number")
     private Integer shirtNumber;
 

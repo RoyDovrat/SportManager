@@ -24,18 +24,22 @@ type PriceForm = {
   shortKitPrice: string
   longKitPrice: string
   hoodiePrice: string
+  socksPrice: string
   allowAlreadyHasClothingSkip: boolean
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
+  socksPublicEnabled: boolean
 }
 
 const emptyForm: PriceForm = {
   shortKitPrice: '',
   longKitPrice: '',
   hoodiePrice: '',
+  socksPrice: '',
   allowAlreadyHasClothingSkip: true,
   longKitPublicEnabled: true,
   hoodiePublicEnabled: true,
+  socksPublicEnabled: false,
 }
 
 function formatPrice(amount: number): string {
@@ -48,6 +52,7 @@ function formatPrice(amount: number): string {
 function formFromPricing(pricing: ClothingPricingResponse): PriceForm {
   const longKitEnabled = pricing.longKitPublicEnabled !== false
   const hoodieEnabled = pricing.hoodiePublicEnabled !== false
+  const socksEnabled = pricing.socksPublicEnabled === true
   return {
     shortKitPrice: String(pricing.shortKitPrice),
     longKitPrice:
@@ -58,9 +63,12 @@ function formFromPricing(pricing: ClothingPricingResponse): PriceForm {
       hoodieEnabled && pricing.hoodiePrice > 0
         ? String(pricing.hoodiePrice)
         : '',
+    socksPrice:
+      socksEnabled && pricing.socksPrice > 0 ? String(pricing.socksPrice) : '',
     allowAlreadyHasClothingSkip: pricing.allowAlreadyHasClothingSkip !== false,
     longKitPublicEnabled: longKitEnabled,
     hoodiePublicEnabled: hoodieEnabled,
+    socksPublicEnabled: socksEnabled,
   }
 }
 
@@ -221,14 +229,21 @@ export function ClothingPricingPage() {
       setSaving(false)
       return
     }
+    if (form.socksPublicEnabled && !(Number(form.socksPrice) > 0)) {
+      showFormError(t('clothingPricing.socksPriceRequired'))
+      setSaving(false)
+      return
+    }
 
     const payload = {
       shortKitPrice: Number(form.shortKitPrice),
       longKitPrice: form.longKitPublicEnabled ? Number(form.longKitPrice) : 0,
       hoodiePrice: form.hoodiePublicEnabled ? Number(form.hoodiePrice) : 0,
+      socksPrice: form.socksPublicEnabled ? Number(form.socksPrice) : 0,
       allowAlreadyHasClothingSkip: form.allowAlreadyHasClothingSkip,
       longKitPublicEnabled: form.longKitPublicEnabled,
       hoodiePublicEnabled: form.hoodiePublicEnabled,
+      socksPublicEnabled: form.socksPublicEnabled,
     }
 
     try {
@@ -418,6 +433,30 @@ export function ClothingPricingPage() {
                   </span>
                 )}
               </label>
+
+              <label className="admin-form__field">
+                <span>{t('clothingPricing.socks')}</span>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  value={form.socksPrice}
+                  onChange={(event) =>
+                    setForm({ ...form, socksPrice: event.target.value })
+                  }
+                  required={form.socksPublicEnabled}
+                  disabled={
+                    loadingCurrent ||
+                    typeof selectedSeasonId !== 'number' ||
+                    !form.socksPublicEnabled
+                  }
+                />
+                {!form.socksPublicEnabled && (
+                  <span className="admin-form__hint">
+                    {t('clothingPricing.priceNotNeededWhenHidden')}
+                  </span>
+                )}
+              </label>
             </div>
 
             <fieldset className="clothing-pricing-form__visibility">
@@ -452,6 +491,20 @@ export function ClothingPricingPage() {
                   }
                 />
                 <span>{t('clothingPricing.hoodiePublicEnabled')}</span>
+              </label>
+              <label className="admin-form__checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.socksPublicEnabled}
+                  disabled={loadingCurrent || typeof selectedSeasonId !== 'number'}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      socksPublicEnabled: event.target.checked,
+                    })
+                  }
+                />
+                <span>{t('clothingPricing.socksPublicEnabled')}</span>
               </label>
               <label className="admin-form__checkbox">
                 <input
@@ -573,6 +626,7 @@ export function ClothingPricingPage() {
                 <th>{t('clothingPricing.shortKit')}</th>
                 <th>{t('clothingPricing.longKit')}</th>
                 <th>{t('clothingPricing.hoodie')}</th>
+                <th>{t('clothingPricing.socks')}</th>
                 <th>{t('clothingPricing.publicColumn')}</th>
                 <th>{t('common.actions')}</th>
               </tr>
@@ -601,6 +655,11 @@ export function ClothingPricingPage() {
                       : formatPrice(row.hoodiePrice)}
                   </td>
                   <td>
+                    {row.socksPublicEnabled === true
+                      ? formatPrice(row.socksPrice)
+                      : '—'}
+                  </td>
+                  <td>
                     <div className="clothing-visibility-pills">
                       <StatusBadge
                         tone={
@@ -619,6 +678,13 @@ export function ClothingPricingPage() {
                         {row.hoodiePublicEnabled !== false
                           ? t('clothingPricing.hoodieShown')
                           : t('clothingPricing.hoodieHidden')}
+                      </StatusBadge>
+                      <StatusBadge
+                        tone={row.socksPublicEnabled === true ? 'success' : 'neutral'}
+                      >
+                        {row.socksPublicEnabled === true
+                          ? t('clothingPricing.socksShown')
+                          : t('clothingPricing.socksHidden')}
                       </StatusBadge>
                       <StatusBadge
                         tone={

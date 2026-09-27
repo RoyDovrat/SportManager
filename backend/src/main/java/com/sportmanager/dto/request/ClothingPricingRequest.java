@@ -20,6 +20,9 @@ public class ClothingPricingRequest {
     /** Required only when hoodiePublicEnabled is true; otherwise ignored (stored as 0). */
     private BigDecimal hoodiePrice;
 
+    /** Required only when socksPublicEnabled is true; otherwise ignored (stored as 0). */
+    private BigDecimal socksPrice;
+
     @NotNull(message = "allowAlreadyHasClothingSkip is required")
     private Boolean allowAlreadyHasClothingSkip = true;
 
@@ -28,6 +31,9 @@ public class ClothingPricingRequest {
 
     @NotNull(message = "hoodiePublicEnabled is required")
     private Boolean hoodiePublicEnabled = true;
+
+    @NotNull(message = "socksPublicEnabled is required")
+    private Boolean socksPublicEnabled = false;
 
     public Long getSeasonId() {
         return seasonId;
@@ -61,6 +67,14 @@ public class ClothingPricingRequest {
         this.hoodiePrice = hoodiePrice;
     }
 
+    public BigDecimal getSocksPrice() {
+        return socksPrice;
+    }
+
+    public void setSocksPrice(BigDecimal socksPrice) {
+        this.socksPrice = socksPrice;
+    }
+
     public Boolean getAllowAlreadyHasClothingSkip() {
         return allowAlreadyHasClothingSkip;
     }
@@ -83,5 +97,13 @@ public class ClothingPricingRequest {
 
     public void setHoodiePublicEnabled(Boolean hoodiePublicEnabled) {
         this.hoodiePublicEnabled = hoodiePublicEnabled;
+    }
+
+    public Boolean getSocksPublicEnabled() {
+        return socksPublicEnabled;
+    }
+
+    public void setSocksPublicEnabled(Boolean socksPublicEnabled) {
+        this.socksPublicEnabled = socksPublicEnabled;
     }
 }

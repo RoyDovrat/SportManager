@@ -42,6 +42,13 @@ public class ClothingPricing {
     private BigDecimal hoodiePrice;
 
     /**
+     * Optional socks price. Null on rows created before socks existed; treated as zero.
+     * Nullable so existing pricing rows are not rewritten when the column is added.
+     */
+    @Column(name = "socks_price", precision = 10, scale = 2)
+    private BigDecimal socksPrice;
+
+    /**
      * When true (or null), public clothing form may offer "already has clothing" skip.
      */
     @Column(name = "allow_already_has_clothing_skip")
@@ -58,6 +65,13 @@ public class ClothingPricing {
      */
     @Column(name = "hoodie_public_enabled")
     private Boolean hoodiePublicEnabled = true;
+
+    /**
+     * When true, the public form may offer socks.
+     * Null or false keeps socks hidden, so existing seasons stay unchanged.
+     */
+    @Column(name = "socks_public_enabled")
+    private Boolean socksPublicEnabled = false;
 
     public Long getId() {
         return id;
@@ -99,6 +113,14 @@ public class ClothingPricing {
         this.hoodiePrice = hoodiePrice;
     }
 
+    public BigDecimal getSocksPrice() {
+        return socksPrice;
+    }
+
+    public void setSocksPrice(BigDecimal socksPrice) {
+        this.socksPrice = socksPrice;
+    }
+
     public Boolean getAllowAlreadyHasClothingSkip() {
         return allowAlreadyHasClothingSkip;
     }
@@ -121,5 +143,13 @@ public class ClothingPricing {
 
     public void setHoodiePublicEnabled(Boolean hoodiePublicEnabled) {
         this.hoodiePublicEnabled = hoodiePublicEnabled;
+    }
+
+    public Boolean getSocksPublicEnabled() {
+        return socksPublicEnabled;
+    }
+
+    public void setSocksPublicEnabled(Boolean socksPublicEnabled) {
+        this.socksPublicEnabled = socksPublicEnabled;
     }
 }

@@ -785,8 +785,13 @@ public class PaymentService {
                 .multiply(BigDecimal.valueOf(safeQuantity(clothingOrder.getLongKitQuantity())));
         BigDecimal hoodieTotal = clothingPricing.getHoodiePrice()
                 .multiply(BigDecimal.valueOf(safeQuantity(clothingOrder.getHoodieQuantity())));
+        BigDecimal socksPrice = clothingPricing.getSocksPrice() == null
+                ? BigDecimal.ZERO
+                : clothingPricing.getSocksPrice();
+        BigDecimal socksTotal = socksPrice
+                .multiply(BigDecimal.valueOf(safeQuantity(clothingOrder.getSocksQuantity())));
 
-        return shortKitTotal.add(longKitTotal).add(hoodieTotal);
+        return shortKitTotal.add(longKitTotal).add(hoodieTotal).add(socksTotal);
     }
 
     private int safeQuantity(Integer quantity) {

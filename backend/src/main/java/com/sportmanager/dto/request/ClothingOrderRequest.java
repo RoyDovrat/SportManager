@@ -28,5 +28,8 @@ public class ClothingOrderRequest {
     private Integer hoodieQuantity;
     private ClothingSize hoodieSize;
 
+    private Integer socksQuantity;
+    private ClothingSize socksSize;
+
     private Integer shirtNumber;
 }

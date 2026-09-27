@@ -37,6 +37,8 @@ type CreateFormState = {
   longKitSize: string
   hoodieQuantity: string
   hoodieSize: string
+  socksQuantity: string
+  socksSize: string
   shirtNumber: string
 }
 
@@ -50,6 +52,8 @@ const emptyCreateForm: CreateFormState = {
   longKitSize: '',
   hoodieQuantity: '0',
   hoodieSize: '',
+  socksQuantity: '0',
+  socksSize: '',
   shirtNumber: '',
 }
 
@@ -61,23 +65,20 @@ function parseQuantity(value: string): number {
 function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
   const studentIdentityNumber = normalizeIsraeliId(form.studentIdentityNumber)
 
-  if (form.alreadyHasClothing) {
-    return {
-      studentIdentityNumber,
-      seasonId: Number(form.seasonId),
-      alreadyHasClothing: true,
-    }
-  }
-
   const shortKitQuantity = parseQuantity(form.shortKitQuantity)
-  const longKitQuantity = parseQuantity(form.longKitQuantity)
+  const longKitQuantity = form.alreadyHasClothing
+    ? 0
+    : parseQuantity(form.longKitQuantity)
   const hoodieQuantity = parseQuantity(form.hoodieQuantity)
+  const socksQuantity = form.alreadyHasClothing
+    ? 0
+    : parseQuantity(form.socksQuantity)
   const shirtRaw = form.shirtNumber.trim()
 
   return {
     studentIdentityNumber,
     seasonId: Number(form.seasonId),
-    alreadyHasClothing: false,
+    alreadyHasClothing: form.alreadyHasClothing,
     shortKitQuantity,
     shortKitSize:
       shortKitQuantity > 0 ? (form.shortKitSize as ClothingSize) : null,
@@ -86,6 +87,8 @@ function buildCreateRequest(form: CreateFormState): ClothingOrderRequest {
       longKitQuantity > 0 ? (form.longKitSize as ClothingSize) : null,
     hoodieQuantity,
     hoodieSize: hoodieQuantity > 0 ? (form.hoodieSize as ClothingSize) : null,
+    socksQuantity,
+    socksSize: socksQuantity > 0 ? (form.socksSize as ClothingSize) : null,
     shirtNumber: shirtRaw === '' ? null : Number(shirtRaw),
   }
 }
@@ -218,32 +221,40 @@ export function ClothingOrdersPage() {
       setError(t('wizard.errors.identityInvalid'))
       return
     }
-    if (!createForm.alreadyHasClothing) {
-      const shortKitQuantity = parseQuantity(createForm.shortKitQuantity)
-      const longKitQuantity = parseQuantity(createForm.longKitQuantity)
-      const hoodieQuantity = parseQuantity(createForm.hoodieQuantity)
-      if (shortKitQuantity + longKitQuantity + hoodieQuantity < 1) {
-        setError(t('wizard.clothing.itemsRequired'))
-        return
-      }
-      if (
-        (shortKitQuantity > 0 && !createForm.shortKitSize) ||
-        (longKitQuantity > 0 && !createForm.longKitSize) ||
-        (hoodieQuantity > 0 && !createForm.hoodieSize)
-      ) {
-        setError(t('wizard.clothing.sizeRequired'))
-        return
-      }
-      const shirtRaw = createForm.shirtNumber.trim()
-      if (shirtRaw === '') {
-        setError(t('publicClothing.printedNumberRequired'))
-        return
-      }
-      const shirtNumber = Number(shirtRaw)
-      if (!Number.isInteger(shirtNumber) || shirtNumber < 0 || shirtNumber > 99) {
-        setError(t('publicClothing.printedNumberInvalid'))
-        return
-      }
+    const shortKitQuantity = parseQuantity(createForm.shortKitQuantity)
+    const longKitQuantity = createForm.alreadyHasClothing
+      ? 0
+      : parseQuantity(createForm.longKitQuantity)
+    const hoodieQuantity = parseQuantity(createForm.hoodieQuantity)
+    const socksQuantity = createForm.alreadyHasClothing
+      ? 0
+      : parseQuantity(createForm.socksQuantity)
+    if (createForm.alreadyHasClothing && shortKitQuantity < 1) {
+      setError(t('publicClothing.shortKitRequired'))
+      return
+    }
+    if (shortKitQuantity + longKitQuantity + hoodieQuantity + socksQuantity < 1) {
+      setError(t('wizard.clothing.itemsRequired'))
+      return
+    }
+    if (
+      (shortKitQuantity > 0 && !createForm.shortKitSize) ||
+      (longKitQuantity > 0 && !createForm.longKitSize) ||
+      (hoodieQuantity > 0 && !createForm.hoodieSize) ||
+      (socksQuantity > 0 && !createForm.socksSize)
+    ) {
+      setError(t('wizard.clothing.sizeRequired'))
+      return
+    }
+    const shirtRaw = createForm.shirtNumber.trim()
+    if (shirtRaw === '') {
+      setError(t('publicClothing.printedNumberRequired'))
+      return
+    }
+    const shirtNumber = Number(shirtRaw)
+    if (!Number.isInteger(shirtNumber) || shirtNumber < 0 || shirtNumber > 99) {
+      setError(t('publicClothing.printedNumberInvalid'))
+      return
     }
 
     setSaving(true)
@@ -251,7 +262,7 @@ export function ClothingOrdersPage() {
     try {
       const created = await createClothingOrder(buildCreateRequest(createForm))
       setMessage(
-        created.alreadyHasClothing
+        created.alreadyHasClothing && !((created.shortKitQuantity ?? 0) > 0)
           ? t('clothingOrders.createdSkip')
           : t('clothingOrders.createdOrder'),
       )
@@ -349,6 +360,10 @@ export function ClothingOrdersPage() {
               setCreateForm({
                 ...createForm,
                 alreadyHasClothing: event.target.checked,
+                longKitQuantity: event.target.checked ? '0' : createForm.longKitQuantity,
+                longKitSize: event.target.checked ? '' : createForm.longKitSize,
+                socksQuantity: event.target.checked ? '0' : createForm.socksQuantity,
+                socksSize: event.target.checked ? '' : createForm.socksSize,
               })
             }
             disabled={saving}
@@ -356,65 +371,77 @@ export function ClothingOrdersPage() {
           <span>{t('clothingOrders.alreadyHas')}</span>
         </label>
 
-        {!createForm.alreadyHasClothing && (
-          <>
-            <div className="clothing-order-form__kits">
-              <KitFields
-                title={t('clothingOrders.shortKit')}
-                quantity={createForm.shortKitQuantity}
-                size={createForm.shortKitSize}
-                disabled={saving}
-                onQuantityChange={(value) =>
-                  setCreateForm({ ...createForm, shortKitQuantity: value })
-                }
-                onSizeChange={(value) =>
-                  setCreateForm({ ...createForm, shortKitSize: value })
-                }
-              />
-              <KitFields
-                title={t('clothingOrders.longKit')}
-                quantity={createForm.longKitQuantity}
-                size={createForm.longKitSize}
-                disabled={saving}
-                onQuantityChange={(value) =>
-                  setCreateForm({ ...createForm, longKitQuantity: value })
-                }
-                onSizeChange={(value) =>
-                  setCreateForm({ ...createForm, longKitSize: value })
-                }
-              />
-              <KitFields
-                title={t('clothingOrders.hoodie')}
-                quantity={createForm.hoodieQuantity}
-                size={createForm.hoodieSize}
-                disabled={saving}
-                onQuantityChange={(value) =>
-                  setCreateForm({ ...createForm, hoodieQuantity: value })
-                }
-                onSizeChange={(value) =>
-                  setCreateForm({ ...createForm, hoodieSize: value })
-                }
-              />
-            </div>
-            <label className="admin-form__field">
-              <span>{t('publicClothing.printedNumber')}</span>
-              <input
-                type="number"
-                min={0}
-                max={99}
-                required
-                value={createForm.shirtNumber}
-                onChange={(event) =>
-                  setCreateForm({
-                    ...createForm,
-                    shirtNumber: event.target.value,
-                  })
-                }
-                disabled={saving}
-              />
-            </label>
-          </>
-        )}
+        <div className="clothing-order-form__kits">
+          <KitFields
+            title={t('clothingOrders.shortKit')}
+            quantity={createForm.shortKitQuantity}
+            size={createForm.shortKitSize}
+            disabled={saving}
+            onQuantityChange={(value) =>
+              setCreateForm({ ...createForm, shortKitQuantity: value })
+            }
+            onSizeChange={(value) =>
+              setCreateForm({ ...createForm, shortKitSize: value })
+            }
+          />
+          {!createForm.alreadyHasClothing && (
+            <KitFields
+              title={t('clothingOrders.longKit')}
+              quantity={createForm.longKitQuantity}
+              size={createForm.longKitSize}
+              disabled={saving}
+              onQuantityChange={(value) =>
+                setCreateForm({ ...createForm, longKitQuantity: value })
+              }
+              onSizeChange={(value) =>
+                setCreateForm({ ...createForm, longKitSize: value })
+              }
+            />
+          )}
+          <KitFields
+            title={t('clothingOrders.hoodie')}
+            quantity={createForm.hoodieQuantity}
+            size={createForm.hoodieSize}
+            disabled={saving}
+            onQuantityChange={(value) =>
+              setCreateForm({ ...createForm, hoodieQuantity: value })
+            }
+            onSizeChange={(value) =>
+              setCreateForm({ ...createForm, hoodieSize: value })
+            }
+          />
+          {!createForm.alreadyHasClothing && (
+            <KitFields
+              title={t('clothingOrders.socks')}
+              quantity={createForm.socksQuantity}
+              size={createForm.socksSize}
+              disabled={saving}
+              onQuantityChange={(value) =>
+                setCreateForm({ ...createForm, socksQuantity: value })
+              }
+              onSizeChange={(value) =>
+                setCreateForm({ ...createForm, socksSize: value })
+              }
+            />
+          )}
+        </div>
+        <label className="admin-form__field">
+          <span>{t('publicClothing.printedNumber')}</span>
+          <input
+            type="number"
+            min={0}
+            max={99}
+            required
+            value={createForm.shirtNumber}
+            onChange={(event) =>
+              setCreateForm({
+                ...createForm,
+                shirtNumber: event.target.value,
+              })
+            }
+            disabled={saving}
+          />
+        </label>
 
         <div className="admin-form__actions">
           <button type="submit" disabled={saving || !filtersReady}>

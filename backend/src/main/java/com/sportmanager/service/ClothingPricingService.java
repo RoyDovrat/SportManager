@@ -36,6 +36,7 @@ public class ClothingPricingService {
         Season season = getSeason(request.getSeasonId());
         boolean longKitEnabled = Boolean.TRUE.equals(request.getLongKitPublicEnabled());
         boolean hoodieEnabled = Boolean.TRUE.equals(request.getHoodiePublicEnabled());
+        boolean socksEnabled = Boolean.TRUE.equals(request.getSocksPublicEnabled());
         BigDecimal longKitPrice = resolveOptionalItemPrice(
                 request.getLongKitPrice(),
                 longKitEnabled,
@@ -46,6 +47,11 @@ public class ClothingPricingService {
                 hoodieEnabled,
                 "Hoodie price"
         );
+        BigDecimal socksPrice = resolveOptionalItemPrice(
+                request.getSocksPrice(),
+                socksEnabled,
+                "Socks price"
+        );
         validatePrice(request.getShortKitPrice(), "Short kit price");
         validatePricingDoesNotExist(season);
 
@@ -54,11 +60,13 @@ public class ClothingPricingService {
         clothingPricing.setShortKitPrice(request.getShortKitPrice());
         clothingPricing.setLongKitPrice(longKitPrice);
         clothingPricing.setHoodiePrice(hoodiePrice);
+        clothingPricing.setSocksPrice(socksPrice);
         clothingPricing.setAllowAlreadyHasClothingSkip(
                 Boolean.TRUE.equals(request.getAllowAlreadyHasClothingSkip())
         );
         clothingPricing.setLongKitPublicEnabled(longKitEnabled);
         clothingPricing.setHoodiePublicEnabled(hoodieEnabled);
+        clothingPricing.setSocksPublicEnabled(socksEnabled);
 
         return toResponse(clothingPricingRepository.save(clothingPricing));
     }
@@ -98,6 +106,7 @@ public class ClothingPricingService {
         ClothingPricing pricing = getPricingEntity(pricingId);
         boolean longKitEnabled = Boolean.TRUE.equals(request.getLongKitPublicEnabled());
         boolean hoodieEnabled = Boolean.TRUE.equals(request.getHoodiePublicEnabled());
+        boolean socksEnabled = Boolean.TRUE.equals(request.getSocksPublicEnabled());
         BigDecimal longKitPrice = resolveOptionalItemPrice(
                 request.getLongKitPrice(),
                 longKitEnabled,
@@ -108,16 +117,23 @@ public class ClothingPricingService {
                 hoodieEnabled,
                 "Hoodie price"
         );
+        BigDecimal socksPrice = resolveOptionalItemPrice(
+                request.getSocksPrice(),
+                socksEnabled,
+                "Socks price"
+        );
         validatePrice(request.getShortKitPrice(), "Short kit price");
 
         pricing.setShortKitPrice(request.getShortKitPrice());
         pricing.setLongKitPrice(longKitPrice);
         pricing.setHoodiePrice(hoodiePrice);
+        pricing.setSocksPrice(socksPrice);
         pricing.setAllowAlreadyHasClothingSkip(
                 Boolean.TRUE.equals(request.getAllowAlreadyHasClothingSkip())
         );
         pricing.setLongKitPublicEnabled(longKitEnabled);
         pricing.setHoodiePublicEnabled(hoodieEnabled);
+        pricing.setSocksPublicEnabled(socksEnabled);
 
         return toResponse(clothingPricingRepository.save(pricing));
     }
@@ -178,6 +194,7 @@ public class ClothingPricingService {
         response.setShortKitPrice(pricing.getShortKitPrice());
         response.setLongKitPrice(pricing.getLongKitPrice());
         response.setHoodiePrice(pricing.getHoodiePrice());
+        response.setSocksPrice(pricing.getSocksPrice() == null ? BigDecimal.ZERO : pricing.getSocksPrice());
         response.setAllowAlreadyHasClothingSkip(
                 pricing.getAllowAlreadyHasClothingSkip() == null
                         || Boolean.TRUE.equals(pricing.getAllowAlreadyHasClothingSkip())
@@ -190,6 +207,7 @@ public class ClothingPricingService {
                 pricing.getHoodiePublicEnabled() == null
                         || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled())
         );
+        response.setSocksPublicEnabled(Boolean.TRUE.equals(pricing.getSocksPublicEnabled()));
         return response;
     }
 }
