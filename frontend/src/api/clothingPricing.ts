@@ -12,6 +12,7 @@ export type ClothingPricingResponse = {
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
   socksPublicEnabled: boolean
+  publicOrdersEnabled: boolean
 }
 
 export type ClothingPricingRequest = {
@@ -24,6 +25,7 @@ export type ClothingPricingRequest = {
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
   socksPublicEnabled: boolean
+  publicOrdersEnabled: boolean
 }
 
 export type ClothingPricingUpdateRequest = {
@@ -35,6 +37,7 @@ export type ClothingPricingUpdateRequest = {
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
   socksPublicEnabled: boolean
+  publicOrdersEnabled: boolean
 }
 
 export function listClothingPricing(): Promise<ClothingPricingResponse[]> {

@@ -68,6 +68,7 @@ export type ClothingCatalogResponse = {
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
   socksPublicEnabled: boolean
+  publicOrdersEnabled: boolean
 }
 
 export type ClothingEligibilityResponse = {

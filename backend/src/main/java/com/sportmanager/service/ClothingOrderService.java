@@ -252,6 +252,11 @@ public class ClothingOrderService {
     ) {
         ClothingPricing pricing = clothingPricingRepository.findBySeasonId(season.getId())
                 .orElse(null);
+        if (pricing != null && Boolean.FALSE.equals(pricing.getPublicOrdersEnabled())) {
+            throw new BusinessRuleException(
+                    "Clothing orders are closed for this season"
+            );
+        }
         boolean longKitEnabled = pricing == null
                 || pricing.getLongKitPublicEnabled() == null
                 || Boolean.TRUE.equals(pricing.getLongKitPublicEnabled());

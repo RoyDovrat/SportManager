@@ -29,6 +29,7 @@ type PriceForm = {
   longKitPublicEnabled: boolean
   hoodiePublicEnabled: boolean
   socksPublicEnabled: boolean
+  publicOrdersEnabled: boolean
 }
 
 const emptyForm: PriceForm = {
@@ -40,6 +41,7 @@ const emptyForm: PriceForm = {
   longKitPublicEnabled: true,
   hoodiePublicEnabled: true,
   socksPublicEnabled: false,
+  publicOrdersEnabled: true,
 }
 
 function formatPrice(amount: number): string {
@@ -69,6 +71,7 @@ function formFromPricing(pricing: ClothingPricingResponse): PriceForm {
     longKitPublicEnabled: longKitEnabled,
     hoodiePublicEnabled: hoodieEnabled,
     socksPublicEnabled: socksEnabled,
+    publicOrdersEnabled: pricing.publicOrdersEnabled !== false,
   }
 }
 
@@ -89,6 +92,7 @@ export function ClothingPricingPage() {
   const [loadingSeasons, setLoadingSeasons] = useState(true)
   const [loadingCurrent, setLoadingCurrent] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [ordersTogglingId, setOrdersTogglingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -171,6 +175,43 @@ export function ClothingPricingPage() {
     setError(null)
   }
 
+  async function togglePublicOrders(row: ClothingPricingResponse) {
+    const publicOrdersEnabled = row.publicOrdersEnabled === false
+    setOrdersTogglingId(row.id)
+    setError(null)
+    setMessage(null)
+    try {
+      await updateClothingPricing(row.id, {
+        shortKitPrice: row.shortKitPrice,
+        longKitPrice: row.longKitPrice,
+        hoodiePrice: row.hoodiePrice,
+        socksPrice: row.socksPrice,
+        allowAlreadyHasClothingSkip: row.allowAlreadyHasClothingSkip !== false,
+        longKitPublicEnabled: row.longKitPublicEnabled !== false,
+        hoodiePublicEnabled: row.hoodiePublicEnabled !== false,
+        socksPublicEnabled: row.socksPublicEnabled === true,
+        publicOrdersEnabled,
+      })
+      const pricingData = await listClothingPricing()
+      setAllPricing(pricingData)
+      if (current?.id === row.id) {
+        setForm((formState) => ({ ...formState, publicOrdersEnabled }))
+        setCurrent((pricing) =>
+          pricing ? { ...pricing, publicOrdersEnabled } : pricing,
+        )
+      }
+      setMessage(
+        publicOrdersEnabled
+          ? t('clothingPricing.ordersOpened')
+          : t('clothingPricing.ordersClosedNotice'),
+      )
+    } catch (err) {
+      setError(formatApiError(err))
+    } finally {
+      setOrdersTogglingId(null)
+    }
+  }
+
   function resetFormFields() {
     if (current) {
       setForm(formFromPricing(current))
@@ -244,6 +285,7 @@ export function ClothingPricingPage() {
       longKitPublicEnabled: form.longKitPublicEnabled,
       hoodiePublicEnabled: form.hoodiePublicEnabled,
       socksPublicEnabled: form.socksPublicEnabled,
+      publicOrdersEnabled: form.publicOrdersEnabled,
     }
 
     try {
@@ -601,7 +643,7 @@ export function ClothingPricingPage() {
         </FilterClearButton>
       </div>
 
-      <div className="admin-table-wrap">
+      <div className="admin-table-wrap clothing-pricing-table-wrap">
         <div className="seasons-table-head">
           <h2>{t('clothingPricing.all')}</h2>
           {allPricing.length > 0 && (
@@ -618,17 +660,17 @@ export function ClothingPricingPage() {
         ) : visibleRows.length === 0 ? (
           <p className="dashboard-empty">{t('clothingPricing.emptyFiltered')}</p>
         ) : (
-          <table className="admin-table">
+          <table className="admin-table clothing-pricing-table">
             <thead>
               <tr>
                 <th className="admin-table__num">{t('common.rowNumber')}</th>
-                <th>{t('clothingPricing.season')}</th>
-                <th>{t('clothingPricing.shortKit')}</th>
-                <th>{t('clothingPricing.longKit')}</th>
-                <th>{t('clothingPricing.hoodie')}</th>
-                <th>{t('clothingPricing.socks')}</th>
-                <th>{t('clothingPricing.publicColumn')}</th>
-                <th>{t('common.actions')}</th>
+                <th className="clothing-pricing-table__season">{t('clothingPricing.season')}</th>
+                <th className="clothing-pricing-table__price">{t('clothingPricing.shortKit')}</th>
+                <th className="clothing-pricing-table__price">{t('clothingPricing.longKit')}</th>
+                <th className="clothing-pricing-table__price">{t('clothingPricing.hoodie')}</th>
+                <th className="clothing-pricing-table__price">{t('clothingPricing.socks')}</th>
+                <th className="clothing-pricing-table__public">{t('clothingPricing.publicColumn')}</th>
+                <th className="clothing-pricing-table__actions">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -642,24 +684,24 @@ export function ClothingPricingPage() {
                   }
                 >
                   <td className="admin-table__num">{index + 1}</td>
-                  <td>{row.seasonName}</td>
-                  <td>{formatPrice(row.shortKitPrice)}</td>
-                  <td>
+                  <td className="clothing-pricing-table__season">{row.seasonName}</td>
+                  <td className="clothing-pricing-table__price">{formatPrice(row.shortKitPrice)}</td>
+                  <td className="clothing-pricing-table__price">
                     {row.longKitPublicEnabled === false
                       ? '—'
                       : formatPrice(row.longKitPrice)}
                   </td>
-                  <td>
+                  <td className="clothing-pricing-table__price">
                     {row.hoodiePublicEnabled === false
                       ? '—'
                       : formatPrice(row.hoodiePrice)}
                   </td>
-                  <td>
+                  <td className="clothing-pricing-table__price">
                     {row.socksPublicEnabled === true
                       ? formatPrice(row.socksPrice)
                       : '—'}
                   </td>
-                  <td>
+                  <td className="clothing-pricing-table__public">
                     <div className="clothing-visibility-pills">
                       <StatusBadge
                         tone={
@@ -699,13 +741,27 @@ export function ClothingPricingPage() {
                       </StatusBadge>
                     </div>
                   </td>
-                  <td className="admin-table__actions">
+                  <td className="admin-table__actions clothing-pricing-table__actions">
                     <button
                       type="button"
                       className="reg-action reg-action--edit"
                       onClick={() => editPricingRow(row)}
                     >
                       {t('common.edit')}
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        row.publicOrdersEnabled === false
+                          ? 'reg-action reg-action--activate'
+                          : 'reg-action reg-action--close-orders'
+                      }
+                      onClick={() => void togglePublicOrders(row)}
+                      disabled={ordersTogglingId === row.id}
+                    >
+                      {row.publicOrdersEnabled === false
+                        ? t('clothingPricing.openOrders')
+                        : t('clothingPricing.closeOrders')}
                     </button>
                   </td>
                 </tr>

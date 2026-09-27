@@ -54,6 +54,8 @@ public class ClothingCatalogService {
                 || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled());
         boolean socksEnabled = pricing != null
                 && Boolean.TRUE.equals(pricing.getSocksPublicEnabled());
+        boolean publicOrdersEnabled = pricing == null
+                || !Boolean.FALSE.equals(pricing.getPublicOrdersEnabled());
 
         return ClothingCatalogResponse.builder()
                 .seasonId(season.getId())
@@ -67,6 +69,7 @@ public class ClothingCatalogService {
                 .longKitPublicEnabled(longKitEnabled)
                 .hoodiePublicEnabled(hoodieEnabled)
                 .socksPublicEnabled(socksEnabled)
+                .publicOrdersEnabled(publicOrdersEnabled)
                 .build();
     }
 

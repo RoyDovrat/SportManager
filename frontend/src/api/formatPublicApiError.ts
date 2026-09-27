@@ -72,6 +72,7 @@ function translateBusinessMessage(message: string | undefined): string | null {
     'Socks are not available for public order in this season':
       t('publicClothing.socksUnavailable'),
     'Short kit must be ordered': t('publicClothing.shortKitRequired'),
+    'Clothing orders are closed for this season': t('publicClothing.ordersClosed'),
   }
 
   if (exact[message]) {

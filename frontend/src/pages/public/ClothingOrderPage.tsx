@@ -345,6 +345,22 @@ export function ClothingOrderPage() {
     )
   }
 
+  if (catalog.publicOrdersEnabled === false) {
+    return (
+      <WizardShell
+        title={t('publicClothing.title')}
+        subtitle={`${t('publicClothing.season')}: ${catalog.seasonName}`}
+        steps={steps}
+        currentIndex={0}
+        showStepper={false}
+        sideBrand={sideBrand}
+        footer={<Link to="/" className="btn">{t('common.backHome')}</Link>}
+      >
+        <p>{t('publicClothing.ordersClosed')}</p>
+      </WizardShell>
+    )
+  }
+
   if (success && currentStepId === 'done') {
     return (
       <WizardShell

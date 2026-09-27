@@ -151,6 +151,7 @@ export const he = {
     printedNumberRequired: 'חובה לבחור את המספר שיופיע על הביגוד (0–99).',
     printedNumberInvalid: 'המספר על הביגוד חייב להיות בין 0 ל־99.',
     socksUnavailable: 'גרביים אינן זמינות להזמנה בעונה זו.',
+    ordersClosed: 'הזמנת הביגוד לעונה זו נסגרה. לא ניתן לבצע הזמנה כרגע.',
     shortKitRequired: 'חובה להזמין חליפה קצרה.',
   },
 
@@ -892,6 +893,10 @@ export const he = {
     longKitPublicEnabled: 'להציג חליפה ארוכה בטופס ההזמנה להורים',
     hoodiePublicEnabled: 'להציג קפוצ׳ון בטופס ההזמנה להורים',
     socksPublicEnabled: 'להציג גרביים בטופס ההזמנה להורים',
+    closeOrders: 'סגירת הזמנות ביגוד',
+    openOrders: 'פתיחת הזמנות ביגוד',
+    ordersClosedNotice: 'הזמנות הביגוד להורים נסגרו לעונה זו.',
+    ordersOpened: 'הזמנות הביגוד להורים נפתחו לעונה זו.',
     publicVisibilityTitle: 'הצגה באתר הציבורי',
     shortKitAlwaysPublic: 'חליפה קצרה מוצגת תמיד להורים.',
     priceNotNeededWhenHidden: 'אין צורך במחיר כשהפריט מוסתר מהטופס הציבורי.',

@@ -15,6 +15,7 @@ public class ClothingPricingResponse {
     private Boolean longKitPublicEnabled;
     private Boolean hoodiePublicEnabled;
     private Boolean socksPublicEnabled;
+    private Boolean publicOrdersEnabled;
 
     public Long getId() {
         return id;
@@ -102,5 +103,13 @@ public class ClothingPricingResponse {
 
     public void setSocksPublicEnabled(Boolean socksPublicEnabled) {
         this.socksPublicEnabled = socksPublicEnabled;
+    }
+
+    public Boolean getPublicOrdersEnabled() {
+        return publicOrdersEnabled;
+    }
+
+    public void setPublicOrdersEnabled(Boolean publicOrdersEnabled) {
+        this.publicOrdersEnabled = publicOrdersEnabled;
     }
 }

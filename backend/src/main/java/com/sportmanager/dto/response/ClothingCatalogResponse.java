@@ -20,4 +20,5 @@ public class ClothingCatalogResponse {
     private boolean longKitPublicEnabled;
     private boolean hoodiePublicEnabled;
     private boolean socksPublicEnabled;
+    private boolean publicOrdersEnabled;
 }

@@ -35,6 +35,9 @@ public class ClothingPricingRequest {
     @NotNull(message = "socksPublicEnabled is required")
     private Boolean socksPublicEnabled = false;
 
+    @NotNull(message = "publicOrdersEnabled is required")
+    private Boolean publicOrdersEnabled = true;
+
     public Long getSeasonId() {
         return seasonId;
     }
@@ -105,5 +108,13 @@ public class ClothingPricingRequest {
 
     public void setSocksPublicEnabled(Boolean socksPublicEnabled) {
         this.socksPublicEnabled = socksPublicEnabled;
+    }
+
+    public Boolean getPublicOrdersEnabled() {
+        return publicOrdersEnabled;
+    }
+
+    public void setPublicOrdersEnabled(Boolean publicOrdersEnabled) {
+        this.publicOrdersEnabled = publicOrdersEnabled;
     }
 }

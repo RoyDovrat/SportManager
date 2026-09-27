@@ -4449,10 +4449,80 @@ body:has(.wizard-page) {
   max-width: 22rem;
 }
 
-.clothing-visibility-pills {
+.clothing-pricing-table-wrap {
+  overflow: visible;
+}
+
+.clothing-pricing-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.clothing-pricing-table th,
+.clothing-pricing-table td {
+  vertical-align: middle;
+}
+
+.clothing-pricing-table th {
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.clothing-pricing-table .admin-table__num {
+  width: 5%;
+}
+
+.clothing-pricing-table__season {
+  width: 16%;
+}
+
+.clothing-pricing-table__price {
+  width: 10%;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.clothing-pricing-table td.clothing-pricing-table__price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.clothing-pricing-table__public {
+  width: 24%;
+}
+
+.clothing-pricing-table .clothing-visibility-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.clothing-pricing-table .status-badge {
+  padding: 0.12rem 0.45rem;
+  font-size: 0.75rem;
+}
+
+.clothing-pricing-table__actions {
+  width: 15%;
+}
+
+.clothing-pricing-table .admin-table__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+}
+
+.clothing-pricing-table .reg-action--close-orders {
+  background: linear-gradient(135deg, #b13224, #d04a3a);
+  border-color: transparent;
+  color: #fff;
+}
+
+.clothing-pricing-table .reg-action--close-orders:hover:not(:disabled) {
+  filter: brightness(1.05);
 }
 
 @media (max-width: 820px) {

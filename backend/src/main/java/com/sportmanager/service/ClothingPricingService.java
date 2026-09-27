@@ -67,6 +67,9 @@ public class ClothingPricingService {
         clothingPricing.setLongKitPublicEnabled(longKitEnabled);
         clothingPricing.setHoodiePublicEnabled(hoodieEnabled);
         clothingPricing.setSocksPublicEnabled(socksEnabled);
+        clothingPricing.setPublicOrdersEnabled(
+                !Boolean.FALSE.equals(request.getPublicOrdersEnabled())
+        );
 
         return toResponse(clothingPricingRepository.save(clothingPricing));
     }
@@ -134,6 +137,9 @@ public class ClothingPricingService {
         pricing.setLongKitPublicEnabled(longKitEnabled);
         pricing.setHoodiePublicEnabled(hoodieEnabled);
         pricing.setSocksPublicEnabled(socksEnabled);
+        pricing.setPublicOrdersEnabled(
+                !Boolean.FALSE.equals(request.getPublicOrdersEnabled())
+        );
 
         return toResponse(clothingPricingRepository.save(pricing));
     }
@@ -208,6 +214,7 @@ public class ClothingPricingService {
                         || Boolean.TRUE.equals(pricing.getHoodiePublicEnabled())
         );
         response.setSocksPublicEnabled(Boolean.TRUE.equals(pricing.getSocksPublicEnabled()));
+        response.setPublicOrdersEnabled(!Boolean.FALSE.equals(pricing.getPublicOrdersEnabled()));
         return response;
     }
 }

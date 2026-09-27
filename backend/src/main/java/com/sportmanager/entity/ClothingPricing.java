@@ -73,6 +73,13 @@ public class ClothingPricing {
     @Column(name = "socks_public_enabled")
     private Boolean socksPublicEnabled = false;
 
+    /**
+     * When false, parents cannot place clothing orders.
+     * Null or true keeps the public page open so existing seasons stay unchanged.
+     */
+    @Column(name = "public_orders_enabled")
+    private Boolean publicOrdersEnabled = true;
+
     public Long getId() {
         return id;
     }
@@ -151,5 +158,13 @@ public class ClothingPricing {
 
     public void setSocksPublicEnabled(Boolean socksPublicEnabled) {
         this.socksPublicEnabled = socksPublicEnabled;
+    }
+
+    public Boolean getPublicOrdersEnabled() {
+        return publicOrdersEnabled;
+    }
+
+    public void setPublicOrdersEnabled(Boolean publicOrdersEnabled) {
+        this.publicOrdersEnabled = publicOrdersEnabled;
     }
 }
