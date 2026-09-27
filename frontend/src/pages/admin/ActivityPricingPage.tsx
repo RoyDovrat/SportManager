@@ -409,23 +409,24 @@ export function ActivityPricingPage() {
                 </p>
               </label>
 
-              <label className="admin-form__field">
-                <span>{t('activityPricing.weeklySessions')}</span>
-                <select
-                  value={form.weeklySessions}
-                  onChange={(event) =>
-                    setForm({ ...form, weeklySessions: event.target.value })
-                  }
-                  required={isFootball}
-                  disabled={!isFootball}
-                >
-                  {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {isFootball && (
+                <label className="admin-form__field">
+                  <span>{t('activityPricing.weeklySessions')}</span>
+                  <select
+                    value={form.weeklySessions}
+                    onChange={(event) =>
+                      setForm({ ...form, weeklySessions: event.target.value })
+                    }
+                    required
+                  >
+                    {FOOTBALL_WEEKLY_OPTIONS.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               <label className="admin-form__field">
                 <span>
@@ -445,26 +446,28 @@ export function ActivityPricingPage() {
                 />
               </label>
 
-              <label className="admin-form__field">
-                <span>{t('activityPricing.lessonType')}</span>
-                <select
-                  value={form.swimmingLessonType}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      swimmingLessonType: event.target.value as SwimmingLessonType,
-                      weeklySessions: '1',
-                    })
-                  }
-                  disabled={isFootball || editingId !== null}
-                >
-                  {SWIMMING_LESSON_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {swimmingLessonTypeLabel(type)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {!isFootball && (
+                <label className="admin-form__field">
+                  <span>{t('activityPricing.lessonType')}</span>
+                  <select
+                    value={form.swimmingLessonType}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        swimmingLessonType: event.target.value as SwimmingLessonType,
+                        weeklySessions: '1',
+                      })
+                    }
+                    disabled={editingId !== null}
+                  >
+                    {SWIMMING_LESSON_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {swimmingLessonTypeLabel(type)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
 
             <div className="seasons-form__footer">
