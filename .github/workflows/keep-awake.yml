@@ -1,0 +1,41 @@
+# Pings the public health check so the Render free API does not sleep after 15 idle minutes.
+# Health does not query the database. Neon still pauses on its own after 5 quiet minutes.
+#
+# Repo variable: API_BASE_URL (same value as the monthly payments workflow, no trailing slash)
+name: Keep API awake
+
+on:
+  schedule:
+    # Every 10 minutes. GitHub may start a few minutes late; 10 still lands inside the 15-minute window.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping API health
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          set -eu
+          if [ -z "${API_BASE_URL}" ]; then
+            echo "Set repository variable API_BASE_URL."
+            exit 1
+          fi
+          url="${API_BASE_URL%/}/api/health"
+          attempt=1
+          while [ "${attempt}" -le 3 ]; do
+            echo "Attempt ${attempt} of 3: ${url}"
+            if curl -fsS --max-time 90 "${url}"; then
+              echo
+              exit 0
+            fi
+            attempt=$((attempt + 1))
+            sleep 15
+          done
+          echo "Health check failed after 3 attempts."
+          exit 1
