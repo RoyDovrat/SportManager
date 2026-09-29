@@ -6,8 +6,8 @@ name: Keep API awake
 
 on:
   schedule:
-    # Every 10 minutes. GitHub may start a few minutes late; 10 still lands inside the 15-minute window.
-    - cron: "*/10 * * * *"
+    # Every 5 minutes. GitHub often starts late; 5 minutes still fits inside Render's 15-minute sleep.
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 permissions: {}
