@@ -1,4 +1,5 @@
-# Pings the public health check so the Render free API does not sleep after 15 idle minutes.
+# Keeps the Render free API from sleeping after 15 idle minutes.
+# GitHub drops most short schedules, so each run pings for hours and the next run overlaps it.
 # Health does not query the database. Neon still pauses on its own after 5 quiet minutes.
 #
 # Repo variable: API_BASE_URL (same value as the monthly payments workflow, no trailing slash)
@@ -6,8 +7,7 @@ name: Keep API awake
 
 on:
   schedule:
-    # Every 5 minutes. GitHub often starts late; 5 minutes still fits inside Render's 15-minute sleep.
-    - cron: "*/5 * * * *"
+    - cron: "10 */3 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -15,9 +15,9 @@ permissions: {}
 jobs:
   ping-health:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 340
     steps:
-      - name: Ping API health
+      - name: Ping API health for several hours
         env:
           API_BASE_URL: ${{ vars.API_BASE_URL }}
         run: |
@@ -27,15 +27,28 @@ jobs:
             exit 1
           fi
           url="${API_BASE_URL%/}/api/health"
-          attempt=1
-          while [ "${attempt}" -le 3 ]; do
-            echo "Attempt ${attempt} of 3: ${url}"
+          # 5 hours 20 minutes. A new run is scheduled every 3 hours, so they overlap.
+          deadline=$((SECONDS + 5 * 60 * 60 + 20 * 60))
+          ok=0
+          while [ "${SECONDS}" -lt "${deadline}" ]; do
+            echo "Ping ${url}"
             if curl -fsS --max-time 90 "${url}"; then
               echo
-              exit 0
+              ok=1
+            else
+              echo "Ping failed; will try again next interval."
             fi
-            attempt=$((attempt + 1))
-            sleep 15
+            remaining=$((deadline - SECONDS))
+            if [ "${remaining}" -le 0 ]; then
+              break
+            fi
+            if [ "${remaining}" -gt 480 ]; then
+              sleep 480
+            else
+              sleep "${remaining}"
+            fi
           done
-          echo "Health check failed after 3 attempts."
-          exit 1
+          if [ "${ok}" -ne 1 ]; then
+            echo "Every ping failed."
+            exit 1
+          fi
